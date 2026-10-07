@@ -3,8 +3,5 @@
   "errors.appNotFound": "App '{0}' não encontrado.",
   "errors.unknownSessionMode": "Modo de sessão desconhecido: {0}",
   "errors.tooManyAttempts": "Muitas tentativas inválidas. Aguarde alguns minutos.",
-  "errors.unauthorized": "Token de pareamento ausente ou inválido.",
-
-  "sessions.disconnected": "desconectada",
-  "sessions.inUse": "em uso"
+  "errors.unauthorized": "Token de pareamento ausente ou inválido."
 }

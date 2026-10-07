@@ -39,6 +39,7 @@ public class SessionTests : IDisposable
         Assert.Equal(@"PC\joao", busy.User);
         Assert.True(busy.IsConsole);
         Assert.Equal(SessionActions.Logoff, busy.Action);
+        Assert.Equal(SessionStates.Active, busy.State); // a code, translated by the client
     }
 
     [Fact]

@@ -30,10 +30,19 @@ public partial class ReleaseSessionWindow : Window
         }
 
         var outcome = s.Action == SessionActions.Logoff ? Strings.T("client.release.willLogoff") : Strings.T("client.release.willDisconnect");
+        var state = State(s.State);
         return s.IsConsole
-            ? Strings.T("client.release.consoleSessionLine", s.User, s.State, outcome)
-            : Strings.T("client.release.sessionLine", s.User, s.State, outcome);
+            ? Strings.T("client.release.consoleSessionLine", s.User, state, outcome)
+            : Strings.T("client.release.sessionLine", s.User, state, outcome);
     }
+
+    /// <summary>Agents send a code (0.8.0+) or, before that, Portuguese text; anything else is shown as is.</summary>
+    private static string State(string state) => state switch
+    {
+        SessionStates.Active or "em uso" => Strings.T("client.release.stateActive"),
+        SessionStates.Disconnected or "desconectada" => Strings.T("client.release.stateDisconnected"),
+        _ => state,
+    };
 
     private static bool IsRemoteApps(BusySessionDto session) => session.Kind == SessionModes.RemoteApp;
 

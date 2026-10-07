@@ -1,7 +1,6 @@
 {
   "buttons.cancel": "Cancel",
   "buttons.save": "Save",
-
   "main.hostLabel": "Host:",
   "main.selectedHost": "Selected host",
   "main.addHost": "Add host",
@@ -20,17 +19,14 @@
   "main.noHostText": "On the remote PC, create a token with 'wrahost agent token' and enter it here along with the PC's address.",
   "main.noApps": "No apps published on this host. On the remote PC, publish them with the \"WRApperture (Host)\" Start menu shortcut, then click Refresh.",
   "main.appsList": "Host apps",
-
   "tile.open": "Open",
   "tile.rename": "Rename…",
   "tile.resetName": "Restore original name",
   "tile.createShortcut": "Create desktop shortcut",
   "tile.renamedTip": "{0}\nOn the remote PC: {1}",
-
   "desktop.name": "Desktop",
   "desktop.tip": "Opens the remote PC's whole desktop, full screen",
   "desktop.shortcutName": "{0} — Desktop",
-
   "status.syncing": "Syncing…",
   "status.synced": "{0} app(s) · synced at {1}",
   "status.never": "never",
@@ -49,7 +45,6 @@
   "status.shortcutCreated": "Shortcut created: {0}",
   "status.credentialsSaved": "Credentials saved in Windows. Apps will open without asking for a password.",
   "status.credentialsDeleted": "Credentials removed. The next connection will ask for a user name and password.",
-
   "progress.openingDesktop": "Opening the desktop…",
   "progress.openingApp": "Opening {0}…",
   "progress.connecting": "Connecting to the remote PC.",
@@ -58,21 +53,18 @@
   "progress.loggingOff": "Signing out your session on the remote PC…",
   "progress.desktopNext": "This may take a few seconds. The desktop opens right after.",
   "progress.appNext": "This may take a few seconds. The app opens right after.",
-
   "dialogs.invalidTokenTitle": "Invalid token",
   "dialogs.askNewToken": "{0}\n\nDo you want to enter a new token now?",
   "dialogs.hostChangedTitle": "Host identity changed",
   "dialogs.hostChangedMessage": "{0}\n\nConfirmed fingerprint:\n{1}\n\nFingerprint presented now:\n{2}\n\nCheck it with 'wrahost agent show' on the host. Trust the new fingerprint?",
   "dialogs.removeHostTitle": "Remove host",
   "dialogs.removeHostMessage": "Remove {0} from this computer? Shortcuts already created will stop working.",
-
   "signing.title": "Open apps without the security warning",
   "signing.prompt": "Since April 2026, Windows shows a security warning every time a remote app opens, unless the connection is signed by a trusted publisher.\n\nWRApperture can set up this computer to sign the connections it creates. This needs administrator permission once. Connection files from other sources (for example, received by email) still show the warning.\n\nSet it up now?",
   "signing.alreadyConfigured": "This computer already signs WRApperture connections; apps open without the warning.\n\nCertificate: {0}",
   "signing.notConfigured": "not set up",
   "signing.certificateName": "WRApperture - RDP connection signing",
   "signing.setupFailed": "Could not complete the setup: {0}",
-
   "errors.openFailed": "Could not open {0}: {1}",
   "errors.releaseFailed": "Could not end the local session on {0}. Sign out on the remote PC and try again.",
   "errors.signingFailed": "Could not set up connection signing. See the log in {0}. Apps still open with the Windows warning.",
@@ -87,7 +79,6 @@
   "errors.httpError": "The host responded with error {0}.",
   "errors.credentialSave": "Could not save the credential in Windows.",
   "errors.credentialDelete": "Could not remove the credential from Windows (error {0}).",
-
   "addHost.title": "Add host",
   "addHost.heading": "Connect to a remote PC",
   "addHost.addressLabel": "PC address (name or IP)",
@@ -105,7 +96,6 @@
   "addHost.invalidAddress": "Enter a valid computer name or IP address.",
   "addHost.invalidPort": "Enter a valid port (default {0}).",
   "addHost.missingToken": "Enter the pairing token.",
-
   "credentials.title": "Host credentials",
   "credentials.heading": "Save sign-in for {0}",
   "credentials.userLabel": "Windows user on the remote PC",
@@ -114,7 +104,6 @@
   "credentials.password": "Password",
   "credentials.storageHint": "The password is kept in this computer's Windows Credential Manager, not in WRApperture.",
   "credentials.missing": "Enter a user name and password.",
-
   "release.title": "Remote PC in use",
   "release.heading": "{0} is in use",
   "release.remoteAppsLine": "• {0}: open remote apps → will be closed",
@@ -122,11 +111,12 @@
   "release.consoleSessionLine": "• {0}: {1} session on the PC's screen → {2}",
   "release.willLogoff": "will be ended",
   "release.willDisconnect": "will be disconnected (their programs stay open)",
+  "release.stateActive": "in use",
+  "release.stateDisconnected": "disconnected",
   "release.appWarning": "To open the app, this session will be ended (sign out). The programs open on the remote PC will be closed and unsaved work will be lost.",
   "release.desktopWarning": "To open the desktop, the open remote apps will be closed. Unsaved work in them will be lost.",
   "release.dontAskAgain": "Don't ask again for this PC",
   "release.confirm": "End and open",
-
   "rename.title": "Rename app",
   "rename.nameLabel": "Name on this computer",
   "rename.hint": "The name changes only here. The remote PC and other computers keep the original name.",

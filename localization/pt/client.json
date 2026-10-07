@@ -1,7 +1,6 @@
 {
   "buttons.cancel": "Cancelar",
   "buttons.save": "Salvar",
-
   "main.hostLabel": "Host:",
   "main.selectedHost": "Host selecionado",
   "main.addHost": "Adicionar host",
@@ -20,17 +19,14 @@
   "main.noHostText": "No PC remoto, gere um token com 'wrahost agent token' e informe-o aqui junto com o endereço do PC.",
   "main.noApps": "Nenhum app publicado neste host. No PC remoto, publique pelo atalho \"WRApperture (Host)\" do Menu Iniciar e clique em Atualizar.",
   "main.appsList": "Apps do host",
-
   "tile.open": "Abrir",
   "tile.rename": "Renomear…",
   "tile.resetName": "Restaurar nome original",
   "tile.createShortcut": "Criar atalho na área de trabalho",
   "tile.renamedTip": "{0}\nNo PC remoto: {1}",
-
   "desktop.name": "Área de trabalho",
   "desktop.tip": "Abre a área de trabalho inteira do PC remoto, em tela cheia",
   "desktop.shortcutName": "{0} — Área de trabalho",
-
   "status.syncing": "Sincronizando…",
   "status.synced": "{0} app(s) · sincronizado às {1}",
   "status.never": "nunca",
@@ -49,7 +45,6 @@
   "status.shortcutCreated": "Atalho criado: {0}",
   "status.credentialsSaved": "Credenciais salvas no Windows. Os apps abrirão sem pedir senha.",
   "status.credentialsDeleted": "Credenciais removidas. A próxima conexão pedirá usuário e senha.",
-
   "progress.openingDesktop": "Abrindo a área de trabalho…",
   "progress.openingApp": "Abrindo {0}…",
   "progress.connecting": "Conectando ao PC remoto.",
@@ -58,21 +53,18 @@
   "progress.loggingOff": "Desconectando sua sessão no PC remoto…",
   "progress.desktopNext": "Isso pode levar alguns segundos. A área de trabalho abre em seguida.",
   "progress.appNext": "Isso pode levar alguns segundos. O app abre em seguida.",
-
   "dialogs.invalidTokenTitle": "Token inválido",
   "dialogs.askNewToken": "{0}\n\nDeseja informar um novo token agora?",
   "dialogs.hostChangedTitle": "Identidade do host mudou",
   "dialogs.hostChangedMessage": "{0}\n\nFingerprint confirmado:\n{1}\n\nFingerprint apresentado agora:\n{2}\n\nConfira com 'wrahost agent show' no host. Confiar no novo fingerprint?",
   "dialogs.removeHostTitle": "Remover host",
   "dialogs.removeHostMessage": "Remover {0} deste computador? Atalhos já criados deixarão de funcionar.",
-
   "signing.title": "Abrir apps sem alerta de segurança",
   "signing.prompt": "Desde abril de 2026, o Windows mostra um alerta de segurança toda vez que um app remoto é aberto, a menos que a conexão seja assinada por um publicador confiável.\n\nO WRApperture pode configurar este computador para assinar as conexões que ele mesmo cria. Isso exige permissão de administrador uma única vez. Arquivos de conexão de outras origens (por exemplo, recebidos por e-mail) continuam exibindo o alerta.\n\nConfigurar agora?",
   "signing.alreadyConfigured": "Este computador já assina as conexões do WRApperture; os apps abrem sem alerta.\n\nCertificado: {0}",
   "signing.notConfigured": "não configurado",
   "signing.certificateName": "WRApperture - assinatura de conexões RDP",
   "signing.setupFailed": "Não foi possível concluir a configuração: {0}",
-
   "errors.openFailed": "Não foi possível abrir {0}: {1}",
   "errors.releaseFailed": "Não foi possível encerrar a sessão local de {0}. Faça logoff no PC remoto e tente de novo.",
   "errors.signingFailed": "Não foi possível configurar a assinatura das conexões. Veja o log em {0}. Os apps continuam abrindo com o alerta do Windows.",
@@ -87,7 +79,6 @@
   "errors.httpError": "O host respondeu com erro {0}.",
   "errors.credentialSave": "Não foi possível salvar a credencial no Windows.",
   "errors.credentialDelete": "Não foi possível remover a credencial do Windows (erro {0}).",
-
   "addHost.title": "Adicionar host",
   "addHost.heading": "Conectar a um PC remoto",
   "addHost.addressLabel": "Endereço do PC (nome ou IP)",
@@ -105,7 +96,6 @@
   "addHost.invalidAddress": "Informe um nome de computador ou endereço IP válido.",
   "addHost.invalidPort": "Informe uma porta válida (padrão {0}).",
   "addHost.missingToken": "Informe o token de pareamento.",
-
   "credentials.title": "Credenciais do host",
   "credentials.heading": "Salvar login de {0}",
   "credentials.userLabel": "Usuário do Windows no PC remoto",
@@ -114,7 +104,6 @@
   "credentials.password": "Senha",
   "credentials.storageHint": "A senha fica no Gerenciador de Credenciais do Windows deste computador, não no WRApperture.",
   "credentials.missing": "Informe usuário e senha.",
-
   "release.title": "PC remoto em uso",
   "release.heading": "{0} está em uso",
   "release.remoteAppsLine": "• {0}: apps remotos abertos → serão fechados",
@@ -122,11 +111,12 @@
   "release.consoleSessionLine": "• {0}: sessão {1} na tela do PC → {2}",
   "release.willLogoff": "será encerrada",
   "release.willDisconnect": "será desconectada (os programas dele continuam abertos)",
+  "release.stateActive": "em uso",
+  "release.stateDisconnected": "desconectada",
   "release.appWarning": "Para abrir o app, essa sessão será encerrada (logoff). Os programas abertos no PC remoto serão fechados e o que não foi salvo será perdido.",
   "release.desktopWarning": "Para abrir a área de trabalho, os apps remotos abertos serão fechados. O que não foi salvo neles será perdido.",
   "release.dontAskAgain": "Não perguntar novamente para este PC",
   "release.confirm": "Encerrar e abrir",
-
   "rename.title": "Renomear app",
   "rename.nameLabel": "Nome neste computador",
   "rename.hint": "O nome muda só aqui. O PC remoto e os outros computadores continuam com o nome original.",

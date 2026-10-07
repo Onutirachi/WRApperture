@@ -74,7 +74,8 @@ internal static class SessionEndpoints
 
     private static BusySessionDto Dto(HostSession s, string action) => new(
         string.IsNullOrEmpty(s.Domain) ? s.User : $@"{s.Domain}\{s.User}",
-        s.State == SessionConnectState.Disconnected ? Strings.T("agent.sessions.disconnected") : Strings.T("agent.sessions.inUse"),
+        // A code, not text: the client shows it in its own language.
+        s.State == SessionConnectState.Disconnected ? SessionStates.Disconnected : SessionStates.Active,
         s.IsConsole,
         action,
         s.Kind == SessionKind.RemoteApp ? SessionModes.RemoteApp : SessionModes.Desktop);

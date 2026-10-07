@@ -69,6 +69,13 @@ public sealed record SessionReleaseRequestDto(string? User, string? Mode = null)
 
 public sealed record SessionReleaseResultDto(int Released, bool Busy);
 
+/// <summary>BusySessionDto.State codes (agents older than 0.8.0 sent Portuguese text instead).</summary>
+public static class SessionStates
+{
+    public const string Active = "active";
+    public const string Disconnected = "disconnected";
+}
+
 public static class SessionActions
 {
     public const string Logoff = "logoff";
