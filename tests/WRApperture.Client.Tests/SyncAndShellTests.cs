@@ -200,6 +200,22 @@ public class ShortcutTests : IDisposable
     }
 
     [Fact]
+    public void Ico_holds_several_sizes_with_consecutive_offsets()
+    {
+        var small = MakePngHeader(16, 16);
+        var large = MakePngHeader(48, 48);
+
+        var ico = IcoWriter.FromPngs([small, large]);
+
+        Assert.Equal(2, BitConverter.ToUInt16(ico, 4));
+        Assert.Equal(16, ico[6]);
+        Assert.Equal(48, ico[22]);
+        Assert.Equal(38u, BitConverter.ToUInt32(ico, 18));                     // after 6 + 2 * 16 bytes of header
+        Assert.Equal(38u + (uint)small.Length, BitConverter.ToUInt32(ico, 34)); // right after the first image
+        Assert.Equal(large, ico[^large.Length..]);
+    }
+
+    [Fact]
     public void Ico_rejects_non_png()
     {
         Assert.Throws<ArgumentException>(() => IcoWriter.FromPng(new byte[30]));

@@ -3,6 +3,7 @@
   <PropertyGroup>
     <AssemblyName>WRApperture.Agent</AssemblyName>
     <RootNamespace>WRApperture.Host.Agent</RootNamespace>
+    <ApplicationIcon>../../assets/icons/WRApperture.Host.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

@@ -5,6 +5,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>WRApperture.Host</AssemblyName>
     <RootNamespace>WRApperture.Host.Manager</RootNamespace>
+    <ApplicationIcon>../../assets/icons/WRApperture.Host.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

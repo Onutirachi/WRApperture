@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>wrahost</AssemblyName>
     <RootNamespace>WRApperture.Host.Cli</RootNamespace>
+    <ApplicationIcon>../../assets/icons/WRApperture.Host.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

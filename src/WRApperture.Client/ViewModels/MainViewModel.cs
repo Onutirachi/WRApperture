@@ -492,26 +492,30 @@ public sealed partial class MainViewModel : ObservableObject
 
         try
         {
+            var ico = _icons.IcoPath(option.Host.Id, tile.App.Alias);
+            Directory.CreateDirectory(Path.GetDirectoryName(ico)!);
             if (tile.IsDesktop)
             {
+                File.WriteAllBytes(ico, ShortcutIcons.ForDesktop());
                 var desktopLnk = DesktopShortcuts.Create(Strings.T("client.desktop.shortcutName", option.Host.DisplayName),
-                    _launcher.WriteDesktopRdpFile(option.Host), RemoteAppLauncher.MstscPath, directory);
+                    _launcher.WriteDesktopRdpFile(option.Host), ico, directory);
                 SetStatus(Strings.T("client.status.shortcutCreated", Path.GetFileName(desktopLnk)), warning: false);
                 return;
             }
 
             var rdp = _launcher.WriteRdpFile(option.Host, tile.App);
             var png = _icons.PngPath(option.Host.Id, tile.App.Alias);
-            var ico = _icons.IcoPath(option.Host.Id, tile.App.Alias);
             if (File.Exists(png))
             {
-                File.WriteAllBytes(ico, IcoWriter.FromPng(File.ReadAllBytes(png)));
+                // The app's icon plus the WRApperture badge, to tell it from a local copy of the app.
+                File.WriteAllBytes(ico, ShortcutIcons.ForApp(File.ReadAllBytes(png)));
             }
 
             var lnk = DesktopShortcuts.Create(tile.DisplayName, rdp, File.Exists(ico) ? ico : RemoteAppLauncher.MstscPath, directory);
             SetStatus(Strings.T("client.status.shortcutCreated", Path.GetFileName(lnk)), warning: false);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or System.Runtime.InteropServices.COMException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException
+                                       or FormatException or System.Runtime.InteropServices.COMException)
         {
             _logger.LogError(ex, "Failed to create shortcut for {Alias}", tile.App.Alias);
             _dialogs.Error(Strings.T("client.errors.shortcutFailed", ex.Message));
