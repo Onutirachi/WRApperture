@@ -1,22 +1,23 @@
 <Window x:Class="WRApperture.Client.Views.RenameAppWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Renomear app" Width="420" SizeToContent="Height" ResizeMode="NoResize"
+        xmlns:loc="clr-namespace:WRApperture.Ui;assembly=WRApperture.Ui"
+        Title="{loc:T client.rename.title}" Width="420" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         Style="{StaticResource BaseWindow}">
     <StackPanel Margin="20">
-        <TextBlock Text="Renomear app" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
+        <TextBlock Text="{loc:T client.rename.title}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
 
-        <TextBlock Text="Nome neste computador" Margin="0,0,0,4" />
-        <TextBox x:Name="NameBox" AutomationProperties.Name="Nome neste computador" />
+        <TextBlock Text="{loc:T client.rename.nameLabel}" Margin="0,0,0,4" />
+        <TextBox x:Name="NameBox" AutomationProperties.Name="{loc:T client.rename.nameLabel}" />
         <TextBlock x:Name="HostNameText" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap" />
         <TextBlock Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"
-                   Text="O nome muda só aqui. O PC remoto e os outros computadores continuam com o nome original." />
+                   Text="{loc:T client.rename.hint}" />
 
         <DockPanel Margin="0,18,0,0" LastChildFill="False">
-            <Button x:Name="RestoreButton" DockPanel.Dock="Left" Content="Restaurar original" Style="{StaticResource Secondary}" Click="OnRestoreClick" />
-            <Button DockPanel.Dock="Right" Content="Salvar" Style="{StaticResource Primary}" Margin="8,0,0,0" IsDefault="True" Click="OnSaveClick" />
-            <Button DockPanel.Dock="Right" Content="Cancelar" Style="{StaticResource Secondary}" IsCancel="True" />
+            <Button x:Name="RestoreButton" DockPanel.Dock="Left" Content="{loc:T client.rename.restore}" Style="{StaticResource Secondary}" Click="OnRestoreClick" />
+            <Button DockPanel.Dock="Right" Content="{loc:T client.buttons.save}" Style="{StaticResource Primary}" Margin="8,0,0,0" IsDefault="True" Click="OnSaveClick" />
+            <Button DockPanel.Dock="Right" Content="{loc:T client.buttons.cancel}" Style="{StaticResource Secondary}" IsCancel="True" />
         </DockPanel>
     </StackPanel>
 </Window>

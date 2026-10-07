@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Win32;
 using WRApperture.Shared;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Client.Core.Signing;
 
@@ -273,7 +274,7 @@ public sealed class RdpSigning : IRdpSigner
 
         var now = DateTimeOffset.UtcNow;
         var certificate = request.CreateSelfSigned(now.AddDays(-1), now.AddYears(10));
-        certificate.FriendlyName = "WRApperture - assinatura de conexões RDP";
+        certificate.FriendlyName = Strings.T("client.signing.certificateName");
 
         using var store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
         store.Open(OpenFlags.ReadWrite);
@@ -343,5 +344,5 @@ public sealed class RdpSigning : IRdpSigner
 
     /// <summary>Formatted SHA-256 for display.</summary>
     public static string Describe(SigningStatus status) =>
-        status.Sha256 is null ? "não configurado" : CertificateFingerprint.Format(status.Sha256);
+        status.Sha256 is null ? Strings.T("client.signing.notConfigured") : CertificateFingerprint.Format(status.Sha256);
 }

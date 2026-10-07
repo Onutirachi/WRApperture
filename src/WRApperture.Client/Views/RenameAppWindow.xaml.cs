@@ -1,4 +1,5 @@
 using System.Windows;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Client.Views;
 
@@ -11,7 +12,7 @@ public partial class RenameAppWindow : Window
         InitializeComponent();
         _hostName = hostName;
         NameBox.Text = currentName;
-        HostNameText.Text = $"Nome no PC remoto: {hostName}";
+        HostNameText.Text = Strings.T("client.rename.hostName", hostName);
         RestoreButton.IsEnabled = currentName != hostName;
         Loaded += (_, _) =>
         {

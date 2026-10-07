@@ -3,6 +3,7 @@ using System.Windows;
 using WRApperture.Client.Core.Agent;
 using WRApperture.Client.Services;
 using WRApperture.Shared;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Client.Views;
 
@@ -35,19 +36,19 @@ public partial class AddHostWindow : Window
         var address = AddressBox.Text.Trim();
         if (Uri.CheckHostName(address) == UriHostNameType.Unknown)
         {
-            ShowError("Informe um nome de computador ou endereço IP válido.");
+            ShowError(Strings.T("client.addHost.invalidAddress"));
             return;
         }
 
         if (!int.TryParse(PortBox.Text, NumberStyles.None, CultureInfo.InvariantCulture, out var port) || port is < 1 or > 65535)
         {
-            ShowError("Informe uma porta válida (padrão 5080).");
+            ShowError(Strings.T("client.addHost.invalidPort", ApiContract.DefaultPort));
             return;
         }
 
         if (string.IsNullOrWhiteSpace(TokenBox.Password))
         {
-            ShowError("Informe o token de pareamento.");
+            ShowError(Strings.T("client.addHost.missingToken"));
             return;
         }
 
@@ -57,12 +58,12 @@ public partial class AddHostWindow : Window
             _pairing = await AgentClient.PairAsync(address, port, TokenBox.Password.Trim());
             _address = address;
             _port = port;
-            HostNameText.Text = $"{_pairing.Host.HostName}  ·  agente {_pairing.Host.AgentVersion}";
+            HostNameText.Text = Strings.T("client.addHost.hostLine", _pairing.Host.HostName, _pairing.Host.AgentVersion);
             FingerprintText.Text = CertificateFingerprint.Format(_pairing.ObservedFingerprint);
             Step1.Visibility = Visibility.Collapsed;
             Step2.Visibility = Visibility.Visible;
             ErrorText.Visibility = Visibility.Collapsed;
-            PrimaryButton.Content = "Confirmar e salvar";
+            PrimaryButton.Content = Strings.T("client.addHost.confirmAndSave");
         }
         catch (AgentException ex)
         {
@@ -79,7 +80,7 @@ public partial class AddHostWindow : Window
         PrimaryButton.IsEnabled = !busy;
         if (_pairing is null)
         {
-            PrimaryButton.Content = busy ? "Conectando…" : "Conectar";
+            PrimaryButton.Content = busy ? Strings.T("client.addHost.connecting") : Strings.T("client.addHost.connect");
         }
     }
 

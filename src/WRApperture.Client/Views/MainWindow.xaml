@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:WRApperture.Client.ViewModels"
+        xmlns:loc="clr-namespace:WRApperture.Ui;assembly=WRApperture.Ui"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
         Title="WRApperture" Width="880" Height="600" MinWidth="520" MinHeight="380"
@@ -24,32 +25,32 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Host:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource Muted}" />
+                    <TextBlock Text="{loc:T client.main.hostLabel}" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource Muted}" />
                     <ComboBox Width="240" ItemsSource="{Binding Hosts}" SelectedItem="{Binding SelectedHost}"
-                              DisplayMemberPath="Label" IsEnabled="{Binding HasHost}" AutomationProperties.Name="Host selecionado" />
-                    <Button Content="Adicionar host" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding AddHostCommand}" />
-                    <Button Content="⟳ Atualizar" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding RefreshCommand}" ToolTip="Buscar a lista de apps no host" />
+                              DisplayMemberPath="Label" IsEnabled="{Binding HasHost}" AutomationProperties.Name="{loc:T client.main.selectedHost}" />
+                    <Button Content="{loc:T client.main.addHost}" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding AddHostCommand}" />
+                    <Button Content="{loc:T client.main.refresh}" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding RefreshCommand}" ToolTip="{loc:T client.main.refreshTip}" />
                     <Button x:Name="MoreButton" Content="⋯" Style="{StaticResource Secondary}" Margin="8,0,0,0" Padding="10,6" IsEnabled="{Binding HasHost}"
-                            ToolTip="Mais opções" Click="OnMoreClick" AutomationProperties.Name="Mais opções">
+                            ToolTip="{loc:T client.main.moreOptions}" Click="OnMoreClick" AutomationProperties.Name="{loc:T client.main.moreOptions}">
                         <Button.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Salvar credenciais do host…" Command="{Binding SaveCredentialsCommand}" />
-                                <MenuItem Header="Remover credenciais salvas" Command="{Binding DeleteCredentialsCommand}" />
+                                <MenuItem Header="{loc:T client.main.saveCredentials}" Command="{Binding SaveCredentialsCommand}" />
+                                <MenuItem Header="{loc:T client.main.deleteCredentials}" Command="{Binding DeleteCredentialsCommand}" />
                                 <Separator />
-                                <MenuItem Header="Abrir apps sem alerta de segurança…" Command="{Binding ConfigureSigningCommand}" />
-                                <MenuItem Header="Perguntar antes de encerrar a sessão do PC remoto" IsCheckable="True"
+                                <MenuItem Header="{loc:T client.main.configureSigning}" Command="{Binding ConfigureSigningCommand}" />
+                                <MenuItem Header="{loc:T client.main.askBeforeRelease}" IsCheckable="True"
                                           IsChecked="{Binding AskBeforeReleasingSession, Mode=TwoWay}"
-                                          ToolTip="Desmarcado (padrão): ao abrir um app com você logado no PC remoto, a sessão é encerrada sem perguntar e os programas abertos lá são fechados" />
+                                          ToolTip="{loc:T client.main.askBeforeReleaseTip}" />
                                 <Separator />
-                                <MenuItem Header="Remover host" Command="{Binding RemoveHostCommand}" />
+                                <MenuItem Header="{loc:T client.main.removeHost}" Command="{Binding RemoveHostCommand}" />
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>
                 </StackPanel>
 
                 <Grid Grid.Column="2" Width="220">
-                    <TextBox x:Name="Search" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Buscar apps" />
-                    <TextBlock Text="Buscar apps…" Foreground="{DynamicResource Muted}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                    <TextBox x:Name="Search" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:T client.main.searchApps}" />
+                    <TextBlock Text="{loc:T client.main.searchPlaceholder}" Foreground="{DynamicResource Muted}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -95,22 +96,22 @@
             <!-- Empty state: no hosts -->
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420"
                         Visibility="{Binding HasNoHost, Converter={StaticResource BoolToVis}}">
-                <TextBlock Text="Nenhum host configurado" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                <TextBlock Text="{loc:T client.main.noHostTitle}" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" />
                 <TextBlock TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,16" Foreground="{DynamicResource Muted}"
-                           Text="No PC remoto, gere um token com 'wrahost agent token' e informe-o aqui junto com o endereço do PC." />
-                <Button Content="Adicionar host" Style="{StaticResource Primary}" HorizontalAlignment="Center" Command="{Binding AddHostCommand}" />
+                           Text="{loc:T client.main.noHostText}" />
+                <Button Content="{loc:T client.main.addHost}" Style="{StaticResource Primary}" HorizontalAlignment="Center" Command="{Binding AddHostCommand}" />
             </StackPanel>
 
             <!-- Empty state: host without apps -->
             <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" MaxWidth="420" TextAlignment="Center"
-                       Text="Nenhum app publicado neste host. No PC remoto, publique pelo atalho &quot;WRApperture (Host)&quot; do Menu Iniciar e clique em Atualizar."
+                       Text="{loc:T client.main.noApps}"
                        Visibility="{Binding HasNoApps, Converter={StaticResource BoolToVis}}" />
 
             <!-- One click selects, double click or Enter opens (like the Windows desktop); F2 renames. -->
             <ListBox x:Name="AppsList" ItemsSource="{Binding AppsView}" SelectedItem="{Binding SelectedApp}" SelectionMode="Single"
                      Background="Transparent" BorderThickness="0" Padding="12" Visibility="{Binding HasHost, Converter={StaticResource BoolToVis}}"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled" KeyDown="OnAppsKeyDown"
-                     AutomationProperties.Name="Apps do host">
+                     AutomationProperties.Name="{loc:T client.main.appsList}">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel />
@@ -153,17 +154,17 @@
                         <Setter Property="ContextMenu">
                             <Setter.Value>
                                 <ContextMenu>
-                                    <MenuItem Header="Abrir" FontWeight="SemiBold" InputGestureText="Enter"
+                                    <MenuItem Header="{loc:T client.tile.open}" FontWeight="SemiBold" InputGestureText="Enter"
                                               Command="{Binding PlacementTarget.Tag.OpenAppCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                               CommandParameter="{Binding}" />
-                                    <MenuItem Header="Renomear…" InputGestureText="F2" Visibility="{Binding CanRename, Converter={StaticResource BoolToVis}}"
+                                    <MenuItem Header="{loc:T client.tile.rename}" InputGestureText="F2" Visibility="{Binding CanRename, Converter={StaticResource BoolToVis}}"
                                               Command="{Binding PlacementTarget.Tag.RenameAppCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                               CommandParameter="{Binding}" />
-                                    <MenuItem Header="Restaurar nome original" Visibility="{Binding IsRenamed, Converter={StaticResource BoolToVis}}"
+                                    <MenuItem Header="{loc:T client.tile.resetName}" Visibility="{Binding IsRenamed, Converter={StaticResource BoolToVis}}"
                                               Command="{Binding PlacementTarget.Tag.ResetAppNameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                               CommandParameter="{Binding}" />
                                     <Separator />
-                                    <MenuItem Header="Criar atalho na área de trabalho"
+                                    <MenuItem Header="{loc:T client.tile.createShortcut}"
                                               Command="{Binding PlacementTarget.Tag.CreateShortcutCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                               CommandParameter="{Binding}" />
                                 </ContextMenu>

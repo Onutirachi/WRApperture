@@ -114,7 +114,7 @@ public sealed class AgentClientTlsTests : IAsyncLifetime
         var host = Samples.Host("127.0.0.1") with { AgentPort = Port, ProtectedToken = Convert.ToBase64String(new byte[64]) };
 
         var ex = Assert.Throws<InvalidTokenException>(() => AgentClient.ForHost(host));
-        Assert.Contains("não pode ser lido", ex.Message);
+        Assert.Contains("cannot be read", ex.Message);
     }
 
     [Fact]
@@ -150,11 +150,20 @@ public class AgentClientHttpTests
     {
         using var client = Create(_ => new HttpResponseMessage(HttpStatusCode.NotFound)
         {
-            Content = JsonContent.Create(new ApiErrorDto("not_found", "App 'x' não encontrado.")),
+            Content = JsonContent.Create(new ApiErrorDto("not_found", "App 'x' not found.")),
         });
 
         var ex = await Assert.ThrowsAsync<AgentException>(() => client.GetIconAsync("x", 48, null));
-        Assert.Equal("App 'x' não encontrado.", ex.Message);
+        Assert.Equal("App 'x' not found.", ex.Message);
+    }
+
+    [Fact]
+    public async Task Errors_without_agent_message_report_the_status_code()
+    {
+        using var client = Create(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+        var ex = await Assert.ThrowsAsync<AgentException>(() => client.GetAppsAsync());
+        Assert.Equal("The host responded with error 500.", ex.Message);
     }
 
     [Fact]
