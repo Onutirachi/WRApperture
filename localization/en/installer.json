@@ -83,5 +83,11 @@
   "host.uninstall.wrahostMissing": "wrahost.exe not found in {0}; preparation and settings were not reverted.",
   "host.uninstall.removePath": "Remove the install folder from the system PATH",
   "host.uninstall.done": "WRApperture removed from this computer.",
-  "host.uninstall.kept": "Published apps, host preparation and token were kept (a reinstall reuses them)."
+  "host.uninstall.kept": "Published apps, host preparation and token were kept (a reinstall reuses them).",
+  "setup.openHost": "Open WRApperture (Host) to pair client computers",
+  "setup.configuring": "Configuring this PC (agent service, firewall, Remote Desktop)…",
+  "setup.configureFailed": "WRApperture was installed, but configuring this PC failed (code {0}).\n\nDetails are in {1}",
+  "setup.unsupportedEdition": "This Windows edition does not support RemoteApp. Use Windows 10/11 Pro, Enterprise or Education.",
+  "setup.purgeQuestion": "Also undo the preparation of this PC (Remote Desktop settings) and delete the pairing token and the published apps?\n\nChoose No to keep them for a future installation.",
+  "setup.removeUserDataQuestion": "Also delete the paired PCs, the saved passwords and the shortcuts created by WRApperture?\n\nChoose No to keep them for a future installation."
 }

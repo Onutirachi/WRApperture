@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build and test
+        run: dotnet test WRApperture.sln -c Release --nologo
+
+      # The packaging tests target Windows PowerShell 5.1 with the Pester 3/4 syntax it ships with.
+      - name: Packaging tests (Pester)
+        shell: powershell
+        run: |
+          Import-Module Pester -MaximumVersion 4.99 -Force
+          $result = Invoke-Pester tests/packaging -PassThru
+          if ($result.FailedCount -gt 0) { exit 1 }

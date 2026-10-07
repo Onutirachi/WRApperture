@@ -193,6 +193,16 @@ Describe 'Uninstall-WRAppertureClient' {
         Join-Path $l.UserData 'client\hosts.json' | Should Exist
     }
 
+    It 'with -KeepFiles leaves the program folder to the setup uninstaller' {
+        $pkg = New-Package; $l = New-Layout
+        Install $pkg $l | Out-Null
+
+        (Uninstall $l @('-KeepFiles')).ExitCode | Should Be 0
+
+        Join-Path $l.Install 'WRApperture.exe' | Should Exist
+        Join-Path $l.Start 'WRApperture.lnk' | Should Not Exist
+    }
+
     It 'removes the uninstall shortcut whatever language it was created in' {
         $pkg = New-Package; $l = New-Layout
         $env:WRAPPERTURE_LANG = 'pt'

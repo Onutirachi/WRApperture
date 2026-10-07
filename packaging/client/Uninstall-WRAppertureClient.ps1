@@ -12,6 +12,9 @@
 .PARAMETER Interactive
     Usado pelo Desinstalar.cmd: pergunta se deve apagar os dados do usuário e espera Enter antes de fechar.
 
+.PARAMETER KeepFiles
+    Não apaga a pasta de instalação (o desinstalador do Windows/Inno Setup remove os arquivos depois).
+
 .PARAMETER DryRun
     Mostra o que seria feito, sem alterar nada.
 #>
@@ -23,6 +26,7 @@ param(
     [string]$DesktopDir = [Environment]::GetFolderPath('DesktopDirectory'),
     [string]$RunKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run',
     [switch]$RemoveUserData,
+    [switch]$KeepFiles,
     [switch]$KeepSigning,
     [switch]$Interactive,
     [switch]$DryRun
@@ -116,7 +120,7 @@ try {
             }
         }
     }
-    if (Test-Path $InstallDir) {
+    if (-not $KeepFiles -and (Test-Path $InstallDir)) {
         Invoke-Step (T 'installer.deleteFolder' $InstallDir) {
             Set-Location $env:TEMP   # this script may be running from inside InstallDir
             Remove-Item -Recurse -Force $InstallDir

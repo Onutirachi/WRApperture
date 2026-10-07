@@ -21,6 +21,7 @@ param(
     [string]$InstallDir = (Join-Path $env:ProgramFiles 'WRApperture'),
     [string]$DesktopDir = [Environment]::GetFolderPath('CommonDesktopDirectory'),
     [switch]$Purge,
+    [switch]$KeepFiles,
     [switch]$Interactive,
     [switch]$DryRun
 )
@@ -107,7 +108,7 @@ try {
         [Environment]::SetEnvironmentVariable('Path', ($parts -join ';'), 'Machine')
     }
 
-    if (Test-Path $InstallDir) {
+    if (-not $KeepFiles -and (Test-Path $InstallDir)) {
         Invoke-Step (T 'installer.deleteFolder' $InstallDir) {
             # This script may be running from inside InstallDir.
             Set-Location $env:TEMP

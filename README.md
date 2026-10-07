@@ -17,32 +17,45 @@ Abra apps individuais de um PC Windows (host) a partir de outro computador (clie
 | `WRApperture.Client` | ✅ | App WPF: pareia com o host, mostra os apps em grade e abre cada um em sua janela com duplo clique |
 | `WRApperture.Client.Core` | ✅ | Lógica do cliente: pareamento com pinning, cache offline, geração de `.rdp`, credenciais e atalhos |
 
-## Instalação (pacotes de release)
+## Instalação
+
+Baixe os instaladores da página de [Releases](https://github.com/Onutirachi/WRApperture/releases/latest). Os executáveis são autônomos e não precisam de .NET instalado. Eles não têm assinatura de código, então o SmartScreen pode avisar na primeira execução: use **Mais informações → Executar assim mesmo**.
+
+**Host** (o PC cujos apps serão usados remotamente): `WRApperture-Host-Setup-<versão>.exe`.
+1. Rode o instalador e aceite o pedido de administrador. Deixe marcado **Criar um atalho na área de trabalho**, se quiser o atalho.
+2. O instalador:
+   - prepara o PC para RemoteApp;
+   - registra o agente como serviço automático, com reinício em caso de falha;
+   - libera a porta 5080 no firewall (redes de domínio e privadas).
+3. Ao concluir, abra o **WRApperture (Host)** e use **Gerar novo token…** para parear os clientes. A mesma janela mostra o endereço, a porta e o fingerprint.
+4. Arraste para a janela os atalhos (da área de trabalho ou do Menu Iniciar) ou programas `.exe` que quer usar remotamente. Nome, caminho, argumentos e ícone são preenchidos automaticamente. O botão **Do Menu Iniciar…** publica vários apps instalados de uma vez.
+
+O Windows Home não suporta RemoteApp; o instalador avisa e não instala.
+
+**Cliente** (o outro computador): `WRApperture-Client-Setup-<versão>.exe`. Não precisa de administrador.
+
+**Desinstalar:** em Configurações → Aplicativos → Aplicativos instalados.
+- O host pergunta se deve desfazer também a preparação do PC e apagar o token.
+- O cliente pergunta se deve apagar os PCs pareados e as senhas salvas.
+
+**Atualizações:** o cliente e o host verificam as releases deste repositório e, com **Atualizar automaticamente** ligado (padrão), se atualizam sozinhos. O agente do host faz isso mesmo sem ninguém usando o PC.
+- O instalador baixado só é executado se o SHA-256 conferir com o `SHA256SUMS.txt` da release.
+- O cliente avisa quando um host está numa versão antiga e pode pedir que ele se atualize.
+
+Instalações anteriores feitas com `Instalar.cmd` são atualizadas no lugar pelos novos instaladores. O token, os apps publicados e os PCs pareados são mantidos.
+
+## Gerar uma release
 
 ```powershell
-.\scripts\build-release.ps1        # roda os testes e gera dist\WRApperture-Host-<v>.zip e dist\WRApperture-Client-<v>.zip
+.\scripts\build-release.ps1        # testes + dist\WRApperture-*-Setup-<v>.exe + dist\SHA256SUMS.txt (requer Inno Setup 6)
 ```
 
-Os executáveis são autônomos e não precisam de .NET instalado.
+No GitHub:
+1. Atualize `<Version>` no `Directory.Build.props`.
+2. Faça commit e envie uma tag `v<versão>`, por exemplo `git tag v0.15.0 && git push origin v0.15.0`.
+3. A Action **Release** compila, roda os testes .NET e Pester, gera os instaladores e publica a release. Os apps instalados passam a se atualizar para ela.
 
-**Host** (PC cujos apps serão usados remotamente):
-1. Extraia `WRApperture-Host-<v>.zip` e dê duplo clique em `Instalar.cmd`, aceitando o UAC. Ele pergunta se deve criar o atalho "WRApperture (Host)" na área de trabalho (Enter = sim).
-2. O instalador:
-   - prepara o host;
-   - registra o agente como serviço automático, com reinício em caso de falha;
-   - libera a porta no firewall (redes de domínio e privadas);
-   - mostra o endereço, a porta, o **token** e o fingerprint.
-3. Abra **"WRApperture (Host)"** no Menu Iniciar e arraste para a janela os atalhos (da área de trabalho ou do Menu Iniciar) ou programas `.exe` que quer usar remotamente. Nome, caminho, argumentos e ícone são preenchidos automaticamente; revise e clique em Publicar. O botão **Do Menu Iniciar…** publica vários apps instalados de uma vez.
-   - O mesmo painel mostra se o PC está preparado, o estado do agente, o endereço, a porta e o fingerprint, e tem o botão **Gerar novo token…** (com Copiar).
-   - Para automação, o `wrahost` continua disponível no PATH (`wrahost inspect <arquivo>` mostra o que seria publicado).
-
-Rodar o instalador de novo atualiza a versão sem invalidar o token. Para desinstalar, dê duplo clique em `Desinstalar.cmd`, no pacote ou em `C:\Program Files\WRApperture`. Ele pede administrador e pergunta se deve desfazer tudo, inclusive o token.
-
-Para usar no dia a dia não é preciso abrir o PowerShell: tudo tem um `.cmd` de duplo clique (`Instalar.cmd` e `Desinstalar.cmd`), que libera a execução de scripts só para aquela chamada.
-
-**Cliente** (outro computador): extraia `WRApperture-Client-<v>.zip` e dê duplo clique em `Instalar.cmd`. Não precisa de administrador. Os atalhos "WRApperture" e "Desinstalar WRApperture" aparecem no Menu Iniciar, e ele pergunta se deve criar também o atalho "WRApperture" na área de trabalho (Enter = sim). O desinstalador pergunta se deve apagar também os PCs pareados e as senhas salvas.
-
-Os executáveis não são assinados, então o SmartScreen pode exibir um aviso na primeira execução.
+Os scripts PowerShell em `packaging/` continuam funcionando para instalação manual e automação: `Instalar.cmd`, `-DryRun`, `-NoDesktopShortcut` e os demais parâmetros.
 
 ## Desenvolvimento: uso do `wrahost` a partir do código (terminal **como administrador**)
 
@@ -139,3 +152,7 @@ Invoke-Pester tests\packaging                  # scripts de instalação (Window
 ```
 
 Para validar de ponta a ponta, siga [specs/20261006-182347-host-core/quickstart.md](specs/20261006-182347-host-core/quickstart.md).
+
+## Licença
+
+[MIT](LICENSE) © Carlos Landini

@@ -47,6 +47,25 @@ Describe 'Install-WRAppertureHost' {
         [bool](Get-Service WRAppertureAgent -ErrorAction SilentlyContinue) | Should Be $serviceBefore
     }
 
+    It 'from the setup wizard (run inside the install folder) only configures the system' {
+        # The wizard has copied the files and made the shortcuts; pairing is done in the host app.
+        $dir = Join-Path $TestDrive 'setup'
+        New-Item -ItemType Directory $dir | Out-Null
+        Copy-Item (Join-Path $scripts 'Install-WRAppertureHost.ps1') $dir
+        Copy-Item (Join-Path $scripts '..\Localization.ps1') $dir
+        Copy-Item (Join-Path $scripts '..\..\localization') $dir -Recurse
+
+        $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $dir 'Install-WRAppertureHost.ps1') `
+            -InstallDir $dir -FromSetup -DryRun *>&1 | Out-String
+
+        $LASTEXITCODE | Should Be 0
+        $output | Should Not Match 'Copy binaries'
+        $output | Should Not Match 'shortcut'
+        $output | Should Not Match 'pairing token'
+        $output | Should Match '\[dry run\] Prepare the host'
+        $output | Should Match '\[dry run\] Start the WRAppertureAgent service'
+    }
+
     It 'dry run with -NoDesktopShortcut skips the desktop shortcut' {
         $r = Invoke-Script 'Install-WRAppertureHost.ps1' @('-InstallDir', (Join-Path $TestDrive 'dry2'), '-NoDesktopShortcut', '-DryRun')
 
@@ -90,6 +109,16 @@ Describe 'Uninstall-WRAppertureHost' {
         $r.Output | Should Match 'wrahost agent reset'
         $r.Output | Should Match "\[dry run\] Delete"
         Join-Path $dir 'wrahost.exe' | Should Exist
+    }
+
+    It 'with -KeepFiles leaves the folder to the setup uninstaller' {
+        $dir = Join-Path $TestDrive 'kept'
+        New-Item -ItemType Directory $dir | Out-Null
+
+        $r = Invoke-Script 'Uninstall-WRAppertureHost.ps1' @('-InstallDir', $dir, '-KeepFiles', '-DryRun')
+
+        $r.ExitCode | Should Be 0
+        $r.Output | Should Not Match '\[dry run\] Delete'
     }
 
     It 'dry run without -Purge does not plan revert' {

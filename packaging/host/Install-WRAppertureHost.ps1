@@ -23,6 +23,11 @@
 .PARAMETER NoDesktopShortcut
     Não cria o atalho na área de trabalho.
 
+.PARAMETER FromSetup
+    Usado pelo instalador gráfico (Inno Setup), que já copiou os arquivos e criou os atalhos: faz só a
+    configuração do sistema (serviço, firewall, PATH, preparação), sem perguntas e sem gerar token (o
+    pareamento é feito no app do host). Grava a saída em %ProgramData%\WRApperture\logs\setup-*.log.
+
 .PARAMETER AllowPublicNetwork
     Libera o agente também em redes classificadas como Públicas.
 
@@ -35,6 +40,7 @@ param(
     [string]$DesktopDir = [Environment]::GetFolderPath('CommonDesktopDirectory'),
     [switch]$Interactive,
     [switch]$NoDesktopShortcut,
+    [switch]$FromSetup,
     [switch]$AllowPublicNetwork,
     [switch]$DryRun
 )
@@ -93,9 +99,19 @@ if (-not $DryRun -and -not (Test-IsAdministrator)) {
 
 if ($DryRun) { Write-Host (T 'installer.host.install.dryRunMode' $InstallDir) -ForegroundColor DarkYellow }
 
-# Machine-wide install: the shortcut goes to the desktop shared by all users.
+if ($FromSetup -and -not $DryRun) {
+    # Runs hidden behind the setup wizard: keep a log the wizard can point to if something fails.
+    $logDir = Join-Path $env:ProgramData 'WRApperture\logs'
+    New-Item -ItemType Directory -Force $logDir | Out-Null
+    Start-Transcript -Path (Join-Path $logDir ("setup-{0:yyyyMMdd-HHmmss}.log" -f (Get-Date))) | Out-Null
+}
+
+# Machine-wide install: the shortcut goes to the desktop shared by all users. The setup wizard makes its own.
 $desktopShortcut = Join-Path $DesktopDir 'WRApperture (Host).lnk'
-$createDesktopShortcut = Get-DesktopShortcutChoice $desktopShortcut
+$createDesktopShortcut = (-not $FromSetup) -and (Get-DesktopShortcutChoice $desktopShortcut)
+
+# The setup wizard has already put the files in place (this script runs from the install folder).
+$inPlace = [IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\') -ieq [IO.Path]::GetFullPath($InstallDir).TrimEnd('\')
 
 $newToken = $null
 try {
@@ -110,7 +126,7 @@ try {
         Invoke-Step (T 'installer.host.install.stopService' $ServiceName) { Stop-Service -Name $ServiceName -Force; (Get-Service $ServiceName).WaitForStatus('Stopped', '00:00:30') } | Out-Null
     }
 
-    Invoke-Step (T 'installer.host.install.copy' $InstallDir) {
+    if (-not $inPlace) { Invoke-Step (T 'installer.host.install.copy' $InstallDir) {
         New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
         foreach ($file in $Binaries + 'Uninstall-WRAppertureHost.ps1', 'Desinstalar.cmd', 'Localization.ps1') {
             $source = Join-Path $PSScriptRoot $file
@@ -122,7 +138,7 @@ try {
             Remove-Item -Recurse -Force (Join-Path $InstallDir 'localization') -ErrorAction SilentlyContinue
             Copy-Item -Path $catalog -Destination $InstallDir -Recurse -Force
         }
-    } | Out-Null
+    } | Out-Null }
 
     if ($createDesktopShortcut) {
         Invoke-Step (T 'installer.desktopShortcut.create' $desktopShortcut) {
@@ -137,7 +153,7 @@ try {
         } | Out-Null
     }
 
-    Invoke-Step (T 'installer.host.install.shortcut') {
+    if (-not $FromSetup) { Invoke-Step (T 'installer.host.install.shortcut') {
         $shell = New-Object -ComObject WScript.Shell
         $shortcut = $shell.CreateShortcut($ManagerShortcut)
         $shortcut.TargetPath = Join-Path $InstallDir 'WRApperture.Host.exe'
@@ -145,7 +161,7 @@ try {
         $shortcut.Description = T 'installer.host.shortcut.description'
         $shortcut.Save()
         [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
-    } | Out-Null
+    } | Out-Null }
 
     Invoke-Step (T 'installer.host.install.addPath') {
         $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine')
@@ -164,7 +180,10 @@ try {
     $settings = [pscustomobject]@{ port = 5080; isPaired = $false; certificateFingerprint = $null }
     if (-not $DryRun) { $settings = Invoke-Wrahost @('agent', 'show', '--json') | ConvertFrom-Json }
 
-    if (-not $settings.isPaired) {
+    if ($FromSetup) {
+        # Pairing happens in the host app ("Generate new token"), which the wizard offers to open.
+    }
+    elseif (-not $settings.isPaired) {
         $newToken = Invoke-Step (T 'installer.host.install.token') { (Invoke-Wrahost @('agent', 'token', '--json') | ConvertFrom-Json).token }
     }
     else {
