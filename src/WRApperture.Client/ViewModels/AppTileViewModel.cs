@@ -18,8 +18,10 @@ public sealed class AppTileViewModel(CachedApp app, string iconPath, bool isDesk
     /// <summary>Shown name: the local one, or the host's.</summary>
     public string DisplayName => App.Name;
     public bool IsRenamed => App.CustomName is not null;
-    public string ToolTip => IsDesktop ? Strings.T("client.desktop.tip")
-        : IsRenamed ? Strings.T("client.tile.renamedTip", DisplayName, App.DisplayName) : DisplayName;
+    /// <summary>Name (and the host's name when renamed), plus a hint that the right button has more options.</summary>
+    public string ToolTip => (IsDesktop ? Strings.T("client.desktop.tip")
+        : IsRenamed ? Strings.T("client.tile.renamedTip", DisplayName, App.DisplayName) : DisplayName)
+        + "\n" + Strings.T("client.tile.moreTip");
     public string Initial => DisplayName.Length > 0 ? DisplayName[..1].ToUpperInvariant() : "?";
     public ImageSource? Icon { get; } = LoadIcon(iconPath);
 

@@ -23,6 +23,8 @@
   "tile.rename": "Renomear…",
   "tile.resetName": "Restaurar nome original",
   "tile.createShortcut": "Criar atalho na área de trabalho",
+  "tile.addToStartMenu": "Adicionar ao Menu Iniciar",
+  "tile.moreTip": "Botão direito: mais opções (renomear, atalhos)",
   "tile.renamedTip": "{0}\nNo PC remoto: {1}",
   "desktop.name": "Área de trabalho",
   "desktop.tip": "Abre a área de trabalho inteira do PC remoto, em tela cheia",

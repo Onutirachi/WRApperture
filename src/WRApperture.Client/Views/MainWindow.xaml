@@ -167,6 +167,9 @@
                                     <MenuItem Header="{loc:T client.tile.createShortcut}"
                                               Command="{Binding PlacementTarget.Tag.CreateShortcutCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                               CommandParameter="{Binding}" />
+                                    <MenuItem Header="{loc:T client.tile.addToStartMenu}"
+                                              Command="{Binding PlacementTarget.Tag.AddToStartMenuCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding}" />
                                 </ContextMenu>
                             </Setter.Value>
                         </Setter>

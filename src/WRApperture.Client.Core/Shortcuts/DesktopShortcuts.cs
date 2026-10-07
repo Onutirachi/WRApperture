@@ -45,10 +45,18 @@ public static class DesktopShortcuts
         return string.IsNullOrEmpty(cleaned) ? "WRApperture" : cleaned;
     }
 
-    /// <summary>Creates (or replaces) a .lnk on the user's desktop that opens <paramref name="rdpFile"/>.</summary>
+    /// <summary>
+    /// The user's "WRApperture" Start menu folder: apps there show up in Windows search and can be pinned.
+    /// The uninstaller cleans the same folder.
+    /// </summary>
+    public static string StartMenuDirectory { get; } =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "WRApperture");
+
+    /// <summary>Creates (or replaces) a .lnk that opens <paramref name="rdpFile"/>; on the user's desktop by default.</summary>
     public static string Create(string displayName, string rdpFile, string icoFile, string? directory = null)
     {
         directory ??= Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        Directory.CreateDirectory(directory);
         var path = Path.Combine(directory, SafeName(displayName) + ".lnk");
 
         var type = Type.GetTypeFromProgID("WScript.Shell", throwOnError: true)!;

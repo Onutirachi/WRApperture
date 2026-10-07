@@ -8,7 +8,6 @@
   "uninstallFailed": "Uninstall failed: {0}",
   "deleteFolder": "Delete {0}",
   "exitCode": "code {0}",
-
   "client.install.closeRunning": "Close the running WRApperture to update it",
   "client.install.copy": "Copy the client to {0}",
   "client.install.shortcuts": "Create the \"WRApperture\" and \"{0}\" Start menu shortcuts",
@@ -17,7 +16,6 @@
   "client.shortcut.description": "Open apps from another computer (WRApperture)",
   "client.shortcut.uninstallName": "Uninstall WRApperture",
   "client.shortcut.uninstallDescription": "Remove WRApperture from this computer",
-
   "client.uninstall.title": "Uninstall WRApperture from this computer.",
   "client.uninstall.askUserData": "Also delete the paired PCs, icons, saved passwords and the \"open without a warning\" setup? (y/N)",
   "client.uninstall.closeRunning": "Close the running WRApperture",
@@ -26,10 +24,11 @@
   "client.uninstall.signingFailed": "Could not remove the signing setup: {0}",
   "client.uninstall.removeCredential": "Remove saved credential TERMSRV/{0}",
   "client.uninstall.removeDesktopShortcut": "Remove the desktop shortcut '{0}'",
+  "client.uninstall.removeStartMenuShortcut": "Remove the Start menu shortcut '{0}'",
+  "client.uninstall.removeStartMenuFolder": "Remove the empty Start menu folder {0}",
   "client.uninstall.deleteUserData": "Delete user data in {0}",
   "client.uninstall.done": "WRApperture client removed.",
   "client.uninstall.dataKept": "Paired PCs and icons were kept in {0} (a reinstall reuses them).",
-
   "host.install.needsAdmin": "This installer must run as administrator (use Instalar.cmd or an elevated terminal).",
   "host.install.dryRunMode": "Dry run: nothing will be changed. Target: {0}",
   "host.install.stopService": "Stop the {0} service to update it",
@@ -68,7 +67,6 @@
   "host.install.tokenOnFailure": "Pairing token generated (keep it): {0}",
   "host.shortcut.description": "Publish apps from this PC to WRApperture clients",
   "host.service.description": "Publishes this PC's list of RemoteApps to paired clients.",
-
   "host.uninstall.needsAdmin": "Run the uninstall as administrator (use Desinstalar.cmd).",
   "host.uninstall.title": "Uninstall WRApperture from this PC (host).",
   "host.uninstall.askPurge": "Also undo the PC preparation and delete the token? Clients will need to pair again. (y/N)",

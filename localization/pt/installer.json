@@ -8,7 +8,6 @@
   "uninstallFailed": "Falha na desinstalação: {0}",
   "deleteFolder": "Apagar {0}",
   "exitCode": "código {0}",
-
   "client.install.closeRunning": "Fechar o WRApperture em execução para atualizar",
   "client.install.copy": "Copiar o cliente para {0}",
   "client.install.shortcuts": "Criar atalhos \"WRApperture\" e \"{0}\" no Menu Iniciar",
@@ -17,7 +16,6 @@
   "client.shortcut.description": "Abrir apps de outro computador (WRApperture)",
   "client.shortcut.uninstallName": "Desinstalar WRApperture",
   "client.shortcut.uninstallDescription": "Remover o WRApperture deste computador",
-
   "client.uninstall.title": "Desinstalar o WRApperture deste computador.",
   "client.uninstall.askUserData": "Apagar também os PCs pareados, ícones, senhas salvas e a configuração \"abrir sem alerta\"? (s/N)",
   "client.uninstall.closeRunning": "Fechar o WRApperture em execução",
@@ -26,10 +24,11 @@
   "client.uninstall.signingFailed": "Não foi possível remover a configuração de assinatura: {0}",
   "client.uninstall.removeCredential": "Remover credencial salva TERMSRV/{0}",
   "client.uninstall.removeDesktopShortcut": "Remover atalho da área de trabalho '{0}'",
+  "client.uninstall.removeStartMenuShortcut": "Remover atalho do Menu Iniciar '{0}'",
+  "client.uninstall.removeStartMenuFolder": "Remover a pasta vazia do Menu Iniciar {0}",
   "client.uninstall.deleteUserData": "Apagar dados do usuário em {0}",
   "client.uninstall.done": "Cliente WRApperture removido.",
   "client.uninstall.dataKept": "PCs pareados e ícones foram mantidos em {0} (uma reinstalação os reaproveita).",
-
   "host.install.needsAdmin": "Este instalador precisa ser executado como administrador (use Instalar.cmd ou um terminal elevado).",
   "host.install.dryRunMode": "Modo simulação: nada será alterado. Destino: {0}",
   "host.install.stopService": "Parar o serviço {0} para atualização",
@@ -68,7 +67,6 @@
   "host.install.tokenOnFailure": "Token de pareamento gerado (guarde-o): {0}",
   "host.shortcut.description": "Publicar apps deste PC para os clientes WRApperture",
   "host.service.description": "Publica a lista de RemoteApps deste PC para clientes pareados.",
-
   "host.uninstall.needsAdmin": "Execute a desinstalação como administrador (use o Desinstalar.cmd).",
   "host.uninstall.title": "Desinstalar o WRApperture deste PC (host).",
   "host.uninstall.askPurge": "Desfazer também a preparação do PC e apagar o token? Os clientes precisarão parear de novo. (s/N)",

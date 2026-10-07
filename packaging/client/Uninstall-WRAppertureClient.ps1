@@ -125,6 +125,22 @@ try {
             [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
         }
 
+        # App shortcuts added to the Start Menu live in their own folder.
+        $appsMenuDir = Join-Path $StartMenuDir 'WRApperture'
+        if ((Test-Path $appsMenuDir) -and (Test-Path $rdpRoot)) {
+            $shell = New-Object -ComObject WScript.Shell
+            Get-ChildItem -Path $appsMenuDir -Filter '*.lnk' | ForEach-Object {
+                if ($shell.CreateShortcut($_.FullName).TargetPath -like "$rdpRoot\*") {
+                    $link = $_.FullName
+                    Invoke-Step (T 'installer.client.uninstall.removeStartMenuShortcut' $_.Name) { Remove-Item -Force $link }
+                }
+            }
+            [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
+            if (-not (Get-ChildItem -Path $appsMenuDir -Force -ErrorAction SilentlyContinue)) {
+                Invoke-Step (T 'installer.client.uninstall.removeStartMenuFolder' $appsMenuDir) { Remove-Item -Force $appsMenuDir }
+            }
+        }
+
         if (Test-Path $UserDataDir) {
             Invoke-Step (T 'installer.client.uninstall.deleteUserData' $UserDataDir) { Remove-Item -Recurse -Force $UserDataDir }
         }

@@ -426,7 +426,13 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void CreateShortcut(AppTileViewModel? tile)
+    private void CreateShortcut(AppTileViewModel? tile) => CreateShortcutIn(tile, directory: null);
+
+    [RelayCommand]
+    private void AddToStartMenu(AppTileViewModel? tile) => CreateShortcutIn(tile, DesktopShortcuts.StartMenuDirectory);
+
+    /// <summary>A .lnk to the app's .rdp file: on the desktop (null) or in <paramref name="directory"/>.</summary>
+    private void CreateShortcutIn(AppTileViewModel? tile, string? directory)
     {
         if (tile is null || SelectedHost is not { } option)
         {
@@ -438,7 +444,7 @@ public sealed partial class MainViewModel : ObservableObject
             if (tile.IsDesktop)
             {
                 var desktopLnk = DesktopShortcuts.Create(Strings.T("client.desktop.shortcutName", option.Host.DisplayName),
-                    _launcher.WriteDesktopRdpFile(option.Host), RemoteAppLauncher.MstscPath);
+                    _launcher.WriteDesktopRdpFile(option.Host), RemoteAppLauncher.MstscPath, directory);
                 SetStatus(Strings.T("client.status.shortcutCreated", Path.GetFileName(desktopLnk)), warning: false);
                 return;
             }
@@ -451,7 +457,7 @@ public sealed partial class MainViewModel : ObservableObject
                 File.WriteAllBytes(ico, IcoWriter.FromPng(File.ReadAllBytes(png)));
             }
 
-            var lnk = DesktopShortcuts.Create(tile.DisplayName, rdp, File.Exists(ico) ? ico : RemoteAppLauncher.MstscPath);
+            var lnk = DesktopShortcuts.Create(tile.DisplayName, rdp, File.Exists(ico) ? ico : RemoteAppLauncher.MstscPath, directory);
             SetStatus(Strings.T("client.status.shortcutCreated", Path.GetFileName(lnk)), warning: false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or System.Runtime.InteropServices.COMException)

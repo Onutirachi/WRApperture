@@ -209,6 +209,37 @@ Describe 'Uninstall-WRAppertureClient' {
         $r.Output | Should Match 'TERMSRV/wrapperture-pester-'
     }
 
+    It '-RemoveUserData removes the app shortcuts from the WRApperture Start menu folder, and the folder when empty' {
+        $pkg = New-Package; $l = New-Layout
+        Install $pkg $l | Out-Null
+        $rdpDir = Join-Path $l.UserData 'client\rdp\abc'
+        New-Item -ItemType Directory $rdpDir -Force | Out-Null
+        Set-Content (Join-Path $rdpDir 'calc.rdp') 'x'
+        $appsMenu = Join-Path $l.Start 'WRApperture'
+        New-Item -ItemType Directory $appsMenu | Out-Null
+        $shell = New-Object -ComObject WScript.Shell
+        $ours = $shell.CreateShortcut((Join-Path $appsMenu 'Calculadora.lnk')); $ours.TargetPath = (Join-Path $rdpDir 'calc.rdp'); $ours.Save()
+
+        $r = Uninstall $l @('-RemoveUserData')
+
+        $r.ExitCode | Should Be 0
+        $appsMenu | Should Not Exist
+        $r.Output | Should Match 'Start menu shortcut'
+    }
+
+    It 'keeps the WRApperture Start menu folder when it holds something else' {
+        $pkg = New-Package; $l = New-Layout
+        Install $pkg $l | Out-Null
+        New-Item -ItemType Directory (Join-Path $l.UserData 'client\rdp') -Force | Out-Null
+        $appsMenu = Join-Path $l.Start 'WRApperture'
+        New-Item -ItemType Directory $appsMenu | Out-Null
+        Set-Content (Join-Path $appsMenu 'notes.txt') 'x'
+
+        (Uninstall $l @('-RemoveUserData')).ExitCode | Should Be 0
+
+        Join-Path $appsMenu 'notes.txt' | Should Exist
+    }
+
     It 'interactive mode asks about user data and removes it when the answer is yes' {
         $pkg = New-Package; $l = New-Layout
         Install $pkg $l | Out-Null

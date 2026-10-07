@@ -78,7 +78,7 @@ dotnet run --project src/WRApperture.Client
 1. Clique em **Adicionar host** e informe o IP ou nome do PC remoto, a porta `5080` e o token.
 2. Confira se o fingerprint exibido é igual ao de `wrahost agent show` no host e confirme.
 3. Dê duplo clique em um app (ou selecione e tecle Enter): só a janela dele abre. Vários apps compartilham a mesma sessão.
-4. Opcional: no menu **⋯**, use **Salvar credenciais do host…** para abrir sem digitar a senha. Com o botão direito em um app, use **Criar atalho na área de trabalho** ou **Renomear…** (F2). O novo nome vale só neste computador; o PC remoto não muda.
+4. Opcional: no menu **⋯**, use **Salvar credenciais do host…** para abrir sem digitar a senha. Com o botão direito em um app, use **Criar atalho na área de trabalho**, **Adicionar ao Menu Iniciar** (o app aparece na busca do Windows e pode ser fixado) ou **Renomear…** (F2). O novo nome vale só neste computador; o PC remoto não muda.
 5. O primeiro bloco da grade, **Área de trabalho**, abre o PC remoto inteiro em tela cheia, com as mesmas credenciais e sem o alerta de segurança.
    - Se você já estiver logado lá, a sessão é reaproveitada com os programas abertos.
    - Apps remotos abertos são fechados antes, porque o Windows não mistura os dois modos.

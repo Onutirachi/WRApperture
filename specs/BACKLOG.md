@@ -4,10 +4,9 @@ Ideias para futuras features. Cada item vira uma spec (`/speckit-specify`) quand
 
 | # | Ideia | Notas |
 |---|---|---|
-| 4 | **Atalho na área de trabalho** para os apps | Já existe: botão direito no app → "Criar atalho na área de trabalho". Avaliar deixar mais visível e adicionar ao Menu Iniciar |
 | 5 | Minimizar o painel para a **bandeja do Windows** | Ícone na bandeja com o menu dos apps e opção de iniciar com o Windows |
 
-Feitos: 1 (duplo clique) e 7 (renomear apps no cliente) em `20261007-145218-client-tiles`; 2 (área de trabalho completa) em `20261007-150633-full-desktop`; 3 (tema escuro) em `20261007-152301-dark-theme`; 6 (idiomas) em `20261007-152909-localization`.
+Feitos: 1 (duplo clique) e 7 (renomear apps no cliente) em `20261007-145218-client-tiles`; 2 (área de trabalho completa) em `20261007-150633-full-desktop`; 3 (tema escuro) em `20261007-152301-dark-theme`; 6 (idiomas) em `20261007-152909-localization`; 4 (atalhos no Menu Iniciar) em `20261007-154623-start-menu-shortcuts`.
 
 ## Limitações conhecidas
 

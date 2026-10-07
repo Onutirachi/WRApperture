@@ -23,6 +23,8 @@
   "tile.rename": "Rename…",
   "tile.resetName": "Restore original name",
   "tile.createShortcut": "Create desktop shortcut",
+  "tile.addToStartMenu": "Add to Start menu",
+  "tile.moreTip": "Right-click for more options (rename, shortcuts)",
   "tile.renamedTip": "{0}\nOn the remote PC: {1}",
   "desktop.name": "Desktop",
   "desktop.tip": "Opens the remote PC's whole desktop, full screen",
