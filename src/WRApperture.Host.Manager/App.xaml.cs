@@ -39,6 +39,7 @@ public partial class App : Application
             .AddWRAppertureHostCore()
             .AddSingleton<IAgentService, AgentService>()
             .AddSingleton<IManagerDialogs, ManagerDialogs>()
+            .AddSingleton<WRApperture.Shared.Updates.IUpdateChecker>(_ => WRApperture.Shared.Updates.UpdateChecker.CreateDefault())
             .AddSingleton(sp => ActivatorUtilities.CreateInstance<ManagerViewModel>(sp, isAdmin))
             .BuildServiceProvider();
 

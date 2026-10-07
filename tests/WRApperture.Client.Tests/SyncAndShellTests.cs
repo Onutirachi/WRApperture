@@ -33,6 +33,7 @@ public class HostSyncTests : IDisposable
         Assert.Equal(["notepad", "calc"], synced.Apps.Select(a => a.Alias));
         Assert.Equal(3390, synced.RdpPort);
         Assert.True(synced.Supports(AgentFeatures.DesktopSession));
+        Assert.Equal("0.6.0", synced.AgentVersion);
         Assert.NotNull(synced.LastSyncUtc);
         Assert.Equal([1, 2, 3], File.ReadAllBytes(_icons.PngPath(host.Id, "notepad")));
         Assert.Equal("\"e-notepad\"", synced.Apps[0].IconETag);
@@ -150,6 +151,9 @@ public class HostSyncTests : IDisposable
 
         public Task<SessionReleaseResultDto> ReleaseSessionAsync(string? rdpUser, bool desktop = false, CancellationToken ct = default) =>
             Task.FromResult(new SessionReleaseResultDto(0, false));
+
+        public Task<UpdateRequestResultDto> RequestHostUpdateAsync(CancellationToken ct = default) =>
+            Task.FromResult(new UpdateRequestResultDto(UpdateOutcomes.UpToDate, "0.6.0", "0.6.0"));
 
         public void Dispose()
         {

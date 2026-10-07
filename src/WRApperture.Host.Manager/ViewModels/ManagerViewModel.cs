@@ -10,6 +10,7 @@ using WRApperture.Host.Core.Models;
 using WRApperture.Host.Core.Publishing;
 using WRApperture.Host.Manager.Services;
 using WRApperture.Shared.Localization;
+using WRApperture.Shared.Updates;
 
 namespace WRApperture.Host.Manager.ViewModels;
 
@@ -40,12 +41,14 @@ public sealed partial class ManagerViewModel : ObservableObject
     private readonly IAgentSettingsStore _agentSettings;
     private readonly IAgentService _agent;
     private readonly IManagerDialogs _dialogs;
+    private readonly IUpdateChecker _updates;
     private readonly ILogger<ManagerViewModel> _logger;
 
     public ManagerViewModel(IAppPublisher publisher, IAppSourceInspector inspector, IAppDiscovery discovery, IIconProvider icons,
         IHostPreparation preparation, IAgentSettingsStore agentSettings, IAgentService agent, IManagerDialogs dialogs,
-        ILogger<ManagerViewModel> logger, bool isAdmin)
+        IUpdateChecker updates, ILogger<ManagerViewModel> logger, bool isAdmin)
     {
+        _updates = updates;
         _publisher = publisher;
         _inspector = inspector;
         _discovery = discovery;
@@ -116,6 +119,7 @@ public sealed partial class ManagerViewModel : ObservableObject
         Fingerprint = _agent.Fingerprint(settings.CertificateThumbprint) ?? Strings.T("manager.connection.fingerprintPending");
         var ips = _agent.Ipv4Addresses();
         Addresses = ips.Count == 0 ? Strings.T("manager.connection.noNetwork") : string.Join(", ", ips);
+        OnPropertyChanged(nameof(AutoUpdate));
     }
 
     /// <summary>Dropped files or files picked with "Add program or shortcut…": each one is reviewed in the editor.</summary>

@@ -112,8 +112,31 @@ public class AgentSettingsStoreTests
         Assert.Throws<AdminRequiredException>(() => _store.RegenerateToken());
         Assert.Throws<AdminRequiredException>(() => _store.SetPort(6000));
         Assert.Throws<AdminRequiredException>(() => _store.SetCertificateThumbprint("AB"));
+        Assert.Throws<AdminRequiredException>(() => _store.SetAutoUpdate(false));
         Assert.True(_store.VerifyToken(token));
         Assert.True(_store.Load().IsPaired);
+    }
+
+    [Fact]
+    public void Automatic_updates_are_on_unless_turned_off()
+    {
+        Assert.True(_store.Load().AutoUpdate);
+
+        _store.SetAutoUpdate(false);
+        Assert.False(_store.Load().AutoUpdate);
+        Assert.Equal(0, _registry.GetValue(RegistryPaths.AgentSettings, "AutoUpdate"));
+
+        _store.SetAutoUpdate(true);
+        Assert.True(_store.Load().AutoUpdate);
+        Assert.Equal(1, _registry.GetValue(RegistryPaths.AgentSettings, "AutoUpdate"));
+    }
+
+    [Fact]
+    public void A_non_dword_auto_update_value_counts_as_on()
+    {
+        _registry.SetValue(RegistryPaths.AgentSettings, "AutoUpdate", "0", RegistryValueKind.String);
+
+        Assert.True(_store.Load().AutoUpdate);
     }
 
     [Fact]

@@ -13,6 +13,9 @@ public static class ApiContract
     public const string SessionRelease = "/api/session/release";
     public const int SessionReleaseTimeoutSeconds = 45;
 
+    /// <summary>GET: <see cref="UpdateStatusDto"/>. POST: update now (<see cref="UpdateRequestResultDto"/>).</summary>
+    public const string Update = "/api/update";
+
     public const int DefaultIconSize = 48;
     public const int MinIconSize = 16;
     public const int MaxIconSize = 256;
@@ -25,6 +28,7 @@ public static class ApiContract
         public const string TooManyAttempts = "too_many_attempts";
         public const string NotFound = "not_found";
         public const string BadRequest = "bad_request";
+        public const string UpdateCheckFailed = "update_check_failed";
     }
 }
 
@@ -38,6 +42,9 @@ public static class AgentFeatures
 {
     /// <summary>The session API understands <see cref="SessionModes.Desktop"/>.</summary>
     public const string DesktopSession = "desktop-session";
+
+    /// <summary><see cref="ApiContract.Update"/> exists: the agent can update itself from the latest release.</summary>
+    public const string SelfUpdate = "self-update";
 }
 
 /// <summary>What the client is about to open; decides which host sessions are in the way.</summary>
@@ -80,4 +87,21 @@ public static class SessionActions
 {
     public const string Logoff = "logoff";
     public const string Disconnect = "disconnect";
+}
+
+/// <param name="Current">The agent's version ("0.15.0").</param>
+/// <param name="Latest">The latest release, null before the first successful check.</param>
+/// <param name="Available">Latest is newer than Current.</param>
+/// <param name="AutoUpdate">The host installs new releases by itself (HKLM\SOFTWARE\WRApperture\Agent\AutoUpdate).</param>
+public sealed record UpdateStatusDto(string Current, string? Latest, bool Available, bool AutoUpdate, DateTimeOffset? CheckedAtUtc);
+
+/// <summary>Answer to POST /api/update: 202 with <see cref="UpdateOutcomes.Installing"/>, or 200 with <see cref="UpdateOutcomes.UpToDate"/>.</summary>
+public sealed record UpdateRequestResultDto(string Outcome, string Current, string? Latest);
+
+public static class UpdateOutcomes
+{
+    /// <summary>The agent is downloading and verifying the release; its setup then restarts the service.</summary>
+    public const string Installing = "installing";
+
+    public const string UpToDate = "up-to-date";
 }

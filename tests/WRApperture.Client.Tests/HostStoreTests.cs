@@ -77,6 +77,30 @@ public class HostStoreTests : IDisposable
     }
 
     [Fact]
+    public void Older_state_without_auto_update_turns_it_on()
+    {
+        Directory.CreateDirectory(_dir.Path);
+        File.WriteAllText(_dir.Paths.StateFile, """{"version":1,"closeToTray":false,"hosts":[]}""");
+
+        var state = _store.Load();
+
+        Assert.True(state.AutoUpdate);
+        Assert.Null(state.UpdateNoticeVersion);
+    }
+
+    [Fact]
+    public void Update_settings_and_agent_version_round_trip()
+    {
+        _store.Save(new ClientState { AutoUpdate = false, UpdateNoticeVersion = "1.2.3", Hosts = [Samples.Host() with { AgentVersion = "0.15.0" }] });
+
+        var loaded = _store.Load();
+
+        Assert.False(loaded.AutoUpdate);
+        Assert.Equal("1.2.3", loaded.UpdateNoticeVersion);
+        Assert.Equal("0.15.0", Assert.Single(loaded.Hosts).AgentVersion);
+    }
+
+    [Fact]
     public void Local_app_names_round_trip()
     {
         var host = Samples.Host() with { Apps = [new CachedApp("calc", "Calculadora", CustomName: "Contas")] };

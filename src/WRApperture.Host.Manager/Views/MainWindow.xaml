@@ -179,6 +179,28 @@
                             <Button Content="{loc:T manager.main.restartAgent}" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding RestartAgentCommand}"
                                     IsEnabled="{Binding AgentInstalled}" />
                         </StackPanel>
+
+                        <Separator Margin="0,14" />
+
+                        <TextBlock Text="{loc:T manager.main.updates}" Style="{StaticResource SectionTitle}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="86" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="{loc:T manager.main.version}" Style="{StaticResource Label}" Margin="0,0,0,4" />
+                            <TextBlock Grid.Column="1" Text="{Binding CurrentVersion}" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="1" Text="{loc:T manager.main.latestVersion}" Style="{StaticResource Label}" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LatestVersion}" TextWrapping="Wrap" />
+                        </Grid>
+                        <CheckBox Content="{loc:T manager.main.autoUpdate}" ToolTip="{loc:T manager.main.autoUpdateTip}" Margin="0,10,0,0"
+                                  IsChecked="{Binding AutoUpdate, Mode=TwoWay}" IsEnabled="{Binding IsAdmin}" />
+                        <Button Content="{loc:T manager.main.updateNow}" Style="{StaticResource Primary}" HorizontalAlignment="Left" Margin="0,12,0,0"
+                                Command="{Binding UpdateNowCommand}" Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
                 </ScrollViewer>
             </Border>

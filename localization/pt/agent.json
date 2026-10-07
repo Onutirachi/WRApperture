@@ -3,5 +3,6 @@
   "errors.appNotFound": "App '{0}' não encontrado.",
   "errors.unknownSessionMode": "Modo de sessão desconhecido: {0}",
   "errors.tooManyAttempts": "Muitas tentativas inválidas. Aguarde alguns minutos.",
-  "errors.unauthorized": "Token de pareamento ausente ou inválido."
+  "errors.unauthorized": "Token de pareamento ausente ou inválido.",
+  "errors.updateCheckFailed": "O PC remoto não conseguiu acessar o GitHub para procurar atualizações. Verifique a internet dele e tente mais tarde."
 }

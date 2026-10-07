@@ -41,11 +41,19 @@ internal sealed class TrayIcon : IDisposable
                 _show();
             }
         };
-        _icon.BalloonTipClicked += (_, _) => _show();
+        _icon.BalloonTipClicked += (_, _) => (_noticeAction ?? _show)();
+        _icon.BalloonTipClosed += (_, _) => _noticeAction = null;
         Rebuild(); // an empty ContextMenuStrip may not open at all
     }
 
-    public void ShowNotice(string title, string text) => _icon.ShowBalloonTip(5000, title, text, ToolTipIcon.Info);
+    private Action? _noticeAction;
+
+    /// <summary>Clicking the notice runs <paramref name="onClick"/>, or shows the window when there is none.</summary>
+    public void ShowNotice(string title, string text, Action? onClick = null)
+    {
+        _noticeAction = onClick;
+        _icon.ShowBalloonTip(5000, title, text, ToolTipIcon.Info);
+    }
 
     private void Rebuild()
     {

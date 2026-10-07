@@ -14,6 +14,9 @@ public sealed class ClientPaths(string root)
     public string HostIcons(Guid hostId) => Path.Combine(Root, "icons", hostId.ToString("N"));
     public string HostRdp(Guid hostId) => Path.Combine(Root, "rdp", hostId.ToString("N"));
 
+    /// <summary>Downloaded client setups (emptied before each download).</summary>
+    public string Updates => Path.Combine(Root, "updates");
+
     /// <summary>Aliases are already safe ([A-Za-z0-9_-]); this guards against a malicious agent anyway.</summary>
     public static string SafeFileName(string alias)
     {

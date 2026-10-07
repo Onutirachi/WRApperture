@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using WRApperture.Host.Agent.Certificates;
+using WRApperture.Host.Agent.Updates;
 using WRApperture.Host.Core;
 using WRApperture.Host.Core.Agent;
 using WRApperture.Host.Core.HostInfo;
 using WRApperture.Host.Core.Models;
 using WRApperture.Shared;
+using WRApperture.Shared.Updates;
 
 namespace WRApperture.Host.Agent.Tests;
 
@@ -22,6 +24,13 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
     internal FakeIcons Icons { get; } = new();
     internal ManualTimeProvider Time { get; } = new();
     internal FakeSessions Sessions { get; } = new();
+    internal FakeUpdateChecker Updates { get; } = new();
+    internal FakeSetupRunner Setups { get; } = new();
+
+    /// <summary>The agent's own version in these tests; the scheduled loop never fires on its own.</summary>
+    internal static readonly Version CurrentVersion = new(1, 0, 0);
+
+    internal HostUpdater Updater => Services.GetRequiredService<HostUpdater>();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -35,6 +44,15 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
             services.AddSingleton<TimeProvider>(Time);
             services.AddSingleton<WRApperture.Host.Core.Sessions.ISessionProvider>(Sessions);
             services.AddSingleton(new AgentIdentity { Fingerprint = Fingerprint });
+            services.AddSingleton<IUpdateChecker>(Updates);
+            services.AddSingleton<IHostSetupRunner>(Setups);
+            services.AddSingleton(new HostUpdaterOptions
+            {
+                CurrentVersion = CurrentVersion,
+                FirstCheckDelay = Timeout.InfiniteTimeSpan,
+                CanInstallUnattended = true,
+                PrepareDownloadFolder = () => @"C:\Fake\updates\agent",
+            });
         });
     }
 
@@ -66,8 +84,9 @@ internal sealed class FakePublisher : IAppPublisher
 internal sealed class FakeSettings : IAgentSettingsStore
 {
     public string? CurrentToken { get; set; } = AgentFactory.Token;
+    public bool AutoUpdate { get; set; } = true;
 
-    public AgentSettings Load() => new(ApiContract.DefaultPort, CurrentToken is not null, "THUMB");
+    public AgentSettings Load() => new(ApiContract.DefaultPort, CurrentToken is not null, "THUMB", AutoUpdate);
 
     public string RegenerateToken() => CurrentToken = Guid.NewGuid().ToString("N");
 
@@ -77,7 +96,50 @@ internal sealed class FakeSettings : IAgentSettingsStore
 
     public void SetCertificateThumbprint(string thumbprint) { }
 
+    public void SetAutoUpdate(bool enabled) => AutoUpdate = enabled;
+
     public void Reset() => CurrentToken = null;
+}
+
+/// <summary>Stands in for GitHub: never touches the network.</summary>
+internal sealed class FakeUpdateChecker : IUpdateChecker
+{
+    public ReleaseInfo? Latest { get; set; }
+    public Exception? CheckError { get; set; }
+    public Exception? DownloadError { get; set; }
+    public int Checks { get; private set; }
+    public List<(UpdateProduct Product, string Folder)> Downloads { get; } = [];
+
+    public static ReleaseInfo Release(string version) => new(Version.Parse(version), "v" + version, "notes", null, []);
+
+    public Task<ReleaseInfo?> GetLatestAsync(CancellationToken ct = default)
+    {
+        Checks++;
+        return CheckError is null ? Task.FromResult(Latest) : Task.FromException<ReleaseInfo?>(CheckError);
+    }
+
+    public Task<VerifiedSetup> DownloadVerifiedAsync(ReleaseInfo release, UpdateProduct product, string targetDirectory,
+        CancellationToken ct = default)
+    {
+        Downloads.Add((product, targetDirectory));
+        return DownloadError is null
+            ? Task.FromResult(new VerifiedSetup(Path.Combine(targetDirectory, UpdateSource.SetupAssetName(product, release.Version)), "abc", release.Version))
+            : Task.FromException<VerifiedSetup>(DownloadError);
+    }
+}
+
+/// <summary>Records setups instead of starting them; <see cref="Gate"/> keeps one "running".</summary>
+internal sealed class FakeSetupRunner : IHostSetupRunner
+{
+    public List<VerifiedSetup> Runs { get; } = [];
+    public TaskCompletionSource<int>? Gate { get; set; }
+    public int ExitCode { get; set; }
+
+    public Task<int> RunAsync(VerifiedSetup setup, CancellationToken ct)
+    {
+        Runs.Add(setup);
+        return Gate?.Task ?? Task.FromResult(ExitCode);
+    }
 }
 
 internal sealed class FakeIcons : IIconProvider
