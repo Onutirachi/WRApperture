@@ -12,12 +12,12 @@ description: "Task list for localization"
 
 ## Phase 2: Extração (paralela)
 
-- [ ] T004 [P] Cliente → `client.json`
-- [ ] T005 [P] App do host → `manager.json`
-- [ ] T006 [P] Núcleo do host, agente e `wrahost` → `host.json`, `agent.json`, `cli.json`
-- [ ] T007 [P] Instaladores → `installer.json`, `README.txt` em inglês
+- [X] T004 [P] Cliente → `client.json`
+- [X] T005 [P] App do host → `manager.json`
+- [X] T006 [P] Núcleo do host, agente e `wrahost` → `host.json`, `agent.json`, `cli.json`
+- [X] T007 [P] Instaladores → `installer.json`, `README.txt` em inglês
 
 ## Phase 3: Integração
 
-- [ ] T008 Juntar as áreas, build e testes completos, conferência visual em inglês e português (`--read-only`)
-- [ ] T009 Versão 0.8.0, README, BACKLOG, build de release
+- [X] T008 Juntar as áreas, build e testes completos, conferência visual em inglês e português (`--read-only`)
+- [X] T009 Versão 0.8.0, README, BACKLOG, build de release
