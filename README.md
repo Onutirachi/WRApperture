@@ -75,7 +75,18 @@ dotnet run --project src/WRApperture.Client
 3. Clique em um app: só a janela dele abre. Vários apps compartilham a mesma sessão.
 4. Opcional: no menu **⋯**, use **Salvar credenciais do host…** para abrir sem digitar a senha. Com o botão direito em um app, use **Criar atalho na área de trabalho**.
 
+**Abrir sem alerta de segurança.** Desde a atualização de abril de 2026, o Windows mostra um alerta a cada abertura de um arquivo `.rdp` não assinado.
+- No primeiro clique em um app, o cliente oferece **"Abrir apps sem alerta"**. Também está no menu **⋯**.
+- Ele pede administrador **uma única vez** e configura este PC para assinar as conexões que o próprio WRApperture cria:
+  - um certificado de máquina, com a chave liberada só para o seu usuário;
+  - uma cópia no Raiz, restrita a "Autenticação de Área de Trabalho Remota", para não servir para assinar programas;
+  - a política de publicadores confiáveis do RDP.
+- Arquivos `.rdp` de outras origens continuam exibindo o alerta.
+- A configuração é removida pelo desinstalador com `-RemoveUserData`.
+
 Na primeira conexão, o Windows pode avisar sobre o certificado RDP do host. Marque "Não perguntar novamente para conexões com este computador".
+
+**Barra de idioma flutuante.** O `wrahost prepare` (rodado pelo instalador do host) oculta a barra de idioma nos perfis carregados. Para outro usuário do host, ele mesmo roda `wrahost langbar hide`, sem precisar de administrador. A mudança vale a partir de uma **nova sessão**: faça logoff da sessão remota antes de testar.
 Os dados do cliente ficam em `%LOCALAPPDATA%\WRApperture\client`. O token fica protegido com DPAPI e a senha fica no Gerenciador de Credenciais do Windows.
 
 ### Sem o cliente: `.rdp` manual

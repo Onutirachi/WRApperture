@@ -11,6 +11,7 @@ using WRApperture.Client.Core.Credentials;
 using WRApperture.Client.Core.Launch;
 using WRApperture.Client.Core.Model;
 using WRApperture.Client.Core.Shortcuts;
+using WRApperture.Client.Core.Signing;
 using WRApperture.Client.Core.Storage;
 using WRApperture.Client.Services;
 using WRApperture.Shared;
@@ -37,11 +38,14 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly HostSync _sync;
     private readonly ICredentialStore _credentials;
     private readonly IDialogService _dialogs;
+    private readonly IRdpSigner _signer;
+    private readonly ISigningSetup _signingSetup;
     private readonly ILogger<MainViewModel> _logger;
     private ClientState _state;
 
     public MainViewModel(HostStore store, IconStore icons, RemoteAppLauncher launcher, HostSync sync,
-        ICredentialStore credentials, IDialogService dialogs, ILogger<MainViewModel> logger)
+        ICredentialStore credentials, IDialogService dialogs, IRdpSigner signer, ISigningSetup signingSetup,
+        ILogger<MainViewModel> logger)
     {
         _store = store;
         _icons = icons;
@@ -49,6 +53,8 @@ public sealed partial class MainViewModel : ObservableObject
         _sync = sync;
         _credentials = credentials;
         _dialogs = dialogs;
+        _signer = signer;
+        _signingSetup = signingSetup;
         _logger = logger;
         _state = store.Load();
 
@@ -180,12 +186,33 @@ public sealed partial class MainViewModel : ObservableObject
 
     private bool CanRefresh() => SelectedHost is not null && !IsBusy;
 
+    private const string SigningExplanation =
+        "Desde abril de 2026, o Windows mostra um alerta de segurança toda vez que um app remoto é aberto, " +
+        "a menos que a conexão seja assinada por um publicador confiável.\n\n" +
+        "O WRApperture pode configurar este computador para assinar as conexões que ele mesmo cria. " +
+        "Isso exige permissão de administrador uma única vez. Arquivos de conexão de outras origens " +
+        "(por exemplo, recebidos por e-mail) continuam exibindo o alerta.";
+
     [RelayCommand]
-    private void OpenApp(AppTileViewModel? tile)
+    private async Task OpenAppAsync(AppTileViewModel? tile)
     {
         if (tile is null || SelectedHost is not { } option)
         {
             return;
+        }
+
+        if (!_state.SigningPromptDismissed && !_signer.GetStatus().Configured)
+        {
+            if (_dialogs.Confirm("Abrir apps sem alerta de segurança", SigningExplanation + "\n\nConfigurar agora?"))
+            {
+                await ConfigureSigningCoreAsync();
+            }
+            else
+            {
+                _state = _state with { SigningPromptDismissed = true };
+                _store.Save(_state);
+                SetStatus("Ok. Para configurar depois, use o menu ⋯ → Abrir apps sem alerta.", warning: false);
+            }
         }
 
         try
@@ -197,6 +224,41 @@ public sealed partial class MainViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to launch {Alias}", tile.App.Alias);
             _dialogs.Error($"Não foi possível abrir {tile.DisplayName}: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ConfigureSigningAsync()
+    {
+        var status = _signer.GetStatus();
+        if (status.Configured)
+        {
+            _dialogs.Info($"Este computador já assina as conexões do WRApperture; os apps abrem sem alerta.\n\nCertificado: {RdpSigning.Describe(status)}");
+            return;
+        }
+
+        if (_dialogs.Confirm("Abrir apps sem alerta de segurança", SigningExplanation + "\n\nConfigurar agora?"))
+        {
+            await ConfigureSigningCoreAsync();
+        }
+    }
+
+    private async Task ConfigureSigningCoreAsync()
+    {
+        switch (await _signingSetup.ConfigureAsync())
+        {
+            case SigningSetupResult.Configured:
+                var resigned = _launcher.SignExistingFiles();
+                _logger.LogInformation("RDP signing configured; {Count} existing files re-signed", resigned);
+                SetStatus("Pronto: os apps passam a abrir sem o alerta de segurança.", warning: false);
+                break;
+            case SigningSetupResult.Cancelled:
+                SetStatus("Configuração cancelada. Os apps continuam abrindo com o alerta do Windows.", warning: true);
+                break;
+            default:
+                _dialogs.Error("Não foi possível configurar a assinatura das conexões. Veja o log em " +
+                               ClientPaths.LogDirectory + ". Os apps continuam abrindo com o alerta do Windows.");
+                break;
         }
     }
 

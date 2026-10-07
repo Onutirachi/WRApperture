@@ -31,7 +31,7 @@ function Install($pkg, $l, [string[]]$Extra = @()) {
 function Uninstall($l, [string[]]$Extra = @()) {
     $uninstaller = Join-Path $TestDrive 'Uninstall-WRAppertureClient.ps1'
     Copy-Item (Join-Path $scripts 'Uninstall-WRAppertureClient.ps1') $uninstaller -Force
-    Invoke-Script $uninstaller (@('-InstallDir', $l.Install, '-StartMenuDir', $l.Start, '-UserDataDir', $l.UserData, '-DesktopDir', $l.Desktop) + $Extra)
+    Invoke-Script $uninstaller (@('-InstallDir', $l.Install, '-StartMenuDir', $l.Start, '-UserDataDir', $l.UserData, '-DesktopDir', $l.Desktop, '-KeepSigning') + $Extra)
 }
 
 function Get-LinkTarget([string]$Path) {

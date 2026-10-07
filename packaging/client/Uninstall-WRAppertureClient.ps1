@@ -6,6 +6,9 @@
     Também apaga hosts pareados, ícones, logs, as credenciais salvas (TERMSRV/<host>) e os
     atalhos da área de trabalho criados pelo WRApperture.
 
+.PARAMETER KeepSigning
+    Com -RemoveUserData, mantém a configuração "abrir apps sem alerta" (certificado de assinatura) neste PC.
+
 .PARAMETER DryRun
     Mostra o que seria feito, sem alterar nada.
 #>
@@ -16,6 +19,7 @@ param(
     [string]$UserDataDir = (Join-Path $env:LOCALAPPDATA 'WRApperture'),
     [string]$DesktopDir = [Environment]::GetFolderPath('DesktopDirectory'),
     [switch]$RemoveUserData,
+    [switch]$KeepSigning,
     [switch]$DryRun
 )
 
@@ -43,6 +47,20 @@ try {
         Invoke-Step 'Remover atalho do Menu Iniciar' { Remove-Item -Force $startMenuLink }
     }
 
+    # Must run before the program folder is deleted: the client itself removes the signing setup.
+    $signing = Get-ChildItem Cert:\LocalMachine\My -ErrorAction SilentlyContinue | Where-Object { $_.Subject -like 'CN=WRApperture RDP Signing*' }
+    if ($RemoveUserData -and -not $KeepSigning -and $signing -and (Test-Path $target)) {
+        Invoke-Step 'Remover a configuração "abrir apps sem alerta" (pede administrador)' {
+            try {
+                $p = Start-Process -FilePath $target -ArgumentList '--remove-signing' -Verb RunAs -Wait -PassThru
+                if ($p.ExitCode -ne 0) { throw "código $($p.ExitCode)" }
+            }
+            catch {
+                # Never block the uninstall; the setup can be removed later by reinstalling and uninstalling again.
+                Write-Host "Não foi possível remover a configuração de assinatura: $($_.Exception.Message)" -ForegroundColor DarkYellow
+            }
+        }
+    }
     if (Test-Path $InstallDir) {
         Invoke-Step "Apagar $InstallDir" {
             Set-Location $env:TEMP   # this script may be running from inside InstallDir

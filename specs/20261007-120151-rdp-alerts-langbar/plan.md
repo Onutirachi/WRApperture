@@ -26,7 +26,7 @@ Os detalhes estão em [research.md](research.md).
 |---|---|---|
 | II. Registro via Core | ✅ | Host: HKU via `IUserRegistryAccess` no Core. Cliente: a política do RDP é escrita só por `RdpSigning` (Client.Core) |
 | III. Idempotente/reversível | ✅ | Setup idempotente e multiusuário. `--remove-signing` reverte. Barra de idioma com snapshot e revert |
-| IV. Segurança | ✅ | Chave não exportável e liberada só para os SIDs configurados. Sem Root/TrustedPublisher. Confiança restrita ao thumbprint do WRApperture. A proteção contra `.rdp` de terceiros continua |
+| IV. Segurança | ✅ | Chave não exportável e liberada só para os SIDs configurados. Cópia no Root **com propósito restrito** a Remote Desktop Authentication: o Authenticode recusa, o que foi verificado. Sem TrustedPublisher. A proteção contra `.rdp` de terceiros continua (verificado) |
 
 ## Project Structure
 

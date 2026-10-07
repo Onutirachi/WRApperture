@@ -30,6 +30,9 @@ public sealed record ClientState
 
     public int Version { get; init; } = CurrentVersion;
     public Guid? SelectedHostId { get; init; }
+
+    /// <summary>User declined the "open without security warning" setup; don't ask on every click.</summary>
+    public bool SigningPromptDismissed { get; init; }
     public IReadOnlyList<PairedHost> Hosts { get; init; } = [];
 
     public static ClientState Empty { get; } = new();

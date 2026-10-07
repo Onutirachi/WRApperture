@@ -22,6 +22,11 @@ DESINSTALAR (PowerShell como administrador)
   & "$env:ProgramFiles\WRApperture\Uninstall-WRAppertureHost.ps1"           mantem apps e token
   & "$env:ProgramFiles\WRApperture\Uninstall-WRAppertureHost.ps1" -Purge    desfaz tudo
 
+BARRA DE IDIOMA FLUTUANDO SOBRE OS APPS
+  O instalador ja oculta a barra para os usuarios logados. Para outro usuario,
+  ele mesmo roda (sem admin): wrahost langbar hide
+  Vale a partir da proxima sessao: faca logoff da sessao remota e abra o app de novo.
+
 ATENCAO
   - No Windows Pro so existe uma sessao por vez: abrir um app remoto desconecta
     quem estiver usando este PC.

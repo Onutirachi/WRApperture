@@ -36,6 +36,8 @@
                                 <MenuItem Header="Salvar credenciais do host…" Command="{Binding SaveCredentialsCommand}" />
                                 <MenuItem Header="Remover credenciais salvas" Command="{Binding DeleteCredentialsCommand}" />
                                 <Separator />
+                                <MenuItem Header="Abrir apps sem alerta de segurança…" Command="{Binding ConfigureSigningCommand}" />
+                                <Separator />
                                 <MenuItem Header="Remover host" Command="{Binding RemoveHostCommand}" />
                             </ContextMenu>
                         </Button.ContextMenu>
