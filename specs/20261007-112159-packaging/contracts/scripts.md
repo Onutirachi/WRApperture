@@ -11,7 +11,8 @@ Saída: `dist/WRApperture-Host-<v>.zip` e `dist/WRApperture-Client-<v>.zip`. Se 
 |---|---|
 | `Instalar.cmd` | Duplo clique: pede elevação e chama `Install-WRAppertureHost.ps1` |
 | `Install-WRAppertureHost.ps1 [-InstallDir] [-AllowPublicNetwork] [-DryRun]` | Instala ou atualiza |
-| `Uninstall-WRAppertureHost.ps1 [-InstallDir] [-Purge] [-DryRun]` | Remove (também é copiado para `InstallDir`) |
+| `Desinstalar.cmd` | Duplo clique: pede elevação e chama `Uninstall-WRAppertureHost.ps1 -Interactive`, que pergunta sobre `-Purge` e espera Enter. É copiado para `InstallDir` |
+| `Uninstall-WRAppertureHost.ps1 [-InstallDir] [-Purge] [-Interactive] [-DryRun]` | Remove (também é copiado para `InstallDir`) |
 | `wrahost.exe`, `WRApperture.Agent.exe`, `appsettings.json` | Binários |
 | `LEIA-ME.txt` | Passo a passo |
 
@@ -20,7 +21,8 @@ Saída: `dist/WRApperture-Host-<v>.zip` e `dist/WRApperture-Client-<v>.zip`. Se 
 |---|---|
 | `Instalar.cmd` | Duplo clique, sem elevação |
 | `Install-WRAppertureClient.ps1 [-InstallDir] [-StartMenuDir] [-DryRun]` | Instala em `%LOCALAPPDATA%\Programs\WRApperture` e cria o atalho "WRApperture" no Menu Iniciar |
-| `Uninstall-WRAppertureClient.ps1 [-InstallDir] [-StartMenuDir] [-RemoveUserData] [-DryRun]` | Remove. Com `-RemoveUserData`, apaga também hosts, ícones, logs e as credenciais `TERMSRV/*` dos hosts pareados |
+| `Desinstalar.cmd` | Duplo clique (também no Menu Iniciar como "Desinstalar WRApperture"): chama `Uninstall-WRAppertureClient.ps1 -Interactive`, que pergunta sobre `-RemoveUserData` |
+| `Uninstall-WRAppertureClient.ps1 [-InstallDir] [-StartMenuDir] [-RemoveUserData] [-Interactive] [-DryRun]` | Remove. Com `-RemoveUserData`, apaga também hosts, ícones, logs e as credenciais `TERMSRV/*` dos hosts pareados |
 | `WRApperture.exe` | Binário |
 
 ## Códigos de saída

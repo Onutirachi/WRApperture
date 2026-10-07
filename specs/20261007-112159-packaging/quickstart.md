@@ -23,5 +23,5 @@ Invoke-Pester tests\packaging
 2. Abra "WRApperture" pelo Menu Iniciar e pareie com o IP e o token do passo 3.2.
 
 ## 5. Desinstalação
-- Host: `& "$env:ProgramFiles\WRApperture\Uninstall-WRAppertureHost.ps1"` (apps preservados), depois com `-Purge` (o `wrahost check` deve voltar ao estado original).
-- Cliente: `& "$env:LOCALAPPDATA\Programs\WRApperture\Uninstall-WRAppertureClient.ps1" -RemoveUserData`.
+- Host: duplo clique em `C:\Program Files\WRApperture\Desinstalar.cmd` e responda "N" (apps e token preservados). Depois reinstale e desinstale respondendo "s": o `wrahost check` deve voltar ao estado original.
+- Cliente: Menu Iniciar → "Desinstalar WRApperture" e responda "s" para apagar também os dados.

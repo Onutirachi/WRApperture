@@ -10,6 +10,9 @@
     Também desfaz a preparação do host (wrahost revert) e apaga token, configurações e certificado do agente.
     Os apps publicados continuam registrados no Windows; remova-os antes com "wrahost unpublish <alias>" se quiser.
 
+.PARAMETER Interactive
+    Usado pelo Desinstalar.cmd: pergunta se deve limpar tudo e espera Enter antes de fechar.
+
 .PARAMETER DryRun
     Mostra o que seria feito, sem alterar nada.
 #>
@@ -17,8 +20,14 @@
 param(
     [string]$InstallDir = (Join-Path $env:ProgramFiles 'WRApperture'),
     [switch]$Purge,
+    [switch]$Interactive,
     [switch]$DryRun
 )
+
+function Exit-Script([int]$Code) {
+    if ($Interactive) { [void](Read-Host 'Pressione Enter para fechar') }
+    exit $Code
+}
 
 $ErrorActionPreference = 'Stop'
 $ServiceName = 'WRAppertureAgent'
@@ -36,8 +45,14 @@ function Test-IsAdministrator {
 }
 
 if (-not $DryRun -and -not (Test-IsAdministrator)) {
-    Write-Host 'Execute a desinstalação como administrador.' -ForegroundColor Red
-    exit 2
+    Write-Host 'Execute a desinstalação como administrador (use o Desinstalar.cmd).' -ForegroundColor Red
+    Exit-Script 2
+}
+
+if ($Interactive -and -not $Purge) {
+    Write-Host 'Desinstalar o WRApperture deste PC (host).' -ForegroundColor Cyan
+    $answer = Read-Host 'Desfazer também a preparação do PC e apagar o token? Os clientes precisarão parear de novo. (s/N)'
+    $Purge = $answer -match '^\s*[sSyY]'
 }
 
 try {
@@ -77,14 +92,14 @@ try {
     }
 
     Write-Host ''
-    if ($DryRun) { Write-Host 'Simulação concluída.' -ForegroundColor DarkYellow; exit 0 }
+    if ($DryRun) { Write-Host 'Simulação concluída.' -ForegroundColor DarkYellow; Exit-Script 0 }
     Write-Host 'WRApperture removido deste computador.' -ForegroundColor Green
     if (-not $Purge) {
-        Write-Host 'Apps publicados, preparação do host e token foram mantidos (use -Purge para limpar tudo).'
+        Write-Host 'Apps publicados, preparação do host e token foram mantidos (uma reinstalação os reaproveita).'
     }
-    exit 0
+    Exit-Script 0
 }
 catch {
     Write-Host "Falha na desinstalação: $($_.Exception.Message)" -ForegroundColor Red
-    exit 1
+    Exit-Script 1
 }

@@ -5,6 +5,7 @@ function New-Package {
     $pkg = Join-Path $TestDrive ('pkg-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory $pkg | Out-Null
     Copy-Item (Join-Path $scripts '*.ps1') $pkg
+    Copy-Item (Join-Path $scripts 'Desinstalar.cmd') $pkg
     Set-Content (Join-Path $pkg 'WRApperture.exe') 'stub-exe'
     return $pkg
 }
@@ -49,6 +50,8 @@ Describe 'Install-WRAppertureClient' {
         Join-Path $l.Install 'WRApperture.exe' | Should Exist
         Join-Path $l.Install 'Uninstall-WRAppertureClient.ps1' | Should Exist
         Get-LinkTarget (Join-Path $l.Start 'WRApperture.lnk') | Should Be (Join-Path $l.Install 'WRApperture.exe')
+        Join-Path $l.Install 'Desinstalar.cmd' | Should Exist
+        Get-LinkTarget (Join-Path $l.Start 'Desinstalar WRApperture.lnk') | Should Be (Join-Path $l.Install 'Desinstalar.cmd')
     }
 
     It 'reinstalling updates the binary and keeps user data' {
@@ -99,6 +102,7 @@ Describe 'Uninstall-WRAppertureClient' {
         $r.ExitCode | Should Be 0
         $l.Install | Should Not Exist
         Join-Path $l.Start 'WRApperture.lnk' | Should Not Exist
+        Join-Path $l.Start 'Desinstalar WRApperture.lnk' | Should Not Exist
         Join-Path $l.UserData 'client\hosts.json' | Should Exist
     }
 
@@ -124,6 +128,36 @@ Describe 'Uninstall-WRAppertureClient' {
         $r.Output | Should Match 'TERMSRV/wrapperture-pester-'
     }
 
+    It 'interactive mode asks about user data and removes it when the answer is yes' {
+        $pkg = New-Package; $l = New-Layout
+        Install $pkg $l | Out-Null
+        New-Item -ItemType Directory (Join-Path $l.UserData 'client') -Force | Out-Null
+        Set-Content (Join-Path $l.UserData 'client\hosts.json') '{"hosts":[]}'
+        $uninstaller = Join-Path $TestDrive 'Uninstall-WRAppertureClient.ps1'
+        Copy-Item (Join-Path $scripts 'Uninstall-WRAppertureClient.ps1') $uninstaller -Force
+
+        $output = "s`n`n" | & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $uninstaller -InstallDir $l.Install `
+            -StartMenuDir $l.Start -UserDataDir $l.UserData -DesktopDir $l.Desktop -KeepSigning -Interactive *>&1 | Out-String
+
+        $LASTEXITCODE | Should Be 0
+        $l.UserData | Should Not Exist
+        $l.Install | Should Not Exist
+    }
+
+    It 'interactive mode keeps user data by default' {
+        $pkg = New-Package; $l = New-Layout
+        Install $pkg $l | Out-Null
+        New-Item -ItemType Directory (Join-Path $l.UserData 'client') -Force | Out-Null
+        Set-Content (Join-Path $l.UserData 'client\hosts.json') '{"hosts":[]}'
+        $uninstaller = Join-Path $TestDrive 'Uninstall-WRAppertureClient.ps1'
+        Copy-Item (Join-Path $scripts 'Uninstall-WRAppertureClient.ps1') $uninstaller -Force
+
+        "`n`n" | & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $uninstaller -InstallDir $l.Install `
+            -StartMenuDir $l.Start -UserDataDir $l.UserData -DesktopDir $l.Desktop -KeepSigning -Interactive *>&1 | Out-Null
+
+        Join-Path $l.UserData 'client\hosts.json' | Should Exist
+        $l.Install | Should Not Exist
+    }
     It 'is idempotent' {
         $l = New-Layout
 

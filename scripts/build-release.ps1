@@ -63,7 +63,7 @@ Write-Host '==> Assembling host package' -ForegroundColor Cyan
 New-Item -ItemType Directory -Force $hostDir | Out-Null
 Copy-Item (Join-Path $publishDir 'wrahost\wrahost.exe') $hostDir
 Copy-Item (Join-Path $publishDir 'agent\WRApperture.Agent.exe'), (Join-Path $publishDir 'agent\appsettings.json') $hostDir
-Copy-Item (Join-Path $root 'packaging\host\Instalar.cmd'), (Join-Path $root 'packaging\host\LEIA-ME.txt') $hostDir
+Copy-Item (Join-Path $root 'packaging\host\Instalar.cmd'), (Join-Path $root 'packaging\host\Desinstalar.cmd'), (Join-Path $root 'packaging\host\LEIA-ME.txt') $hostDir
 foreach ($script in 'Install-WRAppertureHost.ps1', 'Uninstall-WRAppertureHost.ps1') {
     Copy-ScriptWithBom (Join-Path $root "packaging\host\$script") (Join-Path $hostDir $script)
 }
@@ -71,7 +71,7 @@ foreach ($script in 'Install-WRAppertureHost.ps1', 'Uninstall-WRAppertureHost.ps
 Write-Host '==> Assembling client package' -ForegroundColor Cyan
 New-Item -ItemType Directory -Force $clientDir | Out-Null
 Copy-Item (Join-Path $publishDir 'client\WRApperture.exe') $clientDir
-Copy-Item (Join-Path $root 'packaging\client\Instalar.cmd') $clientDir
+Copy-Item (Join-Path $root 'packaging\client\Instalar.cmd'), (Join-Path $root 'packaging\client\Desinstalar.cmd') $clientDir
 foreach ($script in 'Install-WRAppertureClient.ps1', 'Uninstall-WRAppertureClient.ps1') {
     Copy-ScriptWithBom (Join-Path $root "packaging\client\$script") (Join-Path $clientDir $script)
 }

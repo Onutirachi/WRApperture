@@ -49,11 +49,13 @@ try {
     Invoke-Step "Copiar o cliente para $InstallDir" {
         New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
         Copy-Item -Path $source -Destination $InstallDir -Force
-        $uninstaller = Join-Path $PSScriptRoot 'Uninstall-WRAppertureClient.ps1'
-        if (Test-Path $uninstaller) { Copy-Item -Path $uninstaller -Destination $InstallDir -Force }
+        foreach ($file in 'Uninstall-WRAppertureClient.ps1', 'Desinstalar.cmd') {
+            $extra = Join-Path $PSScriptRoot $file
+            if (Test-Path $extra) { Copy-Item -Path $extra -Destination $InstallDir -Force }
+        }
     }
 
-    Invoke-Step 'Criar atalho "WRApperture" no Menu Iniciar' {
+    Invoke-Step 'Criar atalhos "WRApperture" e "Desinstalar WRApperture" no Menu Iniciar' {
         New-Item -ItemType Directory -Force -Path $StartMenuDir | Out-Null
         $shell = New-Object -ComObject WScript.Shell
         $shortcut = $shell.CreateShortcut((Join-Path $StartMenuDir 'WRApperture.lnk'))
@@ -61,13 +63,24 @@ try {
         $shortcut.WorkingDirectory = $InstallDir
         $shortcut.Description = 'Abrir apps de outro computador (WRApperture)'
         $shortcut.Save()
+
+        $uninstallCmd = Join-Path $InstallDir 'Desinstalar.cmd'
+        if (Test-Path $uninstallCmd) {
+            $uninstall = $shell.CreateShortcut((Join-Path $StartMenuDir 'Desinstalar WRApperture.lnk'))
+            $uninstall.TargetPath = $uninstallCmd
+            $uninstall.WorkingDirectory = $env:TEMP   # never inside the folder being deleted
+            $uninstall.IconLocation = "$target,0"
+            $uninstall.Description = 'Remover o WRApperture deste computador'
+            $uninstall.Save()
+        }
+
         [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
     }
 
     Write-Host ''
     if ($DryRun) { Write-Host 'Simulação concluída.' -ForegroundColor DarkYellow; exit 0 }
     Write-Host 'Cliente WRApperture instalado. Abra "WRApperture" pelo Menu Iniciar.' -ForegroundColor Green
-    Write-Host "Para desinstalar: & `"$InstallDir\Uninstall-WRAppertureClient.ps1`""
+    Write-Host 'Para desinstalar: Menu Iniciar → "Desinstalar WRApperture".'
     if ($Launch) { Start-Process -FilePath $target }
     exit 0
 }

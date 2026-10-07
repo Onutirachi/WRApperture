@@ -18,9 +18,9 @@ PAREAMENTO
   wrahost agent show                       porta e fingerprint
   wrahost agent token                      gera novo token (o anterior deixa de valer)
 
-DESINSTALAR (PowerShell como administrador)
-  & "$env:ProgramFiles\WRApperture\Uninstall-WRAppertureHost.ps1"           mantem apps e token
-  & "$env:ProgramFiles\WRApperture\Uninstall-WRAppertureHost.ps1" -Purge    desfaz tudo
+DESINSTALAR
+  Duplo clique em Desinstalar.cmd (neste pacote ou em C:\Program Files\WRApperture).
+  Ele pede administrador e pergunta se deve desfazer tudo (inclusive o token).
 
 BARRA DE IDIOMA FLUTUANDO SOBRE OS APPS
   O instalador ja oculta a barra para os usuarios logados. Para outro usuario,

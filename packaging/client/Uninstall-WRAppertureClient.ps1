@@ -9,6 +9,9 @@
 .PARAMETER KeepSigning
     Com -RemoveUserData, mantém a configuração "abrir apps sem alerta" (certificado de assinatura) neste PC.
 
+.PARAMETER Interactive
+    Usado pelo Desinstalar.cmd: pergunta se deve apagar os dados do usuário e espera Enter antes de fechar.
+
 .PARAMETER DryRun
     Mostra o que seria feito, sem alterar nada.
 #>
@@ -20,6 +23,7 @@ param(
     [string]$DesktopDir = [Environment]::GetFolderPath('DesktopDirectory'),
     [switch]$RemoveUserData,
     [switch]$KeepSigning,
+    [switch]$Interactive,
     [switch]$DryRun
 )
 
@@ -32,6 +36,17 @@ function Invoke-Step([string]$Description, [scriptblock]$Action) {
     & $Action
 }
 
+function Exit-Script([int]$Code) {
+    if ($Interactive) { [void](Read-Host 'Pressione Enter para fechar') }
+    exit $Code
+}
+
+if ($Interactive -and -not $RemoveUserData) {
+    Write-Host 'Desinstalar o WRApperture deste computador.' -ForegroundColor Cyan
+    $answer = Read-Host 'Apagar também os PCs pareados, ícones, senhas salvas e a configuração "abrir sem alerta"? (s/N)'
+    $RemoveUserData = $answer -match '^\s*[sSyY]'
+}
+
 try {
     $target = Join-Path $InstallDir $ExeName
     $running = Get-Process -Name ([IO.Path]::GetFileNameWithoutExtension($ExeName)) -ErrorAction SilentlyContinue |
@@ -42,9 +57,11 @@ try {
         }
     }
 
-    $startMenuLink = Join-Path $StartMenuDir 'WRApperture.lnk'
-    if (Test-Path $startMenuLink) {
-        Invoke-Step 'Remover atalho do Menu Iniciar' { Remove-Item -Force $startMenuLink }
+    foreach ($name in 'WRApperture.lnk', 'Desinstalar WRApperture.lnk') {
+        $startMenuLink = Join-Path $StartMenuDir $name
+        if (Test-Path $startMenuLink) {
+            Invoke-Step "Remover atalho '$name' do Menu Iniciar" { Remove-Item -Force $startMenuLink }
+        }
     }
 
     # Must run before the program folder is deleted: the client itself removes the signing setup.
@@ -97,12 +114,12 @@ try {
     }
 
     Write-Host ''
-    if ($DryRun) { Write-Host 'Simulação concluída.' -ForegroundColor DarkYellow; exit 0 }
+    if ($DryRun) { Write-Host 'Simulação concluída.' -ForegroundColor DarkYellow; Exit-Script 0 }
     Write-Host 'Cliente WRApperture removido.' -ForegroundColor Green
-    if (-not $RemoveUserData) { Write-Host "Hosts pareados e ícones foram mantidos em $UserDataDir (use -RemoveUserData para apagar)." }
-    exit 0
+    if (-not $RemoveUserData) { Write-Host "PCs pareados e ícones foram mantidos em $UserDataDir (uma reinstalação os reaproveita)." }
+    Exit-Script 0
 }
 catch {
     Write-Host "Falha na desinstalação: $($_.Exception.Message)" -ForegroundColor Red
-    exit 1
+    Exit-Script 1
 }

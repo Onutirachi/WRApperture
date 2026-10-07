@@ -33,9 +33,11 @@ Os executáveis são autônomos e não precisam de .NET instalado.
    - mostra o endereço, a porta, o **token** e o fingerprint.
 3. Publique apps com `wrahost publish ...`. O `wrahost` fica no PATH.
 
-Rodar o instalador de novo atualiza a versão sem invalidar o token. Para desinstalar, rode `Uninstall-WRAppertureHost.ps1` (com `-Purge`, desfaz tudo).
+Rodar o instalador de novo atualiza a versão sem invalidar o token. Para desinstalar, dê duplo clique em `Desinstalar.cmd`, no pacote ou em `C:\Program Files\WRApperture`. Ele pede administrador e pergunta se deve desfazer tudo, inclusive o token.
 
-**Cliente** (outro computador): extraia `WRApperture-Client-<v>.zip` e dê duplo clique em `Instalar.cmd`. Não precisa de administrador. O atalho "WRApperture" aparece no Menu Iniciar.
+Para usar no dia a dia não é preciso abrir o PowerShell: tudo tem um `.cmd` de duplo clique (`Instalar.cmd` e `Desinstalar.cmd`), que libera a execução de scripts só para aquela chamada.
+
+**Cliente** (outro computador): extraia `WRApperture-Client-<v>.zip` e dê duplo clique em `Instalar.cmd`. Não precisa de administrador. Os atalhos "WRApperture" e "Desinstalar WRApperture" aparecem no Menu Iniciar. O desinstalador pergunta se deve apagar também os PCs pareados e as senhas salvas.
 
 Os executáveis não são assinados, então o SmartScreen pode exibir um aviso na primeira execução.
 

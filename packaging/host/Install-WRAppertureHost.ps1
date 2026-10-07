@@ -79,7 +79,7 @@ try {
 
     Invoke-Step "Copiar binários para $InstallDir" {
         New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-        foreach ($file in $Binaries + 'Uninstall-WRAppertureHost.ps1') {
+        foreach ($file in $Binaries + 'Uninstall-WRAppertureHost.ps1', 'Desinstalar.cmd') {
             $source = Join-Path $PSScriptRoot $file
             if (Test-Path $source) { Copy-Item -Path $source -Destination $InstallDir -Force }
         }
@@ -180,6 +180,7 @@ try {
     Write-Host 'Próximos passos:'
     Write-Host '  1. Publique apps (novo terminal como administrador): wrahost discover / wrahost publish --path "..." --name "..."'
     Write-Host '  2. No outro computador, abra o WRApperture e adicione este host com o endereço, a porta e o token acima.'
+    Write-Host "  Para desinstalar: duplo clique em $InstallDir\Desinstalar.cmd"
     Write-Host '  Atenção: no Windows Pro só há uma sessão por vez; abrir um app remoto desconecta quem estiver usando este PC.' -ForegroundColor DarkYellow
 
     $public = Get-NetConnectionProfile -ErrorAction SilentlyContinue | Where-Object NetworkCategory -eq 'Public'

@@ -38,6 +38,11 @@
   - sem admin, o instalador do host recusa com código 2;
   - instalação e desinstalação **reais** do cliente em diretórios temporários (parâmetros `-InstallDir` e `-StartMenuDir`), sem admin.
 
+## R9. Desinstalação sem PowerShell (feedback de uso)
+- **Problema**: o usuário não conseguia rodar os `.ps1`. O duplo clique abre o Bloco de Notas, e a política de execução bloqueia scripts, inclusive os baixados (Mark of the Web).
+- **Decision**: `Desinstalar.cmd` em cada pacote e na pasta instalada, e no cliente também um atalho "Desinstalar WRApperture" no Menu Iniciar. Eles chamam o PowerShell com `-ExecutionPolicy Bypass`, válido só para aquela chamada. Com `-Interactive`, os scripts perguntam o que manter e esperam Enter para a mensagem final ficar visível.
+- **Autoexclusão**: o `.cmd` muda para `%TEMP%` e usa `(goto) 2>nul & powershell ...`. Isso desliga o `cmd` do próprio arquivo, então a pasta e o próprio `.cmd` podem ser apagados sem o erro "O sistema não pode encontrar o caminho especificado" (verificado).
+
 ## R8. Descobertos na implementação
 - **Encoding**: o Windows PowerShell 5.1 lê `.ps1` sem BOM como ANSI, o que embaralha os acentos. Os scripts ficam em UTF-8 com BOM no repositório (regra no `.editorconfig`), e o `build-release.ps1` regrava os scripts do pacote com BOM.
 - **`$PSScriptRoot`** não está disponível nos valores padrão de `param()` no PowerShell 5.1. Os defaults que dependem dele são calculados no corpo do script.
