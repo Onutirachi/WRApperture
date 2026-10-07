@@ -2,6 +2,7 @@ using System.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using WRApperture.Host.Core;
 using WRApperture.Host.Core.Errors;
+using WRApperture.Host.Core.Publishing;
 
 namespace WRApperture.Host.Cli;
 
@@ -27,6 +28,25 @@ internal static class DiscoveryCommands
             Console.WriteLine($"{apps.Count} app(s). Publique com: wrahost publish --path \"<EXECUTÁVEL>\" --name \"<NOME>\"");
         }));
         yield return discover;
+
+        var source = new Argument<string>("arquivo") { Description = "Atalho (.lnk) ou programa (.exe)" };
+        var inspectJson = new Option<bool>("--json") { Description = "Saída em JSON" };
+        var inspect = new Command("inspect", "Mostra o que seria publicado a partir de um atalho ou programa (somente leitura)") { source, inspectJson };
+        inspect.SetAction(r => ExitCodes.Run(() =>
+        {
+            var draft = services.GetRequiredService<IAppSourceInspector>().Inspect(r.GetValue(source)!);
+            if (r.GetValue(inspectJson))
+            {
+                Output.WriteJson(draft);
+                return;
+            }
+
+            Console.WriteLine($"Nome:        {draft.DisplayName}");
+            Console.WriteLine($"Programa:    {draft.ExecutablePath}");
+            Console.WriteLine($"Argumentos:  {draft.Arguments ?? "(nenhum)"}");
+            Console.WriteLine($"Ícone:       {draft.IconPath},{draft.IconIndex}");
+        }));
+        yield return inspect;
 
         var alias = new Argument<string>("alias") { Description = "Alias do app publicado" };
         var output = new Option<FileInfo>("--out") { Description = "Arquivo PNG de saída", Required = true };

@@ -48,6 +48,7 @@ if (-not $SkipTests) {
 $projects = @(
     @{ Name = 'wrahost'; Path = 'src\WRApperture.Host.Cli\WRApperture.Host.Cli.csproj' },
     @{ Name = 'agent'; Path = 'src\WRApperture.Host.Agent\WRApperture.Host.Agent.csproj' },
+    @{ Name = 'manager'; Path = 'src\WRApperture.Host.Manager\WRApperture.Host.Manager.csproj' },
     @{ Name = 'client'; Path = 'src\WRApperture.Client\WRApperture.Client.csproj' }
 )
 foreach ($p in $projects) {
@@ -61,7 +62,7 @@ foreach ($p in $projects) {
 
 Write-Host '==> Assembling host package' -ForegroundColor Cyan
 New-Item -ItemType Directory -Force $hostDir | Out-Null
-Copy-Item (Join-Path $publishDir 'wrahost\wrahost.exe') $hostDir
+Copy-Item (Join-Path $publishDir 'wrahost\wrahost.exe'), (Join-Path $publishDir 'manager\WRApperture.Host.exe') $hostDir
 Copy-Item (Join-Path $publishDir 'agent\WRApperture.Agent.exe'), (Join-Path $publishDir 'agent\appsettings.json') $hostDir
 Copy-Item (Join-Path $root 'packaging\host\Instalar.cmd'), (Join-Path $root 'packaging\host\Desinstalar.cmd'), (Join-Path $root 'packaging\host\LEIA-ME.txt') $hostDir
 foreach ($script in 'Install-WRAppertureHost.ps1', 'Uninstall-WRAppertureHost.ps1') {

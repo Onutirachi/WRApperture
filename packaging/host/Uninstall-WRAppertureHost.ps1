@@ -63,6 +63,15 @@ try {
         }
     }
 
+    foreach ($manager in @(Get-Process -Name 'WRApperture.Host' -ErrorAction SilentlyContinue)) {
+        Invoke-Step 'Fechar o WRApperture (Host) em execução' { $manager.Kill(); $manager.WaitForExit(5000) | Out-Null }
+    }
+
+    $managerShortcut = Join-Path ([Environment]::GetFolderPath('CommonPrograms')) 'WRApperture (Host).lnk'
+    if (Test-Path $managerShortcut) {
+        Invoke-Step 'Remover atalho "WRApperture (Host)" do Menu Iniciar' { Remove-Item -Force $managerShortcut }
+    }
+
     if (Get-NetFirewallRule -Name $FirewallRule -ErrorAction SilentlyContinue) {
         Invoke-Step 'Remover a regra de firewall do agente' { Remove-NetFirewallRule -Name $FirewallRule }
     }

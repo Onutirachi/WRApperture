@@ -27,6 +27,7 @@ Describe 'Install-WRAppertureHost' {
 
         $r.ExitCode | Should Be 0
         $r.Output | Should Match '\[simulação\] Copiar binários'
+        $r.Output | Should Match '\[simulação\] Criar atalho "WRApperture \(Host\)"'
         $r.Output | Should Match '\[simulação\] Preparar o host'
         $r.Output | Should Match '\[simulação\] Gerar token'
         $r.Output | Should Match '\[simulação\] (Registrar|Atualizar) o serviço WRAppertureAgent'

@@ -30,7 +30,8 @@ param(
 $ErrorActionPreference = 'Stop'
 $ServiceName = 'WRAppertureAgent'
 $FirewallRule = 'WRAppertureAgent-TCP'
-$Binaries = @('wrahost.exe', 'WRApperture.Agent.exe', 'appsettings.json')
+$Binaries = @('wrahost.exe', 'WRApperture.Agent.exe', 'WRApperture.Host.exe', 'appsettings.json')
+$ManagerShortcut = Join-Path ([Environment]::GetFolderPath('CommonPrograms')) 'WRApperture (Host).lnk'
 
 function Write-Step([string]$Text) { Write-Host "==> $Text" -ForegroundColor Cyan }
 
@@ -83,6 +84,16 @@ try {
             $source = Join-Path $PSScriptRoot $file
             if (Test-Path $source) { Copy-Item -Path $source -Destination $InstallDir -Force }
         }
+    } | Out-Null
+
+    Invoke-Step 'Criar atalho "WRApperture (Host)" no Menu Iniciar de todos os usuários' {
+        $shell = New-Object -ComObject WScript.Shell
+        $shortcut = $shell.CreateShortcut($ManagerShortcut)
+        $shortcut.TargetPath = Join-Path $InstallDir 'WRApperture.Host.exe'
+        $shortcut.WorkingDirectory = $InstallDir
+        $shortcut.Description = 'Publicar apps deste PC para os clientes WRApperture'
+        $shortcut.Save()
+        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
     } | Out-Null
 
     Invoke-Step 'Adicionar a pasta de instalação ao PATH do sistema' {
@@ -178,7 +189,7 @@ try {
 
     Write-Host ''
     Write-Host 'Próximos passos:'
-    Write-Host '  1. Publique apps (novo terminal como administrador): wrahost discover / wrahost publish --path "..." --name "..."'
+    Write-Host '  1. Publique apps: Menu Iniciar → "WRApperture (Host)" e arraste atalhos ou programas para a janela.'
     Write-Host '  2. No outro computador, abra o WRApperture e adicione este host com o endereço, a porta e o token acima.'
     Write-Host "  Para desinstalar: duplo clique em $InstallDir\Desinstalar.cmd"
     Write-Host '  Atenção: no Windows Pro só há uma sessão por vez; abrir um app remoto desconecta quem estiver usando este PC.' -ForegroundColor DarkYellow

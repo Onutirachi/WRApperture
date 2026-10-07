@@ -8,15 +8,12 @@ INSTALAR (ou atualizar)
   2. De duplo clique em Instalar.cmd e aceite o pedido de administrador.
   3. Anote o ENDERECO, a PORTA e o TOKEN exibidos no final.
 
-PUBLICAR APPS (terminal como administrador)
-  wrahost discover                         lista os apps instalados
-  wrahost publish --path "C:\caminho\app.exe" --name "Nome do App"
-  wrahost list                             apps publicados
-  wrahost unpublish <alias>                remove um app
+PUBLICAR APPS
+  Menu Iniciar > "WRApperture (Host)": arraste atalhos ou programas para a janela,
+  revise e clique em Publicar. "Do Menu Iniciar..." publica varios de uma vez.
+  No mesmo painel: preparar o PC, gerar novo token (com Copiar), reiniciar o agente.
 
-PAREAMENTO
-  wrahost agent show                       porta e fingerprint
-  wrahost agent token                      gera novo token (o anterior deixa de valer)
+  Linha de comando (opcional): wrahost list / publish / unpublish / inspect
 
 DESINSTALAR
   Duplo clique em Desinstalar.cmd (neste pacote ou em C:\Program Files\WRApperture).

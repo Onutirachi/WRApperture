@@ -12,7 +12,8 @@ Abra apps individuais de um PC Windows (host) a partir de outro computador (clie
 | `wrahost` (CLI) | ✅ | Linha de comando sobre o Core, para uso manual e automação |
 | `WRApperture.Host.Agent` | ✅ | Serviço HTTPS (porta 5080) que expõe apps, ícones e dados de conexão ao cliente, protegido por token de pareamento |
 | `WRApperture.Shared` | ✅ | Contrato da API (rotas, DTOs, fingerprint de certificado), compartilhado entre o Agent e o Client |
-| `WRApperture.Host.Manager` | ⏳ | Interface gráfica do host |
+| `WRApperture.Host.Manager` | ✅ | Interface gráfica do host (`WRApperture.Host.exe`): arrastar atalhos/programas para publicar, editar, remover, preparar o PC, gerar token |
+| `WRApperture.Ui` | ✅ | Tema visual compartilhado entre o cliente e o Manager |
 | `WRApperture.Client` | ✅ | App WPF: pareia com o host, mostra os apps em grade e abre cada um em sua janela com um clique |
 | `WRApperture.Client.Core` | ✅ | Lógica do cliente: pareamento com pinning, cache offline, geração de `.rdp`, credenciais e atalhos |
 
@@ -31,7 +32,9 @@ Os executáveis são autônomos e não precisam de .NET instalado.
    - registra o agente como serviço automático, com reinício em caso de falha;
    - libera a porta no firewall (redes de domínio e privadas);
    - mostra o endereço, a porta, o **token** e o fingerprint.
-3. Publique apps com `wrahost publish ...`. O `wrahost` fica no PATH.
+3. Abra **"WRApperture (Host)"** no Menu Iniciar e arraste para a janela os atalhos (da área de trabalho ou do Menu Iniciar) ou programas `.exe` que quer usar remotamente. Nome, caminho, argumentos e ícone são preenchidos automaticamente; revise e clique em Publicar. O botão **Do Menu Iniciar…** publica vários apps instalados de uma vez.
+   - O mesmo painel mostra se o PC está preparado, o estado do agente, o endereço, a porta e o fingerprint, e tem o botão **Gerar novo token…** (com Copiar).
+   - Para automação, o `wrahost` continua disponível no PATH (`wrahost inspect <arquivo>` mostra o que seria publicado).
 
 Rodar o instalador de novo atualiza a versão sem invalidar o token. Para desinstalar, dê duplo clique em `Desinstalar.cmd`, no pacote ou em `C:\Program Files\WRApperture`. Ele pede administrador e pergunta se deve desfazer tudo, inclusive o token.
 

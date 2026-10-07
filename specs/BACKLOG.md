@@ -10,8 +10,7 @@ Ideias para futuras features. Cada item vira uma spec (`/speckit-specify`) quand
 | 4 | **Atalho na área de trabalho** para os apps | Já existe: botão direito no app → "Criar atalho na área de trabalho". Avaliar deixar mais visível e adicionar ao Menu Iniciar |
 | 5 | Minimizar o painel para a **bandeja do Windows** | Ícone na bandeja com o menu dos apps e opção de iniciar com o Windows |
 | 6 | Interface **bilíngue** (português e inglês) | Arquivos de recursos `.resx` no cliente, no `wrahost` e no instalador |
-| 7 | **Interface gráfica no host** (Manager) | Arrastar um atalho (`.lnk`) ou executável: preenche caminho, nome, ícone e argumentos. Lista, edita e remove apps. Mostra token e fingerprint. Substitui o `wrahost` no uso diário |
-| 8 | **Renomear apps no cliente** (apenas visual) | Nome local por host e app, guardado no `hosts.json`, sem alterar o host |
+| 7 | **Renomear apps no cliente** (apenas visual) | Nome local por host e app, guardado no `hosts.json`, sem alterar o host |
 
 ## Limitações conhecidas
 

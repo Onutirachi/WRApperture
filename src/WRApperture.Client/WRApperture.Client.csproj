@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WRApperture.Client.Core\WRApperture.Client.Core.csproj" />
+    <ProjectReference Include="..\WRApperture.Ui\WRApperture.Ui.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -26,6 +26,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IShortcutResolver, ShortcutResolver>();
 
         services.AddSingleton<IAppPublisher, AppPublisher>();
+        services.AddSingleton<IFileDescriptionReader, FileDescriptionReader>();
+        services.AddSingleton<IAppSourceInspector, AppSourceInspector>();
         services.AddSingleton<IHostPreparation, HostPreparation>();
         services.AddSingleton<IAppDiscovery, AppDiscovery>();
         services.AddSingleton<IIconProvider, IconProvider>();

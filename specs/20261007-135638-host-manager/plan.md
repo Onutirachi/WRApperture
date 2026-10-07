@@ -44,3 +44,9 @@ src/WRApperture.Client/App.xaml           passa a mesclar WRApperture.Ui/Theme.x
 tests/WRApperture.Host.Core.Tests/Publishing/AppSourceInspectorTests.cs
 packaging/host/*                          atalho Menu Iniciar + exe no pacote
 ```
+
+## Validação
+
+- Janela principal capturada em `--read-only`: dados reais do PC (preparação, IP, porta, estado do agente). Layout corrigido após a primeira captura (botões sobrepostos ao título, valores crus "0"/"1", texto cortado).
+- `AppSourceInspector` verificado com arquivos reais via `wrahost inspect`: atalho MSI (CorelDRAW), argumentos (Git Bash, prompts do VS), ícone `.ico`, nome pela descrição do exe ("Mapa de caracteres"), recusas (app da Store ausente, `.ini`).
+- Não verificado aqui: editor, seletor e token em modo administrador (UIPI impede automatizar janela elevada). Validação pelo usuário.
