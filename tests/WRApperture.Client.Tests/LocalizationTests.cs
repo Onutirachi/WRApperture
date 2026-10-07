@@ -83,6 +83,16 @@ public partial class LocalizationTests
     }
 
     [Fact]
+    public void Language_choices_list_every_shipped_language_by_its_own_name()
+    {
+        var choices = Strings.LanguageChoices();
+
+        Assert.Equal(Strings.AvailableLanguages.Count, choices.Count);
+        Assert.Contains(("en", "English"), choices);
+        Assert.Contains(("pt", "Português"), choices);
+    }
+
+    [Fact]
     public void Unknown_key_returns_the_key_and_arguments_are_formatted()
     {
         Assert.Equal("nope.missing", Strings.T("nope.missing"));

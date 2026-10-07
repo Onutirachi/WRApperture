@@ -55,11 +55,28 @@ public partial class MainWindow : Window
         {
             ThemeButton.ContextMenu = new System.Windows.Controls.ContextMenu();
             WRApperture.Ui.ThemeMenu.AddTo(ThemeButton.ContextMenu);
+            ThemeButton.ContextMenu.Items.Add(new System.Windows.Controls.Separator());
+            var language = new System.Windows.Controls.MenuItem { Header = Strings.T("common.language.menu") };
+            language.Click += (_, _) => WRApperture.Ui.LanguageWindow.Choose(this, Restart);
+            ThemeButton.ContextMenu.Items.Add(language);
         }
 
         ThemeButton.ContextMenu.PlacementTarget = ThemeButton;
         ThemeButton.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
         ThemeButton.ContextMenu.IsOpen = true;
+    }
+
+    /// <summary>Same arguments, same elevation: a process started by an elevated one is elevated too.</summary>
+    private static void Restart()
+    {
+        var start = new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath!) { UseShellExecute = false };
+        foreach (var argument in Environment.GetCommandLineArgs().Skip(1))
+        {
+            start.ArgumentList.Add(argument);
+        }
+
+        System.Diagnostics.Process.Start(start);
+        Application.Current.Shutdown();
     }
 
     private void OnAppDoubleClick(object sender, MouseButtonEventArgs e)

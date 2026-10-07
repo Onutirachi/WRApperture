@@ -111,6 +111,7 @@
                         <!-- Padding plus room for the arrow on the right. -->
                         <ContentPresenter Margin="8,5,26,5" IsHitTestVisible="False" VerticalAlignment="Center"
                                           Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
                                           ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" />
                         <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" AllowsTransparency="True" Focusable="False"
                                PopupAnimation="Slide" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">

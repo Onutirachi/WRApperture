@@ -115,6 +115,16 @@ public partial class App : Application
         window.Activate();
     }
 
+    /// <summary>Starts a fresh client (e.g. after changing the language) and quits this one.</summary>
+    public void Restart()
+    {
+        // Let go of the single-instance lock first, or the new process would just wake this one up.
+        _instance?.Dispose();
+        _instance = null;
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath!) { UseShellExecute = false });
+        ExitApp();
+    }
+
     private void ExitApp()
     {
         if (MainWindow is Views.MainWindow window)

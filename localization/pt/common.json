@@ -1,5 +1,12 @@
 {
   "theme.system": "Tema: seguir o Windows",
   "theme.light": "Tema claro",
-  "theme.dark": "Tema escuro"
+  "theme.dark": "Tema escuro",
+  "language.menu": "Idioma (Language)…",
+  "language.title": "Idioma",
+  "language.automatic": "Automático — idioma do Windows ({0})",
+  "language.hint": "Vale para todos os apps do WRApperture neste computador, depois de reiniciá-los. Idiomas ainda sem tradução aparecem em inglês.",
+  "language.restart": "O novo idioma aparece depois de reiniciar o WRApperture. Reiniciar agora?",
+  "buttons.ok": "OK",
+  "buttons.cancel": "Cancelar"
 }

@@ -13,9 +13,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Theme choices go right before the last group ("Remove host").
+        // Theme and language choices go right before the last group ("Remove host").
         var menu = MoreButton.ContextMenu!;
         var lastSeparator = menu.Items.IndexOf(menu.Items.OfType<Separator>().Last());
+        var language = new MenuItem { Header = WRApperture.Shared.Localization.Strings.T("common.language.menu") };
+        language.Click += (_, _) => LanguageWindow.Choose(this, ((App)Application.Current).Restart);
+        menu.Items.Insert(lastSeparator, language);
         ThemeMenu.AddTo(menu, lastSeparator);
         menu.Items.Insert(lastSeparator, new Separator());
     }

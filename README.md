@@ -85,7 +85,7 @@ dotnet run --project src/WRApperture.Client
    - Outro usuário logado é desconectado e os programas dele continuam abertos.
    - Essa preparação exige o host 0.6.0 ou mais recente. Com um host mais antigo, o Windows pergunta como numa conexão remota comum.
 6. O visual segue o modo claro/escuro do Windows. Para fixar um tema, use o menu **⋯** (cliente) ou o botão **◐** (app do host).
-7. O idioma segue o idioma de exibição do Windows (hoje português e inglês; os demais usam inglês). Para acrescentar um idioma, veja [localization/README.md](localization/README.md).
+7. O idioma segue o idioma de exibição do Windows (hoje português e inglês; os demais usam inglês). Para escolher outro, use **Idioma (Language)…** no menu **⋯** do cliente ou no botão **◐** do app do host. Para acrescentar um idioma, veja [localization/README.md](localization/README.md).
 8. O cliente fica na bandeja do Windows (perto do relógio). O botão direito no ícone abre qualquer app do host direto, e fechar a janela mantém o cliente ali. Use **Sair** para encerrar. No menu **⋯**, escolha se fechar mantém o cliente na bandeja e se ele deve **Iniciar com o Windows**.
 9. Os atalhos de apps criados pelo cliente levam um selo azul do WRApperture no canto, para diferenciá-los dos apps instalados no próprio computador. Os desenhos dos ícones ficam em `assets/icons/*.svg`; depois de mudar algum, rode `scripts/build-icons.ps1`.
 

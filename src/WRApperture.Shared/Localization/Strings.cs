@@ -22,6 +22,8 @@ public static class Strings
     public const string DefaultLanguage = "en";
     public const string LanguageVariable = "WRAPPERTURE_LANG";
     private const string ResourcePrefix = "loc/";
+    private const string SettingsKey = @"Software\WRApperture\Ui";
+    private const string SettingsValue = "Language";
 
     private static readonly Lazy<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>> Catalog = new(LoadCatalog);
     private static readonly ConcurrentDictionary<string, string> Cache = new(StringComparer.Ordinal);
@@ -35,6 +37,47 @@ public static class Strings
 
     /// <summary>The language actually used (first of <see cref="Chain"/> that exists).</summary>
     public static string Language => Chain.FirstOrDefault(Catalog.Value.ContainsKey) ?? DefaultLanguage;
+
+    /// <summary>
+    /// The language chosen by the user in the apps (<c>HKCU\Software\WRApperture\Ui\Language</c>), or null for
+    /// automatic (Windows display language). Takes effect on the next start of each app, wrahost and installers.
+    /// </summary>
+    public static string? PreferredLanguage
+    {
+        get => ReadPreference();
+        set
+        {
+            using var key = Registry.CurrentUser.CreateSubKey(SettingsKey);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                key.DeleteValue(SettingsValue, throwOnMissingValue: false);
+            }
+            else
+            {
+                key.SetValue(SettingsValue, value);
+            }
+        }
+    }
+
+    /// <summary>The Windows display language, e.g. "pt-BR" (what automatic mode follows).</summary>
+    public static CultureInfo WindowsLanguage => CultureInfo.CurrentUICulture;
+
+    /// <summary>Shipped languages with their own name ("English", "Português"), sorted by that name.</summary>
+    public static IReadOnlyList<(string Code, string Name)> LanguageChoices() =>
+        AvailableLanguages.Select(code => (code, NativeName(code))).OrderBy(l => l.Item2, StringComparer.CurrentCultureIgnoreCase).ToList();
+
+    public static string NativeName(string code)
+    {
+        try
+        {
+            var name = CultureInfo.GetCultureInfo(code).NativeName;
+            return name.Length > 0 ? char.ToUpper(name[0], CultureInfo.GetCultureInfo(code)) + name[1..] : code;
+        }
+        catch (CultureNotFoundException)
+        {
+            return code;
+        }
+    }
 
     /// <summary>Forces a language (tests, diagnostics). Null returns to the automatic choice.</summary>
     public static void Use(string? language)
@@ -91,20 +134,25 @@ public static class Strings
     private static string? RequestedLanguage()
     {
         var value = Environment.GetEnvironmentVariable(LanguageVariable);
-        if (string.IsNullOrWhiteSpace(value) && OperatingSystem.IsWindows())
+        if (string.IsNullOrWhiteSpace(value))
         {
-            try
-            {
-                using var key = Registry.CurrentUser.OpenSubKey(@"Software\WRApperture\Ui");
-                value = key?.GetValue("Language") as string;
-            }
-            catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
-            {
-                value = null;
-            }
+            value = ReadPreference();
         }
 
         return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
+
+    private static string? ReadPreference()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(SettingsKey);
+            return key?.GetValue(SettingsValue) as string is { Length: > 0 } value ? value : null;
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
+        {
+            return null;
+        }
     }
 
     /// <summary>Embedded as "loc/&lt;language&gt;/&lt;area&gt;.json"; keys become "&lt;area&gt;.&lt;key&gt;".</summary>

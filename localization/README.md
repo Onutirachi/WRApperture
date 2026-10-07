@@ -28,7 +28,7 @@ Everyone whose Windows display language matches gets it automatically:
 
 ## Choosing the language
 
-The language follows the Windows display language. To force one, for example to test a translation, either:
+The language follows the Windows display language. Users can pick another one (or go back to automatic) under **Language…** in the client's ⋯ menu or the host app's ◐ button; that choice is stored in the registry value below. To force one, for example to test a translation, either:
 
 - set the environment variable `WRAPPERTURE_LANG=es`, or
 - set the registry value `HKCU\Software\WRApperture\Ui\Language` (string) to `es`.
