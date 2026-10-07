@@ -3,6 +3,7 @@ using Microsoft.Win32;
 using WRApperture.Host.Core.Abstractions;
 using WRApperture.Host.Core.Errors;
 using WRApperture.Host.Core.Publishing;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Core.Agent;
 
@@ -49,7 +50,7 @@ internal sealed class AgentSettingsStore(
         EnsureAdmin();
         if (!IsValidPort(port))
         {
-            throw new AppValidationException("port", $"use uma porta entre {AgentSettings.MinPort} e {AgentSettings.MaxPort}.");
+            throw new AppValidationException("port", Strings.T("host.validation.port", AgentSettings.MinPort, AgentSettings.MaxPort));
         }
 
         registry.SetValue(Path, "Port", port, RegistryValueKind.DWord);

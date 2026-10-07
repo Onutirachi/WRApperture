@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using WRApperture.Host.Core.Sessions;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Cli;
 
@@ -8,8 +9,8 @@ internal static class SessionCommands
 {
     public static Command Create(IServiceProvider services)
     {
-        var json = new Option<bool>("--json") { Description = "Saída em JSON" };
-        var sessions = new Command("sessions", "Lista as sessões de usuário do host (diagnóstico, somente leitura)") { json };
+        var json = new Option<bool>("--json") { Description = Strings.T("cli.options.json") };
+        var sessions = new Command("sessions", Strings.T("cli.commands.sessions")) { json };
         sessions.SetAction(r => ExitCodes.Run(() =>
         {
             var list = services.GetRequiredService<ISessionProvider>().List();
@@ -21,17 +22,20 @@ internal static class SessionCommands
 
             if (list.Count == 0)
             {
-                Console.WriteLine("Nenhuma sessão de usuário.");
+                Console.WriteLine(Strings.T("cli.output.sessions.empty"));
                 return;
             }
 
             Output.WriteTable(
-                ["ID", "USUÁRIO", "ESTADO", "TIPO", "TELA DO HOST"],
+                [
+                    "ID", Strings.T("cli.output.sessions.user"), Strings.T("cli.output.sessions.state"),
+                    Strings.T("cli.output.sessions.kind"), Strings.T("cli.output.sessions.hostScreen"),
+                ],
                 list.Select(s => new[]
                 {
                     s.Id.ToString(), $@"{s.Domain}\{s.User}", s.State.ToString(),
-                    s.Kind switch { SessionKind.Desktop => "área de trabalho", SessionKind.RemoteApp => "RemoteApp", _ => "-" },
-                    s.IsConsole ? "sim" : string.Empty,
+                    s.Kind switch { SessionKind.Desktop => Strings.T("cli.output.sessions.desktop"), SessionKind.RemoteApp => "RemoteApp", _ => "-" },
+                    s.IsConsole ? Strings.T("cli.output.yes") : string.Empty,
                 }));
         }));
         return sessions;

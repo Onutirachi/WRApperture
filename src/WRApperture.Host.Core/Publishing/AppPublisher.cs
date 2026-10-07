@@ -3,6 +3,7 @@ using Microsoft.Win32;
 using WRApperture.Host.Core.Abstractions;
 using WRApperture.Host.Core.Errors;
 using WRApperture.Host.Core.Models;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Core.Publishing;
 
@@ -67,7 +68,7 @@ internal sealed class AppPublisher(
         if (!AliasGenerator.IsValid(alias))
         {
             // Guards against paths such as "..\x" deleting anything above the app's own key.
-            throw new AppValidationException(nameof(alias), "alias inválido.");
+            throw new AppValidationException(nameof(alias), Strings.T("host.validation.aliasInvalid"));
         }
 
         var existing = Read(alias);

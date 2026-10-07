@@ -75,9 +75,9 @@ public class AppSourceInspectorTests
     }
 
     [Theory]
-    [InlineData(@"C:\docs\manual.pdf", "programas")]
-    [InlineData(@"C:\scripts\run.bat", "programas")]
-    [InlineData(@"C:\nao\existe.exe", "não encontrado")]
+    [InlineData(@"C:\docs\manual.pdf", "programs")]
+    [InlineData(@"C:\scripts\run.bat", "programs")]
+    [InlineData(@"C:\nao\existe.exe", "file not found")]
     public void Rejects_non_programs_and_missing_files(string path, string reason)
     {
         _fs.Files.UnionWith([@"C:\docs\manual.pdf", @"C:\scripts\run.bat"]);
@@ -95,8 +95,8 @@ public class AppSourceInspectorTests
         _fs.Files.UnionWith([unreadable, broken]);
         _resolver.Targets[broken] = new ShortcutTarget(@"C:\gone\app.exe", null, null, 0);
 
-        Assert.Contains("não pôde ser lido", Assert.Throws<AppValidationException>(() => _inspector.Inspect(unreadable)).Reason);
-        Assert.Contains("não existe", Assert.Throws<AppValidationException>(() => _inspector.Inspect(broken)).Reason);
+        Assert.Contains("could not be read", Assert.Throws<AppValidationException>(() => _inspector.Inspect(unreadable)).Reason);
+        Assert.Contains("no longer exists", Assert.Throws<AppValidationException>(() => _inspector.Inspect(broken)).Reason);
     }
 
     [Fact]
@@ -109,8 +109,8 @@ public class AppSourceInspectorTests
         _resolver.Targets[script] = new ShortcutTarget(@"C:\x\run.cmd", null, null, 0);
         _resolver.Targets[stub] = new ShortcutTarget(stubExe, null, null, 0);
 
-        Assert.Contains("programas", Assert.Throws<AppValidationException>(() => _inspector.Inspect(script)).Reason);
-        Assert.Contains("instalador", Assert.Throws<AppValidationException>(() => _inspector.Inspect(stub)).Reason);
+        Assert.Contains("programs", Assert.Throws<AppValidationException>(() => _inspector.Inspect(script)).Reason);
+        Assert.Contains("installer", Assert.Throws<AppValidationException>(() => _inspector.Inspect(stub)).Reason);
     }
 
     [Fact]

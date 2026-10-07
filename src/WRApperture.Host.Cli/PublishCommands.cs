@@ -2,6 +2,7 @@ using System.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using WRApperture.Host.Core;
 using WRApperture.Host.Core.Models;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Cli;
 
@@ -16,8 +17,8 @@ internal static class PublishCommands
 
     private static Command List(IServiceProvider services)
     {
-        var json = new Option<bool>("--json") { Description = "Saída em JSON" };
-        var cmd = new Command("list", "Lista os apps publicados como RemoteApp") { json };
+        var json = new Option<bool>("--json") { Description = Strings.T("cli.options.json") };
+        var cmd = new Command("list", Strings.T("cli.commands.list")) { json };
         cmd.SetAction(r => ExitCodes.Run(() =>
         {
             var apps = services.GetRequiredService<IAppPublisher>().List();
@@ -29,22 +30,22 @@ internal static class PublishCommands
 
             if (apps.Count == 0)
             {
-                Console.WriteLine("Nenhum app publicado.");
+                Console.WriteLine(Strings.T("cli.output.list.empty"));
                 return;
             }
 
             Output.WriteTable(
-                ["ALIAS", "NOME", "CAMINHO", "ARGS", "GERENCIADO"],
+                ["ALIAS", Strings.T("cli.output.list.name"), Strings.T("cli.output.list.path"), "ARGS", Strings.T("cli.output.list.managed")],
                 apps.Select(a => new[]
                 {
                     a.Alias, a.DisplayName, a.ExecutablePath,
                     a.CommandLinePolicy switch
                     {
-                        CommandLinePolicy.Any => "qualquer",
+                        CommandLinePolicy.Any => Strings.T("cli.output.list.anyArguments"),
                         CommandLinePolicy.Required => a.RequiredArguments ?? string.Empty,
                         _ => "-",
                     },
-                    a.IsManaged ? "sim" : "não",
+                    a.IsManaged ? Strings.T("cli.output.yes") : Strings.T("cli.output.no"),
                 }));
         }));
         return cmd;
@@ -52,17 +53,17 @@ internal static class PublishCommands
 
     private static Command Publish(IServiceProvider services)
     {
-        var path = new Option<string>("--path") { Description = "Caminho do executável (aceita %VARIAVEIS%)", Required = true };
-        var name = new Option<string>("--name") { Description = "Nome de exibição", Required = true };
-        var alias = new Option<string?>("--alias") { Description = "Alias (gerado a partir do nome se omitido)" };
-        var args = new Option<string?>("--args") { Description = "Argumentos fixos (implica --args-policy required)" };
+        var path = new Option<string>("--path") { Description = Strings.T("cli.options.path"), Required = true };
+        var name = new Option<string>("--name") { Description = Strings.T("cli.options.name"), Required = true };
+        var alias = new Option<string?>("--alias") { Description = Strings.T("cli.options.alias") };
+        var args = new Option<string?>("--args") { Description = Strings.T("cli.options.args") };
         var policy = new Option<string?>("--args-policy") { Description = "none | any | required" };
         policy.AcceptOnlyFromAmong("none", "any", "required");
-        var icon = new Option<string?>("--icon") { Description = "Arquivo do ícone (padrão: o próprio exe)" };
-        var iconIndex = new Option<int>("--icon-index") { Description = "Índice do ícone", DefaultValueFactory = _ => 0 };
-        var hidden = new Option<bool>("--hidden") { Description = "Não exibir em listagens" };
+        var icon = new Option<string?>("--icon") { Description = Strings.T("cli.options.icon") };
+        var iconIndex = new Option<int>("--icon-index") { Description = Strings.T("cli.options.iconIndex"), DefaultValueFactory = _ => 0 };
+        var hidden = new Option<bool>("--hidden") { Description = Strings.T("cli.options.hidden") };
 
-        var cmd = new Command("publish", "Publica (ou atualiza) um app como RemoteApp") { path, name, alias, args, policy, icon, iconIndex, hidden };
+        var cmd = new Command("publish", Strings.T("cli.commands.publish")) { path, name, alias, args, policy, icon, iconIndex, hidden };
         cmd.SetAction(r => ExitCodes.Run(() =>
         {
             var fixedArgs = r.GetValue(args);
@@ -84,16 +85,16 @@ internal static class PublishCommands
                 fixedArgs,
                 !r.GetValue(hidden)));
 
-            var verb = result.Outcome switch
+            var app = result.App;
+            Console.WriteLine(result.Outcome switch
             {
-                PublishOutcome.Created => "publicado",
-                PublishOutcome.Updated => "atualizado",
-                _ => "já estava publicado (sem alterações)",
-            };
-            Console.WriteLine($"'{result.App.DisplayName}' {verb}. Alias: {result.App.Alias}");
+                PublishOutcome.Created => Strings.T("cli.output.publish.created", app.DisplayName, app.Alias),
+                PublishOutcome.Updated => Strings.T("cli.output.publish.updated", app.DisplayName, app.Alias),
+                _ => Strings.T("cli.output.publish.unchanged", app.DisplayName, app.Alias),
+            });
             if (result.Warnings.Contains(PublishWarnings.WritableLocation))
             {
-                Output.Warn("Aviso: o executável está em uma pasta que usuários comuns podem alterar. Prefira instalar em Program Files.");
+                Output.Warn(Strings.T("cli.output.publish.writableLocation"));
             }
         }));
         return cmd;
@@ -101,14 +102,14 @@ internal static class PublishCommands
 
     private static Command Unpublish(IServiceProvider services)
     {
-        var alias = new Argument<string>("alias") { Description = "Alias do app" };
-        var cmd = new Command("unpublish", "Remove a publicação de um app") { alias };
+        var alias = new Argument<string>("alias") { Description = Strings.T("cli.arguments.alias") };
+        var cmd = new Command("unpublish", Strings.T("cli.commands.unpublish")) { alias };
         cmd.SetAction(r => ExitCodes.Run(() =>
         {
             var a = r.GetValue(alias)!;
             Console.WriteLine(services.GetRequiredService<IAppPublisher>().Unpublish(a)
-                ? $"'{a}' removido."
-                : $"'{a}' não estava publicado.");
+                ? Strings.T("cli.output.unpublish.removed", a)
+                : Strings.T("cli.output.unpublish.notPublished", a));
         }));
         return cmd;
     }

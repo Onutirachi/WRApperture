@@ -1,0 +1,37 @@
+{
+  "readiness.edition": "Windows edition supports RemoteApp",
+  "readiness.editionUnknown": "unknown",
+  "readiness.editionExpected": "Pro, Enterprise or Education",
+  "readiness.rdpEnabled": "Remote Desktop enabled",
+  "readiness.nla": "Network Level Authentication (NLA) on",
+  "readiness.allowListEnforced": "Only published apps can be opened remotely",
+  "readiness.absent": "(absent)",
+  "readiness.firewall": "Firewall allows Remote Desktop (port 3389)",
+  "readiness.firewallNoRules": "no RDP rules found",
+  "readiness.firewallEnabledRules": "{0}/{1} rules enabled",
+  "readiness.firewallExpected": "all enabled",
+  "readiness.languageBar": "Language bar hidden in remote sessions",
+  "readiness.languageBarNoProfiles": "no profile loaded",
+  "readiness.languageBarProfiles": "{0}/{1} profiles",
+  "readiness.languageBarExpected": "all profiles",
+
+  "errors.adminRequired": "This operation requires administrator rights. Run the terminal as administrator.",
+  "errors.editionNotSupported": "Windows edition not supported for RemoteApp: {0}. Use Pro, Enterprise or Education.",
+
+  "validation.port": "use a port between {0} and {1}.",
+  "validation.aliasInvalid": "invalid alias.",
+  "validation.displayNameRequired": "the display name is required.",
+  "validation.displayNameTooLong": "at most {0} characters.",
+  "validation.aliasCharacters": "use only letters, digits, '-' and '_' (up to 64).",
+  "validation.notExecutable": "the file must be an executable (.exe).",
+  "validation.iconIndexNegative": "the icon index cannot be negative.",
+  "validation.requiredArgumentsMissing": "enter the fixed arguments for the 'required' policy.",
+  "validation.pathNotAbsolute": "the path must be absolute: '{0}'.",
+  "validation.fileNotFound": "file not found: '{0}'.",
+
+  "inspect.fileNotFound": "file not found: {0}",
+  "inspect.shortcutUnreadable": "the shortcut \"{0}\" could not be read.",
+  "inspect.shortcutToInstaller": "the shortcut \"{0}\" points to an installer that could not be resolved. Drag the program's executable instead.",
+  "inspect.shortcutTargetMissing": "the shortcut's program no longer exists: {0}",
+  "inspect.notAProgram": "\"{0}\" is not a program. Only programs (.exe) and shortcuts to programs can be published."
+}

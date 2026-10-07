@@ -4,6 +4,7 @@ using WRApperture.Host.Core.Abstractions;
 using WRApperture.Host.Core.Errors;
 using WRApperture.Host.Core.Models;
 using WRApperture.Host.Core.Publishing;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Core.Readiness;
 
@@ -21,13 +22,14 @@ internal sealed class HostPreparation(
     /// <summary>A DWORD setting the preparation can enforce.</summary>
     private sealed record DwordSetting(ReadinessCheckId Id, string Description, string Path, string Name, int Expected, bool AbsentIsOk);
 
-    private static readonly DwordSetting[] Settings =
+    /// <summary>Built on each use so the descriptions follow the current language.</summary>
+    private static DwordSetting[] Settings =>
     [
-        new(ReadinessCheckId.RdpEnabled, "Área de Trabalho Remota habilitada",
+        new(ReadinessCheckId.RdpEnabled, Strings.T("host.readiness.rdpEnabled"),
             RegistryPaths.TerminalServer, "fDenyTSConnections", Expected: 0, AbsentIsOk: false),
-        new(ReadinessCheckId.Nla, "Autenticação em nível de rede (NLA) ativa",
+        new(ReadinessCheckId.Nla, Strings.T("host.readiness.nla"),
             RegistryPaths.RdpTcp, "UserAuthentication", Expected: 1, AbsentIsOk: false),
-        new(ReadinessCheckId.AllowListEnforced, "Somente apps publicados podem ser abertos remotamente",
+        new(ReadinessCheckId.AllowListEnforced, Strings.T("host.readiness.allowListEnforced"),
             RegistryPaths.AllowList, "fDisabledAllowList", Expected: 0, AbsentIsOk: true),
     ];
 
@@ -155,10 +157,10 @@ internal sealed class HostPreparation(
 
     private ReadinessCheck CheckEdition(out bool supported)
     {
-        var edition = registry.GetValue(RegistryPaths.CurrentVersion, "EditionID") as string ?? "desconhecida";
+        var edition = registry.GetValue(RegistryPaths.CurrentVersion, "EditionID") as string ?? Strings.T("host.readiness.editionUnknown");
         supported = SupportedEditionPrefixes.Any(p => edition.StartsWith(p, StringComparison.OrdinalIgnoreCase));
-        return new ReadinessCheck(ReadinessCheckId.Edition, "Edição do Windows suporta RemoteApp",
-            supported ? ReadinessState.Ok : ReadinessState.NotSupported, edition, "Pro, Enterprise ou Education");
+        return new ReadinessCheck(ReadinessCheckId.Edition, Strings.T("host.readiness.edition"),
+            supported ? ReadinessState.Ok : ReadinessState.NotSupported, edition, Strings.T("host.readiness.editionExpected"));
     }
 
     private ReadinessCheck CheckSetting(DwordSetting setting)
@@ -166,7 +168,7 @@ internal sealed class HostPreparation(
         var current = ReadDword(setting);
         return new ReadinessCheck(setting.Id, setting.Description,
             IsOk(setting, current) ? ReadinessState.Ok : ReadinessState.Pending,
-            current.Existed ? current.Value.ToString() : "(ausente)",
+            current.Existed ? current.Value.ToString() : Strings.T("host.readiness.absent"),
             setting.Expected.ToString());
     }
 
@@ -175,18 +177,22 @@ internal sealed class HostPreparation(
         var rules = firewall.GetRdpRules();
         var enabled = rules.Count(r => r.Enabled);
         var ok = rules.Count > 0 && enabled == rules.Count;
-        var current = rules.Count == 0 ? "nenhuma regra de RDP encontrada" : $"{enabled}/{rules.Count} regras ativas";
-        return new ReadinessCheck(ReadinessCheckId.FirewallRdp, "Firewall libera a Área de Trabalho Remota (porta 3389)",
-            ok ? ReadinessState.Ok : ReadinessState.Pending, current, "todas ativas");
+        var current = rules.Count == 0
+            ? Strings.T("host.readiness.firewallNoRules")
+            : Strings.T("host.readiness.firewallEnabledRules", enabled, rules.Count);
+        return new ReadinessCheck(ReadinessCheckId.FirewallRdp, Strings.T("host.readiness.firewall"),
+            ok ? ReadinessState.Ok : ReadinessState.Pending, current, Strings.T("host.readiness.firewallExpected"));
     }
 
     private ReadinessCheck CheckLanguageBar()
     {
         var sids = users.LoadedUserSids();
         var hidden = sids.Count(s => ReadLanguageBar(s) is { Existed: true, Value: LanguageBarSettings.Hidden });
-        var current = sids.Count == 0 ? "nenhum perfil carregado" : $"{hidden}/{sids.Count} perfis";
-        return new ReadinessCheck(ReadinessCheckId.LanguageBarHidden, "Barra de idioma oculta nas sessões remotas",
-            hidden == sids.Count ? ReadinessState.Ok : ReadinessState.Pending, current, "todos os perfis");
+        var current = sids.Count == 0
+            ? Strings.T("host.readiness.languageBarNoProfiles")
+            : Strings.T("host.readiness.languageBarProfiles", hidden, sids.Count);
+        return new ReadinessCheck(ReadinessCheckId.LanguageBarHidden, Strings.T("host.readiness.languageBar"),
+            hidden == sids.Count ? ReadinessState.Ok : ReadinessState.Pending, current, Strings.T("host.readiness.languageBarExpected"));
     }
 
     private DwordSnapshot ReadLanguageBar(string sid) =>

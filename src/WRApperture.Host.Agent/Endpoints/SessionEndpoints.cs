@@ -1,5 +1,6 @@
 using WRApperture.Host.Core.Sessions;
 using WRApperture.Shared;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Agent.Endpoints;
 
@@ -61,7 +62,7 @@ internal static class SessionEndpoints
     }
 
     private static IResult BadMode(string? mode) => Results.BadRequest(
-        new ApiErrorDto(ApiContract.Errors.BadRequest, $"Modo de sessão desconhecido: {mode}"));
+        new ApiErrorDto(ApiContract.Errors.BadRequest, Strings.T("agent.errors.unknownSessionMode", mode)));
 
     private static SessionStatusDto Status(ReleasePlan plan)
     {
@@ -73,7 +74,7 @@ internal static class SessionEndpoints
 
     private static BusySessionDto Dto(HostSession s, string action) => new(
         string.IsNullOrEmpty(s.Domain) ? s.User : $@"{s.Domain}\{s.User}",
-        s.State == SessionConnectState.Disconnected ? "desconectada" : "em uso",
+        s.State == SessionConnectState.Disconnected ? Strings.T("agent.sessions.disconnected") : Strings.T("agent.sessions.inUse"),
         s.IsConsole,
         action,
         s.Kind == SessionKind.RemoteApp ? SessionModes.RemoteApp : SessionModes.Desktop);

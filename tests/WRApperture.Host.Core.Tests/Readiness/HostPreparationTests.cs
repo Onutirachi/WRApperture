@@ -39,7 +39,7 @@ public class HostPreparationTests
         var check = _preparation.Check().Single(c => c.Id == ReadinessCheckId.LanguageBarHidden);
 
         Assert.Equal(ReadinessState.Pending, check.State);
-        Assert.Equal("1/2 perfis", check.CurrentValue);
+        Assert.Equal("1/2 profiles", check.CurrentValue);
     }
 
     [Fact]
