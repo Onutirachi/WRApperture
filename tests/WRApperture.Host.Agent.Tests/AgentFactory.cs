@@ -74,6 +74,8 @@ internal sealed class FakeSettings : IAgentSettingsStore
     public void SetPort(int port) { }
 
     public void SetCertificateThumbprint(string thumbprint) { }
+
+    public void Reset() => CurrentToken = null;
 }
 
 internal sealed class FakeIcons : IIconProvider

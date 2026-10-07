@@ -485,3 +485,6 @@ $RECYCLE.BIN/
 
 # Spec Kit local state
 .specify/feature.json
+
+# Release output
+dist/

@@ -1,0 +1,31 @@
+WRApperture - pacote do HOST (o PC cujos apps serao usados remotamente)
+=====================================================================
+
+Requisitos: Windows 10/11 Pro, Enterprise ou Education (x64). Nao precisa de .NET.
+
+INSTALAR (ou atualizar)
+  1. Extraia este .zip numa pasta.
+  2. De duplo clique em Instalar.cmd e aceite o pedido de administrador.
+  3. Anote o ENDERECO, a PORTA e o TOKEN exibidos no final.
+
+PUBLICAR APPS (terminal como administrador)
+  wrahost discover                         lista os apps instalados
+  wrahost publish --path "C:\caminho\app.exe" --name "Nome do App"
+  wrahost list                             apps publicados
+  wrahost unpublish <alias>                remove um app
+
+PAREAMENTO
+  wrahost agent show                       porta e fingerprint
+  wrahost agent token                      gera novo token (o anterior deixa de valer)
+
+DESINSTALAR (PowerShell como administrador)
+  & "$env:ProgramFiles\WRApperture\Uninstall-WRAppertureHost.ps1"           mantem apps e token
+  & "$env:ProgramFiles\WRApperture\Uninstall-WRAppertureHost.ps1" -Purge    desfaz tudo
+
+ATENCAO
+  - No Windows Pro so existe uma sessao por vez: abrir um app remoto desconecta
+    quem estiver usando este PC.
+  - Por padrao o agente so aceita conexoes em redes de dominio/privadas.
+  - Os executaveis nao sao assinados; o SmartScreen pode exibir um aviso.
+
+Logs: %ProgramData%\WRApperture\logs

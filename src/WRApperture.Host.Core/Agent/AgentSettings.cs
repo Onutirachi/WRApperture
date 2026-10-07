@@ -23,4 +23,7 @@ public interface IAgentSettingsStore
 
     /// <summary>Requires admin.</summary>
     void SetCertificateThumbprint(string thumbprint);
+
+    /// <summary>Deletes all agent settings (token, port, certificate reference). Idempotent. Requires admin.</summary>
+    void Reset();
 }

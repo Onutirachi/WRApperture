@@ -16,7 +16,30 @@ Abra apps individuais de um PC Windows (host) a partir de outro computador (clie
 | `WRApperture.Client` | ✅ | App WPF: pareia com o host, mostra os apps em grade e abre cada um em sua janela com um clique |
 | `WRApperture.Client.Core` | ✅ | Lógica do cliente: pareamento com pinning, cache offline, geração de `.rdp`, credenciais e atalhos |
 
-## Uso rápido do `wrahost` (no host, terminal **como administrador**)
+## Instalação (pacotes de release)
+
+```powershell
+.\scripts\build-release.ps1        # roda os testes e gera dist\WRApperture-Host-<v>.zip e dist\WRApperture-Client-<v>.zip
+```
+
+Os executáveis são autônomos e não precisam de .NET instalado.
+
+**Host** (PC cujos apps serão usados remotamente):
+1. Extraia `WRApperture-Host-<v>.zip` e dê duplo clique em `Instalar.cmd`, aceitando o UAC.
+2. O instalador:
+   - prepara o host;
+   - registra o agente como serviço automático, com reinício em caso de falha;
+   - libera a porta no firewall (redes de domínio e privadas);
+   - mostra o endereço, a porta, o **token** e o fingerprint.
+3. Publique apps com `wrahost publish ...`. O `wrahost` fica no PATH.
+
+Rodar o instalador de novo atualiza a versão sem invalidar o token. Para desinstalar, rode `Uninstall-WRAppertureHost.ps1` (com `-Purge`, desfaz tudo).
+
+**Cliente** (outro computador): extraia `WRApperture-Client-<v>.zip` e dê duplo clique em `Instalar.cmd`. Não precisa de administrador. O atalho "WRApperture" aparece no Menu Iniciar.
+
+Os executáveis não são assinados, então o SmartScreen pode exibir um aviso na primeira execução.
+
+## Desenvolvimento: uso do `wrahost` a partir do código (terminal **como administrador**)
 
 ```powershell
 dotnet build
@@ -82,6 +105,7 @@ O projeto segue Spec-Driven Development com o [GitHub Spec Kit](https://github.c
 dotnet build      # sem warnings (TreatWarningsAsErrors)
 dotnet test       # unit + integração (ícones, só leitura)
 dotnet test --filter "Category!=Integration"   # apenas unitários
+Invoke-Pester tests\packaging                  # scripts de instalação (Windows PowerShell 5.1)
 ```
 
 Para validar de ponta a ponta, siga [specs/20261006-182347-host-core/quickstart.md](specs/20261006-182347-host-core/quickstart.md).

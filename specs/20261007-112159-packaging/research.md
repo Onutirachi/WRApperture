@@ -37,3 +37,8 @@
   - `-DryRun` lista os passos esperados e não altera nada;
   - sem admin, o instalador do host recusa com código 2;
   - instalação e desinstalação **reais** do cliente em diretórios temporários (parâmetros `-InstallDir` e `-StartMenuDir`), sem admin.
+
+## R8. Descobertos na implementação
+- **Encoding**: o Windows PowerShell 5.1 lê `.ps1` sem BOM como ANSI, o que embaralha os acentos. Os scripts ficam em UTF-8 com BOM no repositório (regra no `.editorconfig`), e o `build-release.ps1` regrava os scripts do pacote com BOM.
+- **`$PSScriptRoot`** não está disponível nos valores padrão de `param()` no PowerShell 5.1. Os defaults que dependem dele são calculados no corpo do script.
+- **Tamanho**: cada executável self-contained leva o próprio runtime (wrahost 40 MB, agente 51 MB, cliente 74 MB). Trimming não é usado porque quebra o COM `dynamic` (firewall, `WScript.Shell`) e o WPF.

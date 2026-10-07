@@ -63,6 +63,16 @@ internal sealed class AgentSettingsStore(
         logger.LogInformation("Agent certificate set to {Thumbprint}", thumbprint);
     }
 
+    public void Reset()
+    {
+        EnsureAdmin();
+        if (registry.KeyExists(Path))
+        {
+            registry.DeleteKey(Path);
+            logger.LogInformation("Agent settings reset");
+        }
+    }
+
     private (byte[] Salt, byte[] Hash)? ReadCredentials() =>
         registry.GetValue(Path, "TokenSalt") is byte[] { Length: TokenHasher.SaltBytes } salt &&
         registry.GetValue(Path, "TokenHash") is byte[] { Length: 32 } hash

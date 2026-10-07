@@ -117,6 +117,34 @@ public class AgentSettingsStoreTests
     }
 
     [Fact]
+    public void Reset_removes_only_agent_settings_and_is_idempotent()
+    {
+        var token = _store.RegenerateToken();
+        _store.SetPort(6000);
+        _registry.Seed(RegistryPaths.PreparationSnapshot, "RdpEnabled", "1;DWord;1");
+        _registry.Seed(RegistryPaths.App("notepad"), "Name", "Bloco de Notas");
+
+        _store.Reset();
+        _store.Reset();
+
+        Assert.False(_store.Load().IsPaired);
+        Assert.False(_store.VerifyToken(token));
+        Assert.Equal(AgentSettings.DefaultPort, _store.Load().Port);
+        Assert.True(_registry.KeyExists(RegistryPaths.PreparationSnapshot));
+        Assert.True(_registry.KeyExists(RegistryPaths.App("notepad")));
+    }
+
+    [Fact]
+    public void Reset_requires_admin()
+    {
+        _store.RegenerateToken();
+        _privileges.IsAdmin = false;
+
+        Assert.Throws<AdminRequiredException>(() => _store.Reset());
+        Assert.True(_store.Load().IsPaired);
+    }
+
+    [Fact]
     public void Certificate_thumbprint_is_persisted()
     {
         _store.SetCertificateThumbprint("ABCDEF");
