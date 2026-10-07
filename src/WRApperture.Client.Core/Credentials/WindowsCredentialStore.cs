@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Client.Core.Credentials;
 
@@ -43,7 +44,7 @@ public sealed class WindowsCredentialStore(string targetPrefix = WindowsCredenti
             };
             if (!Native.CredWriteW(ref credential, 0))
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), "Não foi possível salvar a credencial no Windows.");
+                throw new Win32Exception(Marshal.GetLastWin32Error(), Strings.T("client.errors.credentialSave"));
             }
         }
         finally
@@ -76,7 +77,7 @@ public sealed class WindowsCredentialStore(string targetPrefix = WindowsCredenti
         var error = Marshal.GetLastPInvokeError();
         if (error != ErrorNotFound)
         {
-            throw new Win32Exception(error, $"Não foi possível remover a credencial do Windows (erro {error}).");
+            throw new Win32Exception(error, Strings.T("client.errors.credentialDelete", error));
         }
     }
 

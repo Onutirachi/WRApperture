@@ -2,13 +2,14 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using WRApperture.Client.Core.Model;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Client.ViewModels;
 
 public sealed class AppTileViewModel(CachedApp app, string iconPath, bool isDesktop = false)
 {
-    /// <summary>The fixed "Área de trabalho" tile that opens the host's full desktop.</summary>
-    public static AppTileViewModel Desktop() => new(new CachedApp("@desktop", "Área de trabalho"), string.Empty, isDesktop: true);
+    /// <summary>The fixed "Desktop" tile that opens the host's full desktop.</summary>
+    public static AppTileViewModel Desktop() => new(new CachedApp("@desktop", Strings.T("client.desktop.name")), string.Empty, isDesktop: true);
 
     public CachedApp App { get; } = app;
     public bool IsDesktop { get; } = isDesktop;
@@ -17,8 +18,8 @@ public sealed class AppTileViewModel(CachedApp app, string iconPath, bool isDesk
     /// <summary>Shown name: the local one, or the host's.</summary>
     public string DisplayName => App.Name;
     public bool IsRenamed => App.CustomName is not null;
-    public string ToolTip => IsDesktop ? "Abre a área de trabalho inteira do PC remoto, em tela cheia"
-        : IsRenamed ? $"{DisplayName}\nNo PC remoto: {App.DisplayName}" : DisplayName;
+    public string ToolTip => IsDesktop ? Strings.T("client.desktop.tip")
+        : IsRenamed ? Strings.T("client.tile.renamedTip", DisplayName, App.DisplayName) : DisplayName;
     public string Initial => DisplayName.Length > 0 ? DisplayName[..1].ToUpperInvariant() : "?";
     public ImageSource? Icon { get; } = LoadIcon(iconPath);
 

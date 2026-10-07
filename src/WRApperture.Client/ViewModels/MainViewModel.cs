@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Windows.Data;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -15,6 +16,7 @@ using WRApperture.Client.Core.Signing;
 using WRApperture.Client.Core.Storage;
 using WRApperture.Client.Services;
 using WRApperture.Shared;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Client.ViewModels;
 
@@ -137,23 +139,23 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         IsBusy = true;
-        SetStatus("Sincronizando…", warning: false);
+        SetStatus(Strings.T("client.status.syncing"), warning: false);
         try
         {
             var synced = await _sync.SyncAsync(option.Host);
             ReplaceHost(synced);
-            SetStatus($"{synced.Apps.Count} app(s) · sincronizado às {DateTime.Now:HH:mm}", warning: false);
+            SetStatus(Strings.T("client.status.synced", synced.Apps.Count, DateTime.Now.ToString("t", CultureInfo.CurrentCulture)), warning: false);
         }
         catch (AgentUnreachableException ex)
         {
             _logger.LogWarning(ex, "Host {Address} offline", option.Host.Address);
-            var when = option.Host.LastSyncUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? "nunca";
-            SetStatus($"Host offline — exibindo a última lista conhecida (sincronizada em {when}).", warning: true);
+            var when = option.Host.LastSyncUtc?.ToLocalTime().ToString("g", CultureInfo.CurrentCulture) ?? Strings.T("client.status.never");
+            SetStatus(Strings.T("client.status.offline", when), warning: true);
         }
         catch (InvalidTokenException ex)
         {
             SetStatus(ex.Message, warning: true);
-            if (_dialogs.Confirm("Token inválido", ex.Message + "\n\nDeseja informar um novo token agora?"))
+            if (_dialogs.Confirm(Strings.T("client.dialogs.invalidTokenTitle"), Strings.T("client.dialogs.askNewToken", ex.Message)))
             {
                 var result = _dialogs.AddHost(option.Host.Address, option.Host.AgentPort);
                 if (result is not null)
@@ -164,11 +166,10 @@ public sealed partial class MainViewModel : ObservableObject
         }
         catch (CertificateChangedException ex)
         {
-            SetStatus("A identidade do host mudou. Conexão bloqueada.", warning: true);
-            var message = $"{ex.Message}\n\nFingerprint confirmado:\n{CertificateFingerprint.Format(option.Host.PinnedFingerprint)}\n\n" +
-                          $"Fingerprint apresentado agora:\n{CertificateFingerprint.Format(ex.ObservedFingerprint)}\n\n" +
-                          "Confira com 'wrahost agent show' no host. Confiar no novo fingerprint?";
-            if (_dialogs.Confirm("Identidade do host mudou", message))
+            SetStatus(Strings.T("client.status.hostChanged"), warning: true);
+            var message = Strings.T("client.dialogs.hostChangedMessage", ex.Message,
+                CertificateFingerprint.Format(option.Host.PinnedFingerprint), CertificateFingerprint.Format(ex.ObservedFingerprint));
+            if (_dialogs.Confirm(Strings.T("client.dialogs.hostChangedTitle"), message))
             {
                 ReplaceHost(option.Host with { PinnedFingerprint = ex.ObservedFingerprint });
                 _logger.LogWarning("User accepted new fingerprint for {Address}", option.Host.Address);
@@ -183,7 +184,7 @@ public sealed partial class MainViewModel : ObservableObject
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogError(ex, "Failed to store sync results for {Address}", option.Host.Address);
-            SetStatus($"Erro ao salvar dados locais: {ex.Message}", warning: true);
+            SetStatus(Strings.T("client.status.saveFailed", ex.Message), warning: true);
         }
         finally
         {
@@ -192,13 +193,6 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     private bool CanRefresh() => SelectedHost is not null && !IsBusy;
-
-    private const string SigningExplanation =
-        "Desde abril de 2026, o Windows mostra um alerta de segurança toda vez que um app remoto é aberto, " +
-        "a menos que a conexão seja assinada por um publicador confiável.\n\n" +
-        "O WRApperture pode configurar este computador para assinar as conexões que ele mesmo cria. " +
-        "Isso exige permissão de administrador uma única vez. Arquivos de conexão de outras origens " +
-        "(por exemplo, recebidos por e-mail) continuam exibindo o alerta.";
 
     [RelayCommand]
     private async Task OpenAppAsync(AppTileViewModel? tile)
@@ -210,7 +204,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (!_state.SigningPromptDismissed && !_signer.GetStatus().Configured)
         {
-            if (_dialogs.Confirm("Abrir apps sem alerta de segurança", SigningExplanation + "\n\nConfigurar agora?"))
+            if (_dialogs.Confirm(Strings.T("client.signing.title"), Strings.T("client.signing.prompt")))
             {
                 await ConfigureSigningCoreAsync();
             }
@@ -218,7 +212,7 @@ public sealed partial class MainViewModel : ObservableObject
             {
                 _state = _state with { SigningPromptDismissed = true };
                 _store.Save(_state);
-                SetStatus("Ok. Para configurar depois, use o menu ⋯ → Abrir apps sem alerta.", warning: false);
+                SetStatus(Strings.T("client.status.signingLater"), warning: false);
             }
         }
 
@@ -232,15 +226,15 @@ public sealed partial class MainViewModel : ObservableObject
         try
         {
             using var process = tile.IsDesktop ? _launcher.LaunchDesktop(option.Host) : _launcher.Launch(option.Host, tile.App);
-            ProgressMessage = tile.IsDesktop ? "Abrindo a área de trabalho…" : $"Abrindo {tile.DisplayName}…";
-            ProgressDetail = "Conectando ao PC remoto.";
+            ProgressMessage = tile.IsDesktop ? Strings.T("client.progress.openingDesktop") : Strings.T("client.progress.openingApp", tile.DisplayName);
+            ProgressDetail = Strings.T("client.progress.connecting");
             await RemoteAppLauncher.WaitForRdpWindowAsync(process, TimeSpan.FromSeconds(15));
-            SetStatus($"{tile.DisplayName} aberto.", warning: false);
+            SetStatus(Strings.T("client.status.opened", tile.DisplayName), warning: false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
             _logger.LogError(ex, "Failed to launch {Alias}", tile.App.Alias);
-            _dialogs.Error($"Não foi possível abrir {tile.DisplayName}: {ex.Message}");
+            _dialogs.Error(Strings.T("client.errors.openFailed", tile.DisplayName, ex.Message));
         }
         finally
         {
@@ -290,7 +284,7 @@ public sealed partial class MainViewModel : ObservableObject
                 var decision = _dialogs.AskReleaseSession(host.DisplayName, status.Sessions);
                 if (decision is null)
                 {
-                    SetStatus("Abertura cancelada: o PC remoto continua em uso.", warning: false);
+                    SetStatus(Strings.T("client.status.openCancelled"), warning: false);
                     return false;
                 }
 
@@ -302,24 +296,24 @@ public sealed partial class MainViewModel : ObservableObject
             }
 
             IsBusy = true;
-            ProgressMessage = !status.Sessions.Any(s => s.Action == SessionActions.Logoff) ? "Liberando o PC remoto…"
-                : desktop ? "Fechando os apps remotos abertos…"
-                : "Desconectando sua sessão no PC remoto…";
+            ProgressMessage = !status.Sessions.Any(s => s.Action == SessionActions.Logoff) ? Strings.T("client.progress.releasing")
+                : desktop ? Strings.T("client.progress.closingApps")
+                : Strings.T("client.progress.loggingOff");
             ProgressDetail = desktop
-                ? "Isso pode levar alguns segundos. A área de trabalho abre em seguida."
-                : "Isso pode levar alguns segundos. O app abre em seguida.";
+                ? Strings.T("client.progress.desktopNext")
+                : Strings.T("client.progress.appNext");
             var result = await agent.ReleaseSessionAsync(host.RdpUserName, desktop);
             _logger.LogInformation("Released {Count} host sessions on {Address}", result.Released, host.Address);
             if (result.Busy)
             {
-                _dialogs.Error($"Não foi possível encerrar a sessão local de {host.DisplayName}. Faça logoff no PC remoto e tente de novo.");
+                _dialogs.Error(Strings.T("client.errors.releaseFailed", host.DisplayName));
                 return false;
             }
 
             // Give Windows a moment to finish tearing down the session before the RDP connection.
             await Task.Delay(TimeSpan.FromSeconds(2));
             var who = string.Join(", ", status.Sessions.Select(s => s.User).Distinct());
-            SetStatus($"PC remoto liberado ({who}) para abrir {(desktop ? "a área de trabalho" : "o app")}.", warning: false);
+            SetStatus(desktop ? Strings.T("client.status.releasedForDesktop", who) : Strings.T("client.status.releasedForApp", who), warning: false);
             return true;
         }
         catch (AgentException ex)
@@ -354,11 +348,11 @@ public sealed partial class MainViewModel : ObservableObject
         var status = _signer.GetStatus();
         if (status.Configured)
         {
-            _dialogs.Info($"Este computador já assina as conexões do WRApperture; os apps abrem sem alerta.\n\nCertificado: {RdpSigning.Describe(status)}");
+            _dialogs.Info(Strings.T("client.signing.alreadyConfigured", RdpSigning.Describe(status)));
             return;
         }
 
-        if (_dialogs.Confirm("Abrir apps sem alerta de segurança", SigningExplanation + "\n\nConfigurar agora?"))
+        if (_dialogs.Confirm(Strings.T("client.signing.title"), Strings.T("client.signing.prompt")))
         {
             await ConfigureSigningCoreAsync();
         }
@@ -371,14 +365,13 @@ public sealed partial class MainViewModel : ObservableObject
             case SigningSetupResult.Configured:
                 var resigned = _launcher.SignExistingFiles();
                 _logger.LogInformation("RDP signing configured; {Count} existing files re-signed", resigned);
-                SetStatus("Pronto: os apps passam a abrir sem o alerta de segurança.", warning: false);
+                SetStatus(Strings.T("client.status.signingConfigured"), warning: false);
                 break;
             case SigningSetupResult.Cancelled:
-                SetStatus("Configuração cancelada. Os apps continuam abrindo com o alerta do Windows.", warning: true);
+                SetStatus(Strings.T("client.status.signingCancelled"), warning: true);
                 break;
             default:
-                _dialogs.Error("Não foi possível configurar a assinatura das conexões. Veja o log em " +
-                               ClientPaths.LogDirectory + ". Os apps continuam abrindo com o alerta do Windows.");
+                _dialogs.Error(Strings.T("client.errors.signingFailed", ClientPaths.LogDirectory));
                 break;
         }
     }
@@ -428,8 +421,8 @@ public sealed partial class MainViewModel : ObservableObject
             Apps = option.Host.Apps.Select(a => string.Equals(a.Alias, renamed.Alias, StringComparison.OrdinalIgnoreCase) ? renamed : a).ToList(),
         });
         SetStatus(renamed.CustomName is null
-            ? $"Nome original restaurado: {renamed.Name}."
-            : $"{renamed.DisplayName} agora aparece como {renamed.Name} neste computador.", warning: false);
+            ? Strings.T("client.status.nameRestored", renamed.Name)
+            : Strings.T("client.status.renamed", renamed.DisplayName, renamed.Name), warning: false);
     }
 
     [RelayCommand]
@@ -444,9 +437,9 @@ public sealed partial class MainViewModel : ObservableObject
         {
             if (tile.IsDesktop)
             {
-                var desktopLnk = DesktopShortcuts.Create($"{option.Host.DisplayName} — Área de trabalho",
+                var desktopLnk = DesktopShortcuts.Create(Strings.T("client.desktop.shortcutName", option.Host.DisplayName),
                     _launcher.WriteDesktopRdpFile(option.Host), RemoteAppLauncher.MstscPath);
-                SetStatus($"Atalho criado: {Path.GetFileName(desktopLnk)}", warning: false);
+                SetStatus(Strings.T("client.status.shortcutCreated", Path.GetFileName(desktopLnk)), warning: false);
                 return;
             }
 
@@ -459,12 +452,12 @@ public sealed partial class MainViewModel : ObservableObject
             }
 
             var lnk = DesktopShortcuts.Create(tile.DisplayName, rdp, File.Exists(ico) ? ico : RemoteAppLauncher.MstscPath);
-            SetStatus($"Atalho criado: {Path.GetFileName(lnk)}", warning: false);
+            SetStatus(Strings.T("client.status.shortcutCreated", Path.GetFileName(lnk)), warning: false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or System.Runtime.InteropServices.COMException)
         {
             _logger.LogError(ex, "Failed to create shortcut for {Alias}", tile.App.Alias);
-            _dialogs.Error($"Não foi possível criar o atalho: {ex.Message}");
+            _dialogs.Error(Strings.T("client.errors.shortcutFailed", ex.Message));
         }
     }
 
@@ -482,7 +475,7 @@ public sealed partial class MainViewModel : ObservableObject
         {
             _credentials.Save(host.Address, input.UserName, input.Password);
             ReplaceHost(host with { RdpUserName = input.UserName });
-            SetStatus("Credenciais salvas no Windows. Os apps abrirão sem pedir senha.", warning: false);
+            SetStatus(Strings.T("client.status.credentialsSaved"), warning: false);
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
@@ -496,14 +489,14 @@ public sealed partial class MainViewModel : ObservableObject
         var host = SelectedHost!.Host;
         _credentials.Delete(host.Address);
         ReplaceHost(host with { RdpUserName = null });
-        SetStatus("Credenciais removidas. A próxima conexão pedirá usuário e senha.", warning: false);
+        SetStatus(Strings.T("client.status.credentialsDeleted"), warning: false);
     }
 
     [RelayCommand(CanExecute = nameof(HasHost))]
     private void RemoveHost()
     {
         var option = SelectedHost!;
-        if (!_dialogs.Confirm("Remover host", $"Remover {option.Label} deste computador? Atalhos já criados deixarão de funcionar."))
+        if (!_dialogs.Confirm(Strings.T("client.dialogs.removeHostTitle"), Strings.T("client.dialogs.removeHostMessage", option.Label)))
         {
             return;
         }

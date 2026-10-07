@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using WRApperture.Client.Core.Model;
 using WRApperture.Client.Core.Storage;
 using WRApperture.Shared;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Client.Core.Agent;
 
@@ -62,8 +63,7 @@ public sealed class AgentClient : IAgentApi
         }
         catch (Exception ex) when (ex is System.Security.Cryptography.CryptographicException or FormatException)
         {
-            throw new InvalidTokenException(
-                "O token salvo deste host não pode ser lido neste usuário/computador. Informe o token de pareamento novamente.", ex);
+            throw new InvalidTokenException(Strings.T("client.errors.tokenUnreadable"), ex);
         }
     }
 
@@ -94,7 +94,7 @@ public sealed class AgentClient : IAgentApi
     {
         using var response = await SendAsync(new HttpRequestMessage(HttpMethod.Get, ApiContract.Host), ct);
         return await response.Content.ReadFromJsonAsync<HostInfoDto>(ct)
-               ?? throw new AgentException("Resposta inválida do host.");
+               ?? throw new AgentException(Strings.T("client.errors.invalidResponse"));
     }
 
     public async Task<IReadOnlyList<AppSummaryDto>> GetAppsAsync(CancellationToken ct = default)
@@ -150,7 +150,7 @@ public sealed class AgentClient : IAgentApi
         };
         using var response = await SendAsync(request, ct, timeout: TimeSpan.FromSeconds(ApiContract.SessionReleaseTimeoutSeconds));
         return await response.Content.ReadFromJsonAsync<SessionReleaseResultDto>(ct)
-               ?? throw new AgentException("Resposta inválida do host.");
+               ?? throw new AgentException(Strings.T("client.errors.invalidResponse"));
     }
 
     public void Dispose() => _http.Dispose();
@@ -215,7 +215,7 @@ public sealed class AgentClient : IAgentApi
         {
         }
 
-        return $"O host respondeu com erro {(int)response.StatusCode}.";
+        return Strings.T("client.errors.httpError", (int)response.StatusCode);
     }
 
     private static HttpClient CreateHttp(string address, int port, string token, CertificatePinValidator validator)

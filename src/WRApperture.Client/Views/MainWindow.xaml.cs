@@ -13,7 +13,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Theme choices go right before the last group ("Remover host").
+        // Theme choices go right before the last group ("Remove host").
         var menu = MoreButton.ContextMenu!;
         var lastSeparator = menu.Items.IndexOf(menu.Items.OfType<Separator>().Last());
         ThemeMenu.AddTo(menu, lastSeparator);

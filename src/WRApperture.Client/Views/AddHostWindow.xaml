@@ -1,43 +1,44 @@
 <Window x:Class="WRApperture.Client.Views.AddHostWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Adicionar host" Width="460" SizeToContent="Height" ResizeMode="NoResize"
+        xmlns:loc="clr-namespace:WRApperture.Ui;assembly=WRApperture.Ui"
+        Title="{loc:T client.addHost.title}" Width="460" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         Style="{StaticResource BaseWindow}">
     <StackPanel Margin="20">
         <!-- Step 1: connection data -->
         <StackPanel x:Name="Step1">
-            <TextBlock Text="Conectar a um PC remoto" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
+            <TextBlock Text="{loc:T client.addHost.heading}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
 
-            <TextBlock Text="Endereço do PC (nome ou IP)" Margin="0,0,0,4" />
-            <TextBox x:Name="AddressBox" AutomationProperties.Name="Endereço do PC" />
+            <TextBlock Text="{loc:T client.addHost.addressLabel}" Margin="0,0,0,4" />
+            <TextBox x:Name="AddressBox" AutomationProperties.Name="{loc:T client.addHost.address}" />
 
-            <TextBlock Text="Porta do agente" Margin="0,10,0,4" />
-            <TextBox x:Name="PortBox" Width="100" HorizontalAlignment="Left" AutomationProperties.Name="Porta do agente" />
+            <TextBlock Text="{loc:T client.addHost.port}" Margin="0,10,0,4" />
+            <TextBox x:Name="PortBox" Width="100" HorizontalAlignment="Left" AutomationProperties.Name="{loc:T client.addHost.port}" />
 
-            <TextBlock Text="Token de pareamento" Margin="0,10,0,4" />
-            <PasswordBox x:Name="TokenBox" AutomationProperties.Name="Token de pareamento" />
+            <TextBlock Text="{loc:T client.addHost.token}" Margin="0,10,0,4" />
+            <PasswordBox x:Name="TokenBox" AutomationProperties.Name="{loc:T client.addHost.token}" />
             <TextBlock Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0" FontSize="12"
-                       Text="Gerado no PC remoto com 'wrahost agent token' (como administrador)." />
+                       Text="{loc:T client.addHost.tokenHint}" />
         </StackPanel>
 
         <!-- Step 2: confirm identity -->
         <StackPanel x:Name="Step2" Visibility="Collapsed">
-            <TextBlock Text="Confirme a identidade do host" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
+            <TextBlock Text="{loc:T client.addHost.confirmHeading}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
             <TextBlock x:Name="HostNameText" FontWeight="SemiBold" />
-            <TextBlock Text="Fingerprint do certificado:" Margin="0,10,0,4" />
+            <TextBlock Text="{loc:T client.addHost.fingerprintLabel}" Margin="0,10,0,4" />
             <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" Padding="8" CornerRadius="4">
                 <TextBlock x:Name="FingerprintText" FontFamily="Consolas" TextWrapping="Wrap" />
             </Border>
             <TextBlock Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0" FontSize="12"
-                       Text="Confira se é igual ao exibido por 'wrahost agent show' no PC remoto. Se não for, cancele." />
+                       Text="{loc:T client.addHost.fingerprintHint}" />
         </StackPanel>
 
         <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Error}" TextWrapping="Wrap" Margin="0,12,0,0" Visibility="Collapsed" />
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
-            <Button Content="Cancelar" Style="{StaticResource Secondary}" IsCancel="True" />
-            <Button x:Name="PrimaryButton" Content="Conectar" Style="{StaticResource Primary}" Margin="8,0,0,0" IsDefault="True" Click="OnPrimaryClick" />
+            <Button Content="{loc:T client.buttons.cancel}" Style="{StaticResource Secondary}" IsCancel="True" />
+            <Button x:Name="PrimaryButton" Content="{loc:T client.addHost.connect}" Style="{StaticResource Primary}" Margin="8,0,0,0" IsDefault="True" Click="OnPrimaryClick" />
         </StackPanel>
     </StackPanel>
 </Window>

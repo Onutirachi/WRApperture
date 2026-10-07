@@ -13,6 +13,7 @@ using WRApperture.Client.Core.Storage;
 using WRApperture.Client.Services;
 using WRApperture.Client.ViewModels;
 using WRApperture.Client.Views;
+using WRApperture.Shared.Localization;
 using Serilog;
 
 namespace WRApperture.Client;
@@ -98,7 +99,7 @@ public partial class App : Application
                                        or ArgumentException or System.Security.SecurityException or IOException)
         {
             Log.Error(ex, "Elevated signing command {Command} failed", args[0]);
-            MessageBox.Show($"Não foi possível concluir a configuração: {ex.Message}", "WRApperture", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(Strings.T("client.signing.setupFailed", ex.Message), "WRApperture", MessageBoxButton.OK, MessageBoxImage.Error);
             return 1;
         }
     }
