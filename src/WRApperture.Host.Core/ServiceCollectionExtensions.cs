@@ -19,6 +19,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPrivilegeChecker, WindowsPrivilegeChecker>();
         services.AddSingleton<IFileSystemProbe, FileSystemProbe>();
         services.AddSingleton<IFirewallRules, ComFirewallRules>();
+        services.AddSingleton<IUserRegistryAccess, WindowsUserRegistryAccess>();
+        services.AddSingleton<ILanguageBarSettings, LanguageBarSettings>();
         services.AddSingleton<IStartMenuShortcuts, StartMenuShortcuts>();
         services.AddSingleton<IShortcutResolver, ShortcutResolver>();
 

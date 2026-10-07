@@ -31,6 +31,7 @@ try
     }
 
     root.Subcommands.Add(AgentCommands.Create(services));
+    root.Subcommands.Add(LanguageBarCommands.Create(services));
 
     return root.Parse(args).Invoke();
 }

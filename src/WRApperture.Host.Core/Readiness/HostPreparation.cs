@@ -11,8 +11,11 @@ internal sealed class HostPreparation(
     IRegistryAccess registry,
     IFirewallRules firewall,
     IPrivilegeChecker privileges,
+    IUserRegistryAccess users,
     ILogger<HostPreparation> logger) : IHostPreparation
 {
+    private const string LanguageBarSnapshotPrefix = nameof(ReadinessCheckId.LanguageBarHidden) + ":";
+
     private static readonly string[] SupportedEditionPrefixes = ["Professional", "Enterprise", "Education", "Server", "IoTEnterprise"];
 
     /// <summary>A DWORD setting the preparation can enforce.</summary>
@@ -35,6 +38,7 @@ internal sealed class HostPreparation(
         var checks = new List<ReadinessCheck> { CheckEdition(out _) };
         checks.AddRange(Settings.Select(CheckSetting));
         checks.Add(CheckFirewall());
+        checks.Add(CheckLanguageBar());
         return checks;
     }
 
@@ -66,6 +70,19 @@ internal sealed class HostPreparation(
                 firewall.SetEnabled(rule, true);
                 logger.LogInformation("Prepare {Check}: enabled firewall rule {Rule}", ReadinessCheckId.FirewallRdp, rule);
             }
+        }
+
+        foreach (var sid in users.LoadedUserSids())
+        {
+            var current = ReadLanguageBar(sid);
+            if (current is { Existed: true, Value: LanguageBarSettings.Hidden })
+            {
+                continue;
+            }
+
+            _snapshot.RecordDword(LanguageBarSnapshotPrefix + sid, current);
+            users.SetValue(sid, LanguageBarSettings.Path, LanguageBarSettings.Name, LanguageBarSettings.Hidden, RegistryValueKind.DWord);
+            logger.LogInformation("Prepare {Check}: language bar hidden for {Sid}", ReadinessCheckId.LanguageBarHidden, sid);
         }
 
         return Check();
@@ -109,6 +126,29 @@ internal sealed class HostPreparation(
             logger.LogInformation("Revert {Check}: disabled firewall rule {Rule}", ReadinessCheckId.FirewallRdp, rule);
         }
 
+        var loaded = users.LoadedUserSids().ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in _snapshot.NamesWithPrefix(LanguageBarSnapshotPrefix))
+        {
+            var sid = name[LanguageBarSnapshotPrefix.Length..];
+            var previous = _snapshot.ReadDword(name);
+            if (previous is null || !loaded.Contains(sid))
+            {
+                logger.LogWarning("Revert {Check}: profile {Sid} not loaded; language bar left as is", ReadinessCheckId.LanguageBarHidden, sid);
+                continue;
+            }
+
+            if (previous.Existed)
+            {
+                users.SetValue(sid, LanguageBarSettings.Path, LanguageBarSettings.Name, previous.Value, RegistryValueKind.DWord);
+            }
+            else
+            {
+                users.DeleteValue(sid, LanguageBarSettings.Path, LanguageBarSettings.Name);
+            }
+
+            logger.LogInformation("Revert {Check}: language bar restored for {Sid}", ReadinessCheckId.LanguageBarHidden, sid);
+        }
+
         _snapshot.Clear();
         return Check();
     }
@@ -139,6 +179,20 @@ internal sealed class HostPreparation(
         return new ReadinessCheck(ReadinessCheckId.FirewallRdp, "Firewall libera a Área de Trabalho Remota (porta 3389)",
             ok ? ReadinessState.Ok : ReadinessState.Pending, current, "todas ativas");
     }
+
+    private ReadinessCheck CheckLanguageBar()
+    {
+        var sids = users.LoadedUserSids();
+        var hidden = sids.Count(s => ReadLanguageBar(s) is { Existed: true, Value: LanguageBarSettings.Hidden });
+        var current = sids.Count == 0 ? "nenhum perfil carregado" : $"{hidden}/{sids.Count} perfis";
+        return new ReadinessCheck(ReadinessCheckId.LanguageBarHidden, "Barra de idioma oculta nas sessões remotas",
+            hidden == sids.Count ? ReadinessState.Ok : ReadinessState.Pending, current, "todos os perfis");
+    }
+
+    private DwordSnapshot ReadLanguageBar(string sid) =>
+        users.GetValue(sid, LanguageBarSettings.Path, LanguageBarSettings.Name) is int value
+            ? new DwordSnapshot(true, value)
+            : new DwordSnapshot(false, 0);
 
     private DwordSnapshot ReadDword(DwordSetting setting) =>
         registry.GetValue(setting.Path, setting.Name) is int value ? new DwordSnapshot(true, value) : new DwordSnapshot(false, 0);

@@ -15,6 +15,24 @@ internal sealed class FakeFirewallRules : IFirewallRules
     public void SetEnabled(string name, bool enabled) => Rules[name] = enabled;
 }
 
+internal sealed class FakeUserRegistryAccess : IUserRegistryAccess
+{
+    private readonly Dictionary<string, object> _values = new(StringComparer.OrdinalIgnoreCase);
+
+    public List<string> Loaded { get; } = [];
+
+    public IReadOnlyList<string> LoadedUserSids() => Loaded;
+
+    public object? GetValue(string sid, string path, string name) => _values.GetValueOrDefault(Key(sid, path, name));
+
+    public void SetValue(string sid, string path, string name, object value, Microsoft.Win32.RegistryValueKind kind) =>
+        _values[Key(sid, path, name)] = value;
+
+    public void DeleteValue(string sid, string path, string name) => _values.Remove(Key(sid, path, name));
+
+    private static string Key(string sid, string path, string name) => $@"{sid}\{path}\{name}";
+}
+
 internal sealed class FakePrivilegeChecker(bool isAdmin = true) : IPrivilegeChecker
 {
     public bool IsAdmin { get; set; } = isAdmin;

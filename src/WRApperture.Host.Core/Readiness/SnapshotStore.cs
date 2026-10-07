@@ -19,20 +19,28 @@ internal sealed class SnapshotStore(IRegistryAccess registry)
 
     public bool Exists => registry.KeyExists(Path);
 
-    public void RecordDword(ReadinessCheckId id, DwordSnapshot snapshot)
+    public void RecordDword(ReadinessCheckId id, DwordSnapshot snapshot) => RecordDword(id.ToString(), snapshot);
+
+    public DwordSnapshot? ReadDword(ReadinessCheckId id) => ReadDword(id.ToString());
+
+    /// <summary>Snapshot entries are named "&lt;check&gt;" or "&lt;check&gt;:&lt;qualifier&gt;" (e.g. per-user SID).</summary>
+    public void RecordDword(string name, DwordSnapshot snapshot)
     {
-        if (registry.GetValue(Path, id.ToString()) is not null)
+        if (registry.GetValue(Path, name) is not null)
         {
             return;
         }
 
         var text = snapshot.Existed ? $"1;DWord;{snapshot.Value.ToString(CultureInfo.InvariantCulture)}" : "0;;";
-        registry.SetValue(Path, id.ToString(), text, RegistryValueKind.String);
+        registry.SetValue(Path, name, text, RegistryValueKind.String);
     }
 
-    public DwordSnapshot? ReadDword(ReadinessCheckId id)
+    public IReadOnlyList<string> NamesWithPrefix(string prefix) =>
+        registry.GetValueNames(Path).Where(n => n.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    public DwordSnapshot? ReadDword(string name)
     {
-        if (registry.GetValue(Path, id.ToString()) is not string text)
+        if (registry.GetValue(Path, name) is not string text)
         {
             return null;
         }

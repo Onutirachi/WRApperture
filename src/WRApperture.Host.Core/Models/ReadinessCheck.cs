@@ -7,6 +7,7 @@ public enum ReadinessCheckId
     Nla,
     AllowListEnforced,
     FirewallRdp,
+    LanguageBarHidden,
 }
 
 public enum ReadinessState
