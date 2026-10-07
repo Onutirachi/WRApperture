@@ -33,6 +33,8 @@ function New-Layout {
         Start    = Join-Path $base 'StartMenu'
         UserData = Join-Path $base 'UserData'
         Desktop  = Join-Path $base 'Desktop'
+        # A throwaway key: the real Run key is never touched.
+        RunKey   = 'HKCU:\Software\WRApperture.Tests.' + [guid]::NewGuid().ToString('N')
     }
 }
 
@@ -53,12 +55,12 @@ function Get-Uninstaller {
 }
 
 function Uninstall($l, [string[]]$Extra = @()) {
-    Invoke-Script (Get-Uninstaller) (@('-InstallDir', $l.Install, '-StartMenuDir', $l.Start, '-UserDataDir', $l.UserData, '-DesktopDir', $l.Desktop, '-KeepSigning') + $Extra)
+    Invoke-Script (Get-Uninstaller) (@('-InstallDir', $l.Install, '-StartMenuDir', $l.Start, '-UserDataDir', $l.UserData, '-DesktopDir', $l.Desktop, '-RunKey', $l.RunKey, '-KeepSigning') + $Extra)
 }
 
 function Invoke-Interactive([string]$Uninstaller, $l, [string]$Answer) {
     "$Answer`n`n" | & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Uninstaller -InstallDir $l.Install `
-        -StartMenuDir $l.Start -UserDataDir $l.UserData -DesktopDir $l.Desktop -KeepSigning -Interactive *>&1 | Out-String
+        -StartMenuDir $l.Start -UserDataDir $l.UserData -DesktopDir $l.Desktop -RunKey $l.RunKey -KeepSigning -Interactive *>&1 | Out-String
 }
 
 function New-UserData($l) {
@@ -225,6 +227,26 @@ Describe 'Uninstall-WRAppertureClient' {
         $r.ExitCode | Should Be 0
         $appsMenu | Should Not Exist
         $r.Output | Should Match 'Start menu shortcut'
+    }
+
+    It 'removes "start with Windows" only when it points at this installation' {
+        $pkg = New-Package; $l = New-Layout
+        Install $pkg $l | Out-Null
+        New-Item -Path $l.RunKey -Force | Out-Null
+        try {
+            Set-ItemProperty -Path $l.RunKey -Name 'WRApperture' -Value ('"' + (Join-Path $l.Install 'WRApperture.exe') + '" --tray')
+            $r = Uninstall $l
+            $r.ExitCode | Should Be 0
+            (Get-ItemProperty -Path $l.RunKey -Name 'WRApperture' -ErrorAction SilentlyContinue) | Should BeNullOrEmpty
+
+            Install $pkg $l | Out-Null
+            Set-ItemProperty -Path $l.RunKey -Name 'WRApperture' -Value '"C:\Elsewhere\WRApperture.exe" --tray'
+            (Uninstall $l).ExitCode | Should Be 0
+            (Get-ItemProperty -Path $l.RunKey -Name 'WRApperture').WRApperture | Should Be '"C:\Elsewhere\WRApperture.exe" --tray'
+        }
+        finally {
+            Remove-Item -Path $l.RunKey -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
     It 'keeps the WRApperture Start menu folder when it holds something else' {

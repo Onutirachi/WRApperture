@@ -33,34 +33,58 @@ internal sealed class DialogService : IDialogService
 
     public AddHostResult? AddHost(string? address = null, int? agentPort = null)
     {
-        var window = new AddHostWindow(address, agentPort ?? ApiContract.DefaultPort) { Owner = Application.Current.MainWindow };
+        var window = Owned(new AddHostWindow(address, agentPort ?? ApiContract.DefaultPort));
         return window.ShowDialog() == true ? window.Result : null;
     }
 
     public CredentialsInput? AskCredentials(string hostName, string? userName)
     {
-        var window = new CredentialsWindow(hostName, userName) { Owner = Application.Current.MainWindow };
+        var window = Owned(new CredentialsWindow(hostName, userName));
         return window.ShowDialog() == true ? window.Result : null;
     }
 
     public ReleaseDecision? AskReleaseSession(string hostName, IReadOnlyList<BusySessionDto> sessions)
     {
-        var window = new ReleaseSessionWindow(hostName, sessions) { Owner = Application.Current.MainWindow };
+        var window = Owned(new ReleaseSessionWindow(hostName, sessions));
         return window.ShowDialog() == true ? new ReleaseDecision(window.Always) : null;
     }
 
     public string? AskAppName(string currentName, string hostName)
     {
-        var window = new RenameAppWindow(currentName, hostName) { Owner = Application.Current.MainWindow };
+        var window = Owned(new RenameAppWindow(currentName, hostName));
         return window.ShowDialog() == true ? window.Result : null;
     }
 
     public bool Confirm(string title, string message) =>
-        MessageBox.Show(Application.Current.MainWindow, message, title, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes;
+        Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes;
 
     public void Error(string message) =>
-        MessageBox.Show(Application.Current.MainWindow, message, Title, MessageBoxButton.OK, MessageBoxImage.Error);
+        Show(message, Title, MessageBoxButton.OK, MessageBoxImage.Error);
 
     public void Info(string message) =>
-        MessageBox.Show(Application.Current.MainWindow, message, Title, MessageBoxButton.OK, MessageBoxImage.Information);
+        Show(message, Title, MessageBoxButton.OK, MessageBoxImage.Information);
+
+    /// <summary>
+    /// Opened from the tray, the main window may be hidden (or never shown): then the dialog stands on its
+    /// own, centered and in the taskbar, instead of being owned by an invisible window.
+    /// </summary>
+    private static T Owned<T>(T window) where T : Window
+    {
+        if (Application.Current.MainWindow is { IsVisible: true } owner)
+        {
+            window.Owner = owner;
+        }
+        else
+        {
+            window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            window.ShowInTaskbar = true;
+        }
+
+        return window;
+    }
+
+    private static MessageBoxResult Show(string message, string title, MessageBoxButton buttons, MessageBoxImage image) =>
+        Application.Current.MainWindow is { IsVisible: true } owner
+            ? MessageBox.Show(owner, message, title, buttons, image)
+            : MessageBox.Show(message, title, buttons, image);
 }

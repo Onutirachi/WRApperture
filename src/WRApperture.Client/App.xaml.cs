@@ -9,6 +9,7 @@ using WRApperture.Client.Core.Credentials;
 using WRApperture.Client.Core.Launch;
 using WRApperture.Client.Core.Model;
 using WRApperture.Client.Core.Signing;
+using WRApperture.Client.Core.Startup;
 using WRApperture.Client.Core.Storage;
 using WRApperture.Client.Services;
 using WRApperture.Client.ViewModels;
@@ -21,6 +22,8 @@ namespace WRApperture.Client;
 public partial class App : Application
 {
     private ServiceProvider? _services;
+    private SingleInstance? _instance;
+    private TrayIcon? _tray;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -41,6 +44,14 @@ public partial class App : Application
             return;
         }
 
+        _instance = SingleInstance.TryAcquire();
+        if (_instance is null)
+        {
+            SingleInstance.SignalRunningInstance();
+            Shutdown();
+            return;
+        }
+
         _services = new ServiceCollection()
             .AddLogging(b => b.AddSerilog(dispose: false))
             .AddSingleton(ClientPaths.Default)
@@ -57,18 +68,82 @@ public partial class App : Application
             .AddSingleton<Func<PairedHost, IAgentApi>>(_ => AgentClient.ForHost)
             .AddSingleton<HostSync>()
             .AddSingleton<IDialogService, DialogService>()
+            .AddSingleton(new StartupRegistration())
             .AddSingleton<MainViewModel>()
             .BuildServiceProvider();
 
-        Log.Information("Client started");
+        var startHidden = e.Args.Contains(StartupRegistration.TrayArgument);
+        Log.Information("Client started (tray: {Tray})", startHidden);
         WRApperture.Ui.ThemeManager.Initialize(this);
-        var window = new MainWindow { DataContext = _services.GetRequiredService<MainViewModel>() };
+        RefreshStartupEntry();
+
+        // The window hides to the tray instead of closing, so the app ends only through Exit.
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        var vm = _services.GetRequiredService<MainViewModel>();
+        var window = new MainWindow { DataContext = vm };
         MainWindow = window;
+        window.Closed += (_, _) => Shutdown();
+        _tray = new TrayIcon(vm, ShowMainWindow, ExitApp);
+        window.HiddenToTray += () =>
+        {
+            if (vm.ConsumeTrayHint())
+            {
+                _tray.ShowNotice("WRApperture", Strings.T("client.tray.hint"));
+            }
+        };
+        _instance.ShowRequested += () => Dispatcher.BeginInvoke(ShowMainWindow);
+
+        if (!startHidden)
+        {
+            window.Show();
+        }
+    }
+
+    private void ShowMainWindow()
+    {
+        if (MainWindow is not { } window)
+        {
+            return;
+        }
+
         window.Show();
+        if (window.WindowState == WindowState.Minimized)
+        {
+            window.WindowState = WindowState.Normal;
+        }
+
+        window.Activate();
+    }
+
+    private void ExitApp()
+    {
+        if (MainWindow is Views.MainWindow window)
+        {
+            window.CloseForExit();
+        }
+        else
+        {
+            Shutdown();
+        }
+    }
+
+    /// <summary>Keeps "start with Windows" pointing at this exe if it was enabled from another install path.</summary>
+    private void RefreshStartupEntry()
+    {
+        try
+        {
+            _services!.GetRequiredService<StartupRegistration>().Refresh(Environment.ProcessPath!);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException)
+        {
+            Log.Warning(ex, "Could not refresh the Windows startup entry");
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _tray?.Dispose();
+        _instance?.Dispose();
         _services?.Dispose();
         Log.CloseAndFlush();
         base.OnExit(e);

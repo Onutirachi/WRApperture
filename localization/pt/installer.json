@@ -26,6 +26,7 @@
   "client.uninstall.removeDesktopShortcut": "Remover atalho da área de trabalho '{0}'",
   "client.uninstall.removeStartMenuShortcut": "Remover atalho do Menu Iniciar '{0}'",
   "client.uninstall.removeStartMenuFolder": "Remover a pasta vazia do Menu Iniciar {0}",
+  "client.uninstall.removeStartup": "Deixar de iniciar o WRApperture com o Windows",
   "client.uninstall.deleteUserData": "Apagar dados do usuário em {0}",
   "client.uninstall.done": "Cliente WRApperture removido.",
   "client.uninstall.dataKept": "PCs pareados e ícones foram mantidos em {0} (uma reinstalação os reaproveita).",

@@ -26,6 +26,7 @@
   "client.uninstall.removeDesktopShortcut": "Remove the desktop shortcut '{0}'",
   "client.uninstall.removeStartMenuShortcut": "Remove the Start menu shortcut '{0}'",
   "client.uninstall.removeStartMenuFolder": "Remove the empty Start menu folder {0}",
+  "client.uninstall.removeStartup": "Stop starting WRApperture with Windows",
   "client.uninstall.deleteUserData": "Delete user data in {0}",
   "client.uninstall.done": "WRApperture client removed.",
   "client.uninstall.dataKept": "Paired PCs and icons were kept in {0} (a reinstall reuses them).",

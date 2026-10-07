@@ -13,6 +13,7 @@ using WRApperture.Client.Core.Launch;
 using WRApperture.Client.Core.Model;
 using WRApperture.Client.Core.Shortcuts;
 using WRApperture.Client.Core.Signing;
+using WRApperture.Client.Core.Startup;
 using WRApperture.Client.Core.Storage;
 using WRApperture.Client.Services;
 using WRApperture.Shared;
@@ -42,12 +43,13 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly IDialogService _dialogs;
     private readonly IRdpSigner _signer;
     private readonly ISigningSetup _signingSetup;
+    private readonly StartupRegistration _startup;
     private readonly Func<PairedHost, IAgentApi> _agents;
     private readonly ILogger<MainViewModel> _logger;
     private ClientState _state;
 
     public MainViewModel(HostStore store, IconStore icons, RemoteAppLauncher launcher, HostSync sync,
-        ICredentialStore credentials, IDialogService dialogs, IRdpSigner signer, ISigningSetup signingSetup,
+        ICredentialStore credentials, IDialogService dialogs, IRdpSigner signer, ISigningSetup signingSetup, StartupRegistration startup,
         Func<PairedHost, IAgentApi> agents,
         ILogger<MainViewModel> logger)
     {
@@ -59,6 +61,7 @@ public sealed partial class MainViewModel : ObservableObject
         _dialogs = dialogs;
         _signer = signer;
         _signingSetup = signingSetup;
+        _startup = startup;
         _agents = agents;
         _logger = logger;
         _state = store.Load();
@@ -326,6 +329,54 @@ public sealed partial class MainViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>Menu toggle: closing the window keeps the client in the tray (default on).</summary>
+    public bool CloseToTray
+    {
+        get => _state.CloseToTray;
+        set
+        {
+            if (_state.CloseToTray != value)
+            {
+                _state = _state with { CloseToTray = value };
+                _store.Save(_state);
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    /// <summary>Menu toggle: start hidden in the tray when signing in to Windows (HKCU Run entry).</summary>
+    public bool StartWithWindows
+    {
+        get => _startup.IsEnabled;
+        set
+        {
+            try
+            {
+                _startup.Set(value, Environment.ProcessPath!);
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException)
+            {
+                _logger.LogError(ex, "Could not change the Windows startup entry");
+                _dialogs.Error(Strings.T("client.errors.startupFailed", ex.Message));
+            }
+
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>True only the first time the window is hidden to the tray, so the notice shows once.</summary>
+    public bool ConsumeTrayHint()
+    {
+        if (_state.TrayHintShown)
+        {
+            return false;
+        }
+
+        _state = _state with { TrayHintShown = true };
+        _store.Save(_state);
+        return true;
     }
 
     /// <summary>Menu toggle: ask before logging off the host's session (default: don't ask).</summary>

@@ -3,9 +3,17 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
+    <!-- Only for the notification-area icon (NotifyIcon); the UI itself is WPF. -->
+    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>WRApperture</AssemblyName>
     <RootNamespace>WRApperture.Client</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Keep WPF names (Application, MessageBox, Button…) unambiguous. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\WRApperture.Client.Core\WRApperture.Client.Core.csproj" />

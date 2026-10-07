@@ -25,6 +25,9 @@ public sealed class AppTileViewModel(CachedApp app, string iconPath, bool isDesk
     public string Initial => DisplayName.Length > 0 ? DisplayName[..1].ToUpperInvariant() : "?";
     public ImageSource? Icon { get; } = LoadIcon(iconPath);
 
+    /// <summary>The cached PNG (tray menu); empty for the desktop tile.</summary>
+    public string IconPath { get; } = iconPath;
+
     private static ImageSource? LoadIcon(string path)
     {
         if (!File.Exists(path))

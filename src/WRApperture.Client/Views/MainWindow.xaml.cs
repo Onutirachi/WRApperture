@@ -22,6 +22,31 @@ public partial class MainWindow : Window
 
     private MainViewModel Vm => (MainViewModel)DataContext;
 
+    private bool _exiting;
+
+    /// <summary>The window was hidden to the tray instead of closing.</summary>
+    public event Action? HiddenToTray;
+
+    /// <summary>Really closes (tray "Exit"), bypassing close-to-tray.</summary>
+    public void CloseForExit()
+    {
+        _exiting = true;
+        Close();
+    }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        if (!_exiting && Vm.CloseToTray)
+        {
+            e.Cancel = true;
+            Hide();
+            HiddenToTray?.Invoke();
+            return;
+        }
+
+        base.OnClosing(e);
+    }
+
     private void OnMoreClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { ContextMenu: { } menu } button)

@@ -42,6 +42,12 @@
                                           IsChecked="{Binding AskBeforeReleasingSession, Mode=TwoWay}"
                                           ToolTip="{loc:T client.main.askBeforeReleaseTip}" />
                                 <Separator />
+                                <MenuItem Header="{loc:T client.main.closeToTray}" IsCheckable="True"
+                                          IsChecked="{Binding CloseToTray, Mode=TwoWay}"
+                                          ToolTip="{loc:T client.main.closeToTrayTip}" />
+                                <MenuItem Header="{loc:T client.main.startWithWindows}" IsCheckable="True"
+                                          IsChecked="{Binding StartWithWindows, Mode=TwoWay}" />
+                                <Separator />
                                 <MenuItem Header="{loc:T client.main.removeHost}" Command="{Binding RemoveHostCommand}" />
                             </ContextMenu>
                         </Button.ContextMenu>

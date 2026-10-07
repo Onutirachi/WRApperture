@@ -21,6 +21,7 @@ param(
     [string]$StartMenuDir = [Environment]::GetFolderPath('Programs'),
     [string]$UserDataDir = (Join-Path $env:LOCALAPPDATA 'WRApperture'),
     [string]$DesktopDir = [Environment]::GetFolderPath('DesktopDirectory'),
+    [string]$RunKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run',
     [switch]$RemoveUserData,
     [switch]$KeepSigning,
     [switch]$Interactive,
@@ -79,6 +80,12 @@ try {
             $startMenuLink = $link.FullName
             Invoke-Step (T 'installer.client.uninstall.removeShortcut' $link.Name) { Remove-Item -Force $startMenuLink }
         }
+    }
+
+    # "Start with Windows" (set from the client's menu), only when it points at this installation.
+    $runCommand = (Get-ItemProperty -Path $RunKey -Name 'WRApperture' -ErrorAction SilentlyContinue).WRApperture
+    if ($runCommand -and $runCommand.IndexOf($InstallDir.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+        Invoke-Step (T 'installer.client.uninstall.removeStartup') { Remove-ItemProperty -Path $RunKey -Name 'WRApperture' }
     }
 
     # Must run before the program folder is deleted: the client itself removes the signing setup.

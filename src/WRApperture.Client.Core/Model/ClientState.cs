@@ -57,6 +57,12 @@ public sealed record ClientState
 
     /// <summary>User declined the "open without security warning" setup; don't ask on every click.</summary>
     public bool SigningPromptDismissed { get; init; }
+
+    /// <summary>Closing the window keeps the client in the notification area (tray). On by default.</summary>
+    public bool CloseToTray { get; init; } = true;
+
+    /// <summary>The "still running in the tray" notice was shown once.</summary>
+    public bool TrayHintShown { get; init; }
     public IReadOnlyList<PairedHost> Hosts { get; init; } = [];
 
     public static ClientState Empty { get; } = new();
