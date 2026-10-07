@@ -77,6 +77,32 @@ public class HostStoreTests : IDisposable
     }
 
     [Fact]
+    public void Local_app_names_round_trip()
+    {
+        var host = Samples.Host() with { Apps = [new CachedApp("calc", "Calculadora", CustomName: "Contas")] };
+        _store.Save(ClientState.Empty with { Hosts = [host] });
+
+        var app = Assert.Single(Assert.Single(_store.Load().Hosts).Apps);
+
+        Assert.Equal("Contas", app.Name);
+        Assert.Equal("Calculadora", app.DisplayName);
+    }
+
+    [Theory]
+    [InlineData("  Sistema \r\n Contábil ", "Sistema Contábil")]
+    [InlineData("", null)]
+    [InlineData("   ", null)]
+    [InlineData(null, null)]
+    [InlineData(" Calculadora ", null)]
+    public void Custom_name_is_cleaned(string? input, string? expected)
+    {
+        var app = new CachedApp("calc", "Calculadora", CustomName: "Antigo").WithCustomName(input);
+
+        Assert.Equal(expected, app.CustomName);
+        Assert.Equal(expected ?? "Calculadora", app.Name);
+    }
+
+    [Fact]
     public void Protected_token_is_bound_to_entropy()
     {
         var protectedToken = HostStore.ProtectToken("abc");

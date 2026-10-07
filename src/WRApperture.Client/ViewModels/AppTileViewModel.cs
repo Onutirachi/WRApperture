@@ -8,7 +8,11 @@ namespace WRApperture.Client.ViewModels;
 public sealed class AppTileViewModel(CachedApp app, string iconPath)
 {
     public CachedApp App { get; } = app;
-    public string DisplayName => App.DisplayName;
+
+    /// <summary>Shown name: the local one, or the host's.</summary>
+    public string DisplayName => App.Name;
+    public bool IsRenamed => App.CustomName is not null;
+    public string ToolTip => IsRenamed ? $"{DisplayName}\nNo PC remoto: {App.DisplayName}" : DisplayName;
     public string Initial => DisplayName.Length > 0 ? DisplayName[..1].ToUpperInvariant() : "?";
     public ImageSource? Icon { get; } = LoadIcon(iconPath);
 

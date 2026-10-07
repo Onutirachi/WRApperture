@@ -1,6 +1,19 @@
 namespace WRApperture.Client.Core.Model;
 
-public sealed record CachedApp(string Alias, string DisplayName, string? IconETag = null);
+/// <param name="DisplayName">Name published on the host.</param>
+/// <param name="CustomName">Name chosen on this computer only (never sent to the host).</param>
+public sealed record CachedApp(string Alias, string DisplayName, string? IconETag = null, string? CustomName = null)
+{
+    /// <summary>What the user sees: the local name, or the host's.</summary>
+    public string Name => CustomName ?? DisplayName;
+
+    /// <summary>Blank or equal to the host's name means "no local name".</summary>
+    public CachedApp WithCustomName(string? name)
+    {
+        var clean = string.Join(' ', (name ?? string.Empty).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return this with { CustomName = clean.Length == 0 || clean == DisplayName ? null : clean };
+    }
+}
 
 public sealed record PairedHost
 {

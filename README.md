@@ -14,7 +14,7 @@ Abra apps individuais de um PC Windows (host) a partir de outro computador (clie
 | `WRApperture.Shared` | ✅ | Contrato da API (rotas, DTOs, fingerprint de certificado), compartilhado entre o Agent e o Client |
 | `WRApperture.Host.Manager` | ✅ | Interface gráfica do host (`WRApperture.Host.exe`): arrastar atalhos/programas para publicar, editar, remover, preparar o PC, gerar token |
 | `WRApperture.Ui` | ✅ | Tema visual compartilhado entre o cliente e o Manager |
-| `WRApperture.Client` | ✅ | App WPF: pareia com o host, mostra os apps em grade e abre cada um em sua janela com um clique |
+| `WRApperture.Client` | ✅ | App WPF: pareia com o host, mostra os apps em grade e abre cada um em sua janela com duplo clique |
 | `WRApperture.Client.Core` | ✅ | Lógica do cliente: pareamento com pinning, cache offline, geração de `.rdp`, credenciais e atalhos |
 
 ## Instalação (pacotes de release)
@@ -77,11 +77,11 @@ dotnet run --project src/WRApperture.Client
 
 1. Clique em **Adicionar host** e informe o IP ou nome do PC remoto, a porta `5080` e o token.
 2. Confira se o fingerprint exibido é igual ao de `wrahost agent show` no host e confirme.
-3. Clique em um app: só a janela dele abre. Vários apps compartilham a mesma sessão.
-4. Opcional: no menu **⋯**, use **Salvar credenciais do host…** para abrir sem digitar a senha. Com o botão direito em um app, use **Criar atalho na área de trabalho**.
+3. Dê duplo clique em um app (ou selecione e tecle Enter): só a janela dele abre. Vários apps compartilham a mesma sessão.
+4. Opcional: no menu **⋯**, use **Salvar credenciais do host…** para abrir sem digitar a senha. Com o botão direito em um app, use **Criar atalho na área de trabalho** ou **Renomear…** (F2). O novo nome vale só neste computador; o PC remoto não muda.
 
 **Abrir sem alerta de segurança.** Desde a atualização de abril de 2026, o Windows mostra um alerta a cada abertura de um arquivo `.rdp` não assinado.
-- No primeiro clique em um app, o cliente oferece **"Abrir apps sem alerta"**. Também está no menu **⋯**.
+- Ao abrir um app pela primeira vez, o cliente oferece **"Abrir apps sem alerta"**. Também está no menu **⋯**.
 - Ele pede administrador **uma única vez** e configura este PC para assinar as conexões que o próprio WRApperture cria:
   - um certificado de máquina, com a chave liberada só para o seu usuário;
   - uma cópia no Raiz, restrita a "Autenticação de Área de Trabalho Remota", para não servir para assinar programas;

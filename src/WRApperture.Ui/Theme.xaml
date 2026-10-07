@@ -7,6 +7,7 @@
     <SolidColorBrush x:Key="Accent" Color="#2563EB" />
     <SolidColorBrush x:Key="AccentHover" Color="#1D4ED8" />
     <SolidColorBrush x:Key="TileHover" Color="#E8EFFD" />
+    <SolidColorBrush x:Key="TileSelected" Color="#D3E0FB" />
     <SolidColorBrush x:Key="Muted" Color="#5B6270" />
     <SolidColorBrush x:Key="Warning" Color="#B45309" />
     <SolidColorBrush x:Key="WarningBackground" Color="#FEF3C7" />

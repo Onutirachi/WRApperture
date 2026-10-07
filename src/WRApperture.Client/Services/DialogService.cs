@@ -19,6 +19,9 @@ public interface IDialogService
     /// <summary>Null when the user cancels.</summary>
     ReleaseDecision? AskReleaseSession(string hostName, IReadOnlyList<BusySessionDto> sessions);
 
+    /// <summary>Local name for an app; null when the user cancels.</summary>
+    string? AskAppName(string currentName, string hostName);
+
     bool Confirm(string title, string message);
     void Error(string message);
     void Info(string message);
@@ -44,6 +47,12 @@ internal sealed class DialogService : IDialogService
     {
         var window = new ReleaseSessionWindow(hostName, sessions) { Owner = Application.Current.MainWindow };
         return window.ShowDialog() == true ? new ReleaseDecision(window.Always) : null;
+    }
+
+    public string? AskAppName(string currentName, string hostName)
+    {
+        var window = new RenameAppWindow(currentName, hostName) { Owner = Application.Current.MainWindow };
+        return window.ShowDialog() == true ? window.Result : null;
     }
 
     public bool Confirm(string title, string message) =>

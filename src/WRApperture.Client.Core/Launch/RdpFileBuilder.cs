@@ -23,7 +23,7 @@ public static class RdpFileBuilder
 
         Line("remoteapplicationmode", "i", 1);
         Line("remoteapplicationprogram", "s", "||" + app.Alias);
-        Line("remoteapplicationname", "s", SingleLine(app.DisplayName));
+        Line("remoteapplicationname", "s", SingleLine(app.Name));
         Line("remoteapplicationcmdline", "s", string.Empty);
         Line("disableremoteappcapscheck", "i", 1);
         Line("alternate shell", "s", "rdpinit.exe");

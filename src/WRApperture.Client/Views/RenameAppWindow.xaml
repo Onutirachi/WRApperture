@@ -1,0 +1,22 @@
+<Window x:Class="WRApperture.Client.Views.RenameAppWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Renomear app" Width="420" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Style="{StaticResource BaseWindow}">
+    <StackPanel Margin="20">
+        <TextBlock Text="Renomear app" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
+
+        <TextBlock Text="Nome neste computador" Margin="0,0,0,4" />
+        <TextBox x:Name="NameBox" AutomationProperties.Name="Nome neste computador" />
+        <TextBlock x:Name="HostNameText" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap" />
+        <TextBlock Foreground="{StaticResource Muted}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"
+                   Text="O nome muda só aqui. O PC remoto e os outros computadores continuam com o nome original." />
+
+        <DockPanel Margin="0,18,0,0" LastChildFill="False">
+            <Button x:Name="RestoreButton" DockPanel.Dock="Left" Content="Restaurar original" Style="{StaticResource Secondary}" Click="OnRestoreClick" />
+            <Button DockPanel.Dock="Right" Content="Salvar" Style="{StaticResource Primary}" Margin="8,0,0,0" IsDefault="True" Click="OnSaveClick" />
+            <Button DockPanel.Dock="Right" Content="Cancelar" Style="{StaticResource Secondary}" IsCancel="True" />
+        </DockPanel>
+    </StackPanel>
+</Window>

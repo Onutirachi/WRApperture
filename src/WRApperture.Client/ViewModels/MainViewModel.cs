@@ -83,6 +83,9 @@ public sealed partial class MainViewModel : ObservableObject
     private HostOption? _selectedHost;
 
     [ObservableProperty]
+    private AppTileViewModel? _selectedApp;
+
+    [ObservableProperty]
     private string _searchText = string.Empty;
 
     [ObservableProperty]
@@ -370,6 +373,55 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void RenameApp(AppTileViewModel? tile)
+    {
+        tile ??= SelectedApp;
+        if (tile is null)
+        {
+            return;
+        }
+
+        var name = _dialogs.AskAppName(tile.DisplayName, tile.App.DisplayName);
+        if (name is not null)
+        {
+            SetAppName(tile, name);
+        }
+    }
+
+    [RelayCommand]
+    private void ResetAppName(AppTileViewModel? tile)
+    {
+        if (tile is not null)
+        {
+            SetAppName(tile, null);
+        }
+    }
+
+    /// <summary>Local name only (null restores the host's); the host is never changed.</summary>
+    private void SetAppName(AppTileViewModel tile, string? name)
+    {
+        if (SelectedHost is not { } option)
+        {
+            return;
+        }
+
+        var renamed = tile.App.WithCustomName(name);
+        if (renamed == tile.App)
+        {
+            return;
+        }
+
+        _logger.LogInformation("App {Alias} local name set to {Name}", renamed.Alias, renamed.CustomName ?? "(host name)");
+        ReplaceHost(option.Host with
+        {
+            Apps = option.Host.Apps.Select(a => string.Equals(a.Alias, renamed.Alias, StringComparison.OrdinalIgnoreCase) ? renamed : a).ToList(),
+        });
+        SetStatus(renamed.CustomName is null
+            ? $"Nome original restaurado: {renamed.Name}."
+            : $"{renamed.DisplayName} agora aparece como {renamed.Name} neste computador.", warning: false);
+    }
+
+    [RelayCommand]
     private void CreateShortcut(AppTileViewModel? tile)
     {
         if (tile is null || SelectedHost is not { } option)
@@ -506,14 +558,18 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void ShowCachedApps()
     {
+        var selectedAlias = SelectedApp?.App.Alias;
         Apps.Clear();
         if (SelectedHost is { } option)
         {
-            foreach (var app in option.Host.Apps.OrderBy(a => a.DisplayName, StringComparer.CurrentCultureIgnoreCase))
+            foreach (var app in option.Host.Apps.OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase))
             {
                 Apps.Add(new AppTileViewModel(app, _icons.PngPath(option.Host.Id, app.Alias)));
             }
         }
+
+        // Keep the selection across syncs and renames.
+        SelectedApp = Apps.FirstOrDefault(a => string.Equals(a.App.Alias, selectedAlias, StringComparison.OrdinalIgnoreCase));
 
         OnPropertyChanged(nameof(HasNoApps));
     }

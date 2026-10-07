@@ -60,6 +60,15 @@ public class RdpFileBuilderTests
         Assert.Contains("remoteapplicationname:s:Ação & Reação  full address:s:evil\r\n", rdp);
         Assert.Equal("192.168.0.10", Parse(rdp)["full address"]);
     }
+
+    [Fact]
+    public void Uses_local_app_name()
+    {
+        var rdp = RdpFileBuilder.Build(Samples.Host(), new CachedApp("calc", "Calculadora", CustomName: "Contas"));
+
+        Assert.Equal("Contas", Parse(rdp)["remoteapplicationname"]);
+        Assert.Equal("||calc", Parse(rdp)["remoteapplicationprogram"]);
+    }
 }
 
 public class RemoteAppLauncherTests : IDisposable

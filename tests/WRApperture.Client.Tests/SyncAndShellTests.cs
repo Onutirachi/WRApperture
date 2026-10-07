@@ -74,6 +74,21 @@ public class HostSyncTests : IDisposable
     }
 
     [Fact]
+    public async Task Keeps_local_names_of_apps_still_published()
+    {
+        var host = Samples.Host() with
+        {
+            Apps = [new CachedApp("notepad", "N", CustomName: "Notas"), new CachedApp("gone", "G", CustomName: "Sumiu")],
+        };
+
+        var synced = await _sync.SyncAsync(host);
+
+        Assert.Equal("Notas", synced.Apps.Single(a => a.Alias == "notepad").Name);
+        Assert.Null(synced.Apps.Single(a => a.Alias == "calc").CustomName);
+        Assert.DoesNotContain(synced.Apps, a => a.Alias == "gone");
+    }
+
+    [Fact]
     public async Task Auth_errors_propagate()
     {
         _agent.ThrowOnApps = new InvalidTokenException();

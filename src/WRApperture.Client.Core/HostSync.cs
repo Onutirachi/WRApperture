@@ -41,7 +41,8 @@ public sealed class HostSync(IconStore icons, Func<PairedHost, IAgentApi> client
                 _logger.LogWarning(ex, "Icon for {Alias} unavailable", app.Alias);
             }
 
-            cached.Add(new CachedApp(app.Alias, app.DisplayName, etag));
+            // Local names stay with apps that are still published (and leave with removed ones).
+            cached.Add(new CachedApp(app.Alias, app.DisplayName, etag).WithCustomName(old?.CustomName));
         }
 
         _logger.LogInformation("Synced host {Host}: {Count} apps", host.Address, cached.Count);
