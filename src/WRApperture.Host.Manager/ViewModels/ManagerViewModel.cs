@@ -9,6 +9,7 @@ using WRApperture.Host.Core.Errors;
 using WRApperture.Host.Core.Models;
 using WRApperture.Host.Core.Publishing;
 using WRApperture.Host.Manager.Services;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Manager.ViewModels;
 
@@ -21,10 +22,10 @@ public sealed class AppItemViewModel(PublishedApp app, ImageSource? icon)
 
     public string Details => App.CommandLinePolicy switch
     {
-        CommandLinePolicy.Required => $"Argumentos: {App.RequiredArguments}",
-        CommandLinePolicy.Any => "Aceita argumentos do cliente",
+        CommandLinePolicy.Required => Strings.T("manager.app.arguments", App.RequiredArguments),
+        CommandLinePolicy.Any => Strings.T("manager.app.anyArguments"),
         _ => string.Empty,
-    } + (App.ShowInList ? string.Empty : "  ·  oculto no cliente");
+    } + (App.ShowInList ? string.Empty : "  ·  " + Strings.T("manager.app.hidden"));
 }
 
 public sealed record ReadinessItem(string Description, bool IsOk, string Detail);
@@ -99,8 +100,8 @@ public sealed partial class ManagerViewModel : ObservableObject
                 {
                     // Raw values ("0", "1") mean nothing to users; only the edition is worth showing when OK.
                     ReadinessState.Ok => check.Id == ReadinessCheckId.Edition ? check.CurrentValue : string.Empty,
-                    ReadinessState.NotSupported => $"não suportado ({check.CurrentValue})",
-                    _ => $"pendente: {check.CurrentValue}",
+                    ReadinessState.NotSupported => Strings.T("manager.readiness.notSupported", check.CurrentValue),
+                    _ => Strings.T("manager.readiness.pending", check.CurrentValue),
                 }));
         }
 
@@ -111,13 +112,13 @@ public sealed partial class ManagerViewModel : ObservableObject
         AgentInstalled = status.Installed;
         var settings = _agentSettings.Load();
         Port = settings.Port.ToString();
-        Paired = settings.IsPaired ? "sim" : "não — gere um token";
-        Fingerprint = _agent.Fingerprint(settings.CertificateThumbprint) ?? "(criado quando o agente iniciar)";
+        Paired = settings.IsPaired ? Strings.T("manager.connection.pairedYes") : Strings.T("manager.connection.pairedNo");
+        Fingerprint = _agent.Fingerprint(settings.CertificateThumbprint) ?? Strings.T("manager.connection.fingerprintPending");
         var ips = _agent.Ipv4Addresses();
-        Addresses = ips.Count == 0 ? "sem rede" : string.Join(", ", ips);
+        Addresses = ips.Count == 0 ? Strings.T("manager.connection.noNetwork") : string.Join(", ", ips);
     }
 
-    /// <summary>Dropped files or files picked with "Adicionar…": each one is reviewed in the editor.</summary>
+    /// <summary>Dropped files or files picked with "Add program or shortcut…": each one is reviewed in the editor.</summary>
     [RelayCommand(CanExecute = nameof(IsAdmin))]
     private void AddFiles(string[]? paths)
     {
@@ -137,11 +138,11 @@ public sealed partial class ManagerViewModel : ObservableObject
             }
             catch (AppValidationException ex)
             {
-                _dialogs.Error($"Não foi possível usar este item: {ex.Reason}");
+                _dialogs.Error(Strings.T("manager.errors.cannotUse", ex.Reason));
                 continue;
             }
 
-            var input = new EditorInput("Publicar app", null, draft.DisplayName, draft.ExecutablePath,
+            var input = new EditorInput(Strings.T("manager.editor.publishTitle"), null, draft.DisplayName, draft.ExecutablePath,
                 draft.Arguments is null ? CommandLinePolicy.None : CommandLinePolicy.Required, draft.Arguments,
                 draft.IconPath, draft.IconIndex, ShowInList: true);
             if (_dialogs.EditApp(input, TrySave))
@@ -160,7 +161,7 @@ public sealed partial class ManagerViewModel : ObservableObject
     private void Edit()
     {
         var app = SelectedApp!.App;
-        var input = new EditorInput("Editar app", app.Alias, app.DisplayName, app.RawPath ?? app.ExecutablePath,
+        var input = new EditorInput(Strings.T("manager.editor.editTitle"), app.Alias, app.DisplayName, app.RawPath ?? app.ExecutablePath,
             app.CommandLinePolicy, app.RequiredArguments, app.IconPath, app.IconIndex, app.ShowInList);
         if (_dialogs.EditApp(input, TrySave))
         {
@@ -172,12 +173,12 @@ public sealed partial class ManagerViewModel : ObservableObject
     private void Remove()
     {
         var app = SelectedApp!.App;
-        if (!_dialogs.Confirm("Remover app", $"Remover \"{app.DisplayName}\"? Ele deixa de aparecer nos clientes."))
+        if (!_dialogs.Confirm(Strings.T("manager.remove.title"), Strings.T("manager.remove.confirm", app.DisplayName)))
         {
             return;
         }
 
-        Run(() => _publisher.Unpublish(app.Alias), $"\"{app.DisplayName}\" removido.");
+        Run(() => _publisher.Unpublish(app.Alias), Strings.T("manager.status.removed", app.DisplayName));
     }
 
     private bool CanModifySelected() => IsAdmin && SelectedApp is not null;
@@ -207,27 +208,27 @@ public sealed partial class ManagerViewModel : ObservableObject
         }
 
         Refresh();
-        SetStatus($"{chosen.Count - errors.Count} app(s) publicado(s).", warning: errors.Count > 0);
+        SetStatus(Strings.T("manager.status.publishedCount", chosen.Count - errors.Count), warning: errors.Count > 0);
         if (errors.Count > 0)
         {
-            _dialogs.Error("Alguns apps não foram publicados:\n\n" + string.Join("\n", errors));
+            _dialogs.Error(Strings.T("manager.errors.someNotPublished", string.Join("\n", errors)));
         }
     }
 
     [RelayCommand(CanExecute = nameof(IsAdmin))]
-    private void Prepare() => Run(() => _preparation.Prepare(), "PC preparado para abrir apps remotamente.");
+    private void Prepare() => Run(() => _preparation.Prepare(), Strings.T("manager.status.prepared"));
 
     [RelayCommand(CanExecute = nameof(IsAdmin))]
     private void NewToken()
     {
         if (_agentSettings.Load().IsPaired &&
-            !_dialogs.Confirm("Gerar novo token", "Os clientes já pareados precisarão do novo token para continuar. Gerar mesmo assim?"))
+            !_dialogs.Confirm(Strings.T("manager.newToken.title"), Strings.T("manager.newToken.confirm")))
         {
             return;
         }
 
         string? token = null;
-        Run(() => token = _agentSettings.RegenerateToken(), "Novo token gerado.");
+        Run(() => token = _agentSettings.RegenerateToken(), Strings.T("manager.status.tokenGenerated"));
         if (token is not null)
         {
             _dialogs.ShowToken(new TokenInfo(token, Port, Addresses, Fingerprint));
@@ -237,16 +238,16 @@ public sealed partial class ManagerViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(IsAdmin))]
     private async Task RestartAgentAsync()
     {
-        SetStatus("Reiniciando o agente…", warning: false);
+        SetStatus(Strings.T("manager.status.restartingAgent"), warning: false);
         try
         {
             await Task.Run(_agent.Restart);
-            SetStatus("Agente reiniciado.", warning: false);
+            SetStatus(Strings.T("manager.status.agentRestarted"), warning: false);
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.ServiceProcess.TimeoutException)
         {
             _logger.LogError(ex, "Agent restart failed");
-            _dialogs.Error($"Não foi possível reiniciar o agente: {ex.Message}");
+            _dialogs.Error(Strings.T("manager.errors.restartAgent", ex.Message));
         }
 
         Refresh();
@@ -269,10 +270,10 @@ public sealed partial class ManagerViewModel : ObservableObject
             var warning = result.Warnings.Contains(PublishWarnings.WritableLocation);
             SetStatus(result.Outcome switch
             {
-                PublishOutcome.Created => $"\"{result.App.DisplayName}\" publicado.",
-                PublishOutcome.Updated => $"\"{result.App.DisplayName}\" atualizado.",
-                _ => $"\"{result.App.DisplayName}\" já estava publicado assim.",
-            } + (warning ? " Atenção: o programa está numa pasta que usuários comuns podem alterar." : string.Empty), warning);
+                PublishOutcome.Created => Strings.T("manager.status.published", result.App.DisplayName),
+                PublishOutcome.Updated => Strings.T("manager.status.updated", result.App.DisplayName),
+                _ => Strings.T("manager.status.unchanged", result.App.DisplayName),
+            } + (warning ? " " + Strings.T("manager.status.writableLocation") : string.Empty), warning);
             return null;
         }
         catch (AppValidationException ex)

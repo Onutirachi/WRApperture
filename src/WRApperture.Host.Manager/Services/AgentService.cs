@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceProcess;
 using WRApperture.Shared;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Manager.Services;
 
@@ -31,15 +32,15 @@ internal sealed class AgentService : IAgentService
         using var service = ServiceController.GetServices().FirstOrDefault(s => s.ServiceName == ServiceName);
         if (service is null)
         {
-            return new AgentStatus(false, false, "não instalado (rode o Instalar.cmd)");
+            return new AgentStatus(false, false, Strings.T("manager.agent.notInstalled"));
         }
 
         return service.Status switch
         {
-            ServiceControllerStatus.Running => new AgentStatus(true, true, "rodando"),
-            ServiceControllerStatus.StartPending => new AgentStatus(true, false, "iniciando…"),
-            ServiceControllerStatus.StopPending => new AgentStatus(true, false, "parando…"),
-            _ => new AgentStatus(true, false, "parado"),
+            ServiceControllerStatus.Running => new AgentStatus(true, true, Strings.T("manager.agent.running")),
+            ServiceControllerStatus.StartPending => new AgentStatus(true, false, Strings.T("manager.agent.starting")),
+            ServiceControllerStatus.StopPending => new AgentStatus(true, false, Strings.T("manager.agent.stopping")),
+            _ => new AgentStatus(true, false, Strings.T("manager.agent.stopped")),
         };
     }
 
