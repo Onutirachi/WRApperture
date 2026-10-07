@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using WRApperture.Host.Core.Abstractions;
+using WRApperture.Host.Core.Discovery;
+using WRApperture.Host.Core.Icons;
 using WRApperture.Host.Core.Platform;
 using WRApperture.Host.Core.Publishing;
 using WRApperture.Host.Core.Readiness;
@@ -15,8 +17,13 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPrivilegeChecker, WindowsPrivilegeChecker>();
         services.AddSingleton<IFileSystemProbe, FileSystemProbe>();
         services.AddSingleton<IFirewallRules, ComFirewallRules>();
+        services.AddSingleton<IStartMenuShortcuts, StartMenuShortcuts>();
+        services.AddSingleton<IShortcutResolver, ShortcutResolver>();
+
         services.AddSingleton<IAppPublisher, AppPublisher>();
         services.AddSingleton<IHostPreparation, HostPreparation>();
+        services.AddSingleton<IAppDiscovery, AppDiscovery>();
+        services.AddSingleton<IIconProvider, IconProvider>();
         return services;
     }
 }

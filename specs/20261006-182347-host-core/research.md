@@ -48,6 +48,7 @@
     - o alvo existe e tem extensão `.exe`;
     - o nome do arquivo não casa com `unins*`, `uninstall*` ou `setup*`;
     - deduplicar por caminho do exe e argumentos, sem diferenciar maiúsculas de minúsculas.
+- **Descoberto na implementação**: `MsiGetShortcutTarget` retorna `1603` em threads MTA, que são o padrão do .NET. Por isso a resolução roda em uma thread STA. Atalhos MSI não resolvidos apontam para stubs de ícone em `%SystemRoot%\Installer` e são descartados.
 - **Rationale**: Reproduz o que aparece em "Todos os apps" (exceto UWP, fora de escopo) sem dependências externas.
 - **Alternatives considered**:
   - `Shell.Application` via COM `dynamic`: mais lento e frágil.

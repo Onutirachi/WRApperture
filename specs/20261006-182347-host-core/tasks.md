@@ -14,21 +14,21 @@ description: "Task list for Host Core"
 
 ## Phase 1: Setup
 
-- [ ] T001 Criar `WRApperture.sln`, `Directory.Build.props` (net8.0-windows, Nullable, TreatWarningsAsErrors, ImplicitUsings) e `.editorconfig` na raiz
-- [ ] T002 Criar `src/WRApperture.Host.Core/WRApperture.Host.Core.csproj` (classlib; DI.Abstractions, Logging.Abstractions, System.Drawing.Common)
-- [ ] T003 [P] Criar `tests/WRApperture.Host.Core.Tests/WRApperture.Host.Core.Tests.csproj` (xUnit, ref Core, `InternalsVisibleTo`)
-- [ ] T004 [P] Criar `src/WRApperture.Host.Cli/WRApperture.Host.Cli.csproj` (exe `wrahost`; System.CommandLine, Serilog, Serilog.Sinks.File, Serilog.Extensions.Logging; manifest `asInvoker`)
+- [X] T001 Criar `WRApperture.sln`, `Directory.Build.props` (net8.0-windows, Nullable, TreatWarningsAsErrors, ImplicitUsings) e `.editorconfig` na raiz
+- [X] T002 Criar `src/WRApperture.Host.Core/WRApperture.Host.Core.csproj` (classlib; DI.Abstractions, Logging.Abstractions, System.Drawing.Common)
+- [X] T003 [P] Criar `tests/WRApperture.Host.Core.Tests/WRApperture.Host.Core.Tests.csproj` (xUnit, ref Core, `InternalsVisibleTo`)
+- [X] T004 [P] Criar `src/WRApperture.Host.Cli/WRApperture.Host.Cli.csproj` (exe `wrahost`; System.CommandLine, Serilog, Serilog.Sinks.File, Serilog.Extensions.Logging; manifest `asInvoker`)
 
 ---
 
 ## Phase 2: Foundational
 
-- [ ] T005 [P] Seams em `src/WRApperture.Host.Core/Abstractions/` (`IRegistryAccess`, `IFirewallRules`, `IPrivilegeChecker`, `IFileSystemProbe`)
-- [ ] T006 [P] Models e enums em `src/WRApperture.Host.Core/Models/` (conforme data-model.md)
-- [ ] T007 [P] Exceções em `src/WRApperture.Host.Core/Errors/`
-- [ ] T008 [P] Interfaces públicas `IAppPublisher`, `IHostPreparation`, `IAppDiscovery`, `IIconProvider` em `src/WRApperture.Host.Core/`
-- [ ] T009 Fakes em memória em `tests/WRApperture.Host.Core.Tests/Fakes/`
-- [ ] T010 Implementações reais em `src/WRApperture.Host.Core/Platform/` (`WindowsRegistryAccess` HKLM 64-bit view, `WindowsPrivilegeChecker`, `FileSystemProbe` com checagem de ACL (R6), `ComFirewallRules` (R2))
+- [X] T005 [P] Seams em `src/WRApperture.Host.Core/Abstractions/` (`IRegistryAccess`, `IFirewallRules`, `IPrivilegeChecker`, `IFileSystemProbe`)
+- [X] T006 [P] Models e enums em `src/WRApperture.Host.Core/Models/` (conforme data-model.md)
+- [X] T007 [P] Exceções em `src/WRApperture.Host.Core/Errors/`
+- [X] T008 [P] Interfaces públicas `IAppPublisher`, `IHostPreparation`, `IAppDiscovery`, `IIconProvider` em `src/WRApperture.Host.Core/`
+- [X] T009 Fakes em memória em `tests/WRApperture.Host.Core.Tests/Fakes/`
+- [X] T010 Implementações reais em `src/WRApperture.Host.Core/Platform/` (`WindowsRegistryAccess` HKLM 64-bit view, `WindowsPrivilegeChecker`, `FileSystemProbe` com checagem de ACL (R6), `ComFirewallRules` (R2))
 
 **Checkpoint**: base pronta.
 
@@ -38,11 +38,11 @@ description: "Task list for Host Core"
 
 **Independent Test**: `wrahost publish` + `.rdp` do quickstart abre só o Notepad.
 
-- [ ] T011 [P] [US1] Testes de `AliasGenerator` (diacríticos, inválidos, colisão) em `tests/.../Publishing/AliasGeneratorTests.cs`
-- [ ] T012 [P] [US1] Testes de `AppPublisher` (create/update/unchanged, validação, admin, preservar não gerenciados, unpublish isolado) em `tests/.../Publishing/AppPublisherTests.cs`
-- [ ] T013 [US1] `RegistryPaths`, `AliasGenerator`, `AppValidator` em `src/WRApperture.Host.Core/Publishing/`
-- [ ] T014 [US1] `AppPublisher` em `src/WRApperture.Host.Core/Publishing/AppPublisher.cs` (com logs FR-014)
-- [ ] T015 [US1] CLI: `list`, `publish`, `unpublish` + bootstrap (DI, Serilog, códigos de saída) em `src/WRApperture.Host.Cli/`
+- [X] T011 [P] [US1] Testes de `AliasGenerator` (diacríticos, inválidos, colisão) em `tests/.../Publishing/AliasGeneratorTests.cs`
+- [X] T012 [P] [US1] Testes de `AppPublisher` (create/update/unchanged, validação, admin, preservar não gerenciados, unpublish isolado) em `tests/.../Publishing/AppPublisherTests.cs`
+- [X] T013 [US1] `RegistryPaths`, `AliasGenerator`, `AppValidator` em `src/WRApperture.Host.Core/Publishing/`
+- [X] T014 [US1] `AppPublisher` em `src/WRApperture.Host.Core/Publishing/AppPublisher.cs` (com logs FR-014)
+- [X] T015 [US1] CLI: `list`, `publish`, `unpublish` + bootstrap (DI, Serilog, códigos de saída) em `src/WRApperture.Host.Cli/`
 
 **Checkpoint**: MVP — publicar e abrir app remoto.
 
@@ -52,10 +52,10 @@ description: "Task list for Host Core"
 
 **Independent Test**: `wrahost check` → `prepare` → `check` (tudo OK) → `revert`.
 
-- [ ] T016 [P] [US2] Testes de `HostPreparation` (check, prepare idempotente, snapshot não sobrescreve, revert parcial, Home não suportado) em `tests/.../Readiness/HostPreparationTests.cs`
-- [ ] T017 [US2] `SnapshotStore` em `src/WRApperture.Host.Core/Readiness/SnapshotStore.cs`
-- [ ] T018 [US2] `HostPreparation` em `src/WRApperture.Host.Core/Readiness/HostPreparation.cs`
-- [ ] T019 [US2] CLI: `check`, `prepare`, `revert`
+- [X] T016 [P] [US2] Testes de `HostPreparation` (check, prepare idempotente, snapshot não sobrescreve, revert parcial, Home não suportado) em `tests/.../Readiness/HostPreparationTests.cs`
+- [X] T017 [US2] `SnapshotStore` em `src/WRApperture.Host.Core/Readiness/SnapshotStore.cs`
+- [X] T018 [US2] `HostPreparation` em `src/WRApperture.Host.Core/Readiness/HostPreparation.cs`
+- [X] T019 [US2] CLI: `check`, `prepare`, `revert`
 
 ---
 
@@ -63,27 +63,27 @@ description: "Task list for Host Core"
 
 **Independent Test**: `wrahost discover` lista apps do Menu Iniciar sem duplicatas.
 
-- [ ] T020 [P] [US3] Testes de filtro/dedupe/marcação de publicado em `tests/.../Discovery/AppDiscoveryTests.cs` (resolver de atalho injetado como fake)
-- [ ] T021 [US3] `ShortcutResolver` (IShellLinkW + MSI) em `src/WRApperture.Host.Core/Discovery/` e `Platform/Native/`
-- [ ] T022 [US3] `AppDiscovery` em `src/WRApperture.Host.Core/Discovery/AppDiscovery.cs`
-- [ ] T023 [US3] CLI: `discover`
+- [X] T020 [P] [US3] Testes de filtro/dedupe/marcação de publicado em `tests/.../Discovery/AppDiscoveryTests.cs` (resolver de atalho injetado como fake)
+- [X] T021 [US3] `ShortcutResolver` (IShellLinkW + MSI) em `src/WRApperture.Host.Core/Discovery/` e `Platform/Native/`
+- [X] T022 [US3] `AppDiscovery` em `src/WRApperture.Host.Core/Discovery/AppDiscovery.cs`
+- [X] T023 [US3] CLI: `discover`
 
 ---
 
 ## Phase 6: User Story 4 - Ícones (P2)
 
-- [ ] T024 [US4] `IconProvider` (PrivateExtractIconsW + fallback stock icon) em `src/WRApperture.Host.Core/Icons/IconProvider.cs`
-- [ ] T025 [P] [US4] Teste de integração (`Category=Integration`): PNG válido de notepad e fallback para arquivo sem ícone em `tests/.../Icons/IconProviderTests.cs`
-- [ ] T026 [US4] CLI: `icon`
+- [X] T024 [US4] `IconProvider` (PrivateExtractIconsW + fallback stock icon) em `src/WRApperture.Host.Core/Icons/IconProvider.cs`
+- [X] T025 [P] [US4] Teste de integração (`Category=Integration`): PNG válido de notepad e fallback para arquivo sem ícone em `tests/.../Icons/IconProviderTests.cs`
+- [X] T026 [US4] CLI: `icon`
 
 ---
 
 ## Phase 7: Polish
 
-- [ ] T027 `ServiceCollectionExtensions.AddWRAppertureHostCore()` e uso no CLI
-- [ ] T028 `dotnet build` sem warnings e `dotnet test` verde
-- [ ] T029 Smoke test não destrutivo: `wrahost list`, `check`, `discover`, `icon` e `publish` sem elevação (deve sair com código 2)
-- [ ] T030 `README.md` na raiz com visão geral e link para o quickstart
+- [X] T027 `ServiceCollectionExtensions.AddWRAppertureHostCore()` e uso no CLI
+- [X] T028 `dotnet build` sem warnings e `dotnet test` verde
+- [X] T029 Smoke test não destrutivo: `wrahost list`, `check`, `discover`, `icon` e `publish` sem elevação (deve sair com código 2) — OK sem elevação; prepare/publish elevados + abertura via mstsc pendentes de validação manual (quickstart §2–4)
+- [X] T030 `README.md` na raiz com visão geral e link para o quickstart
 
 ## Dependencies & Execution Order
 

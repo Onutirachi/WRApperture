@@ -16,7 +16,7 @@ Todo acesso ao sistema passa por seams (`IRegistryAccess`, `IFirewallRules`, `IP
 
 ## Technical Context
 
-**Language/Version**: C# 12 / .NET 8 (`net8.0-windows`)
+**Language/Version**: C# 12 / .NET 8 (`net8.0-windows10.0.17763.0`)
 
 **Primary Dependencies**:
 - `Microsoft.Extensions.DependencyInjection.Abstractions` e `Microsoft.Extensions.Logging.Abstractions` (Core)
@@ -48,7 +48,7 @@ Todo acesso ao sistema passa por seams (`IRegistryAccess`, `IFirewallRules`, `IP
 
 | Princípio | Status | Evidência |
 |---|---|---|
-| I. Stack única .NET 8 | ✅ | `net8.0-windows`. Dependências listadas acima e justificadas no research (R4, R7, R8) |
+| I. Stack única .NET 8 | ✅ | `net8.0-windows10.0.17763.0`. Dependências listadas acima e justificadas no research (R4, R7, R8) |
 | II. Registro só via Core (NON-NEGOTIABLE) | ✅ | Todo acesso passa por `IRegistryAccess`. O CLI só chama o Core. Os testes usam `FakeRegistryAccess` |
 | III. Idempotente e reversível | ✅ | `Publish` devolve `Unchanged`. `Prepare` segue o padrão check-then-set. `Revert` usa o snapshot. `DeleteKey` é limitado à subchave do app |
 | IV. Segurança por padrão | ✅ | `fDisabledAllowList` forçado para 0, NLA ligada, aviso de pasta gravável, admin obrigatório. Tokens e HTTPS não se aplicam aqui (são da feature host-agent) |

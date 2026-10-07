@@ -22,7 +22,10 @@ try
         .BuildServiceProvider();
 
     var root = new RootCommand("wrahost — publica apps do Windows como RemoteApp");
-    foreach (var command in PublishCommands.Create(services).Concat(ReadinessCommands.Create(services)))
+    var commands = PublishCommands.Create(services)
+        .Concat(ReadinessCommands.Create(services))
+        .Concat(DiscoveryCommands.Create(services));
+    foreach (var command in commands)
     {
         root.Subcommands.Add(command);
     }
