@@ -8,7 +8,7 @@
             <Image x:Name="IconPreview" DockPanel.Dock="Left" Width="40" Height="40" Margin="0,0,12,0" RenderOptions.BitmapScalingMode="HighQuality" />
             <StackPanel VerticalAlignment="Center">
                 <TextBlock x:Name="Heading" FontSize="16" FontWeight="SemiBold" />
-                <TextBlock x:Name="AliasText" Foreground="{StaticResource Muted}" FontSize="12" />
+                <TextBlock x:Name="AliasText" Foreground="{DynamicResource Muted}" FontSize="12" />
             </StackPanel>
         </DockPanel>
 
@@ -31,7 +31,7 @@
 
         <CheckBox x:Name="ShowBox" Content="Mostrar nos clientes" Margin="0,12,0,0" />
 
-        <TextBlock x:Name="ErrorText" Foreground="#B91C1C" TextWrapping="Wrap" Margin="0,12,0,0" Visibility="Collapsed" />
+        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Error}" TextWrapping="Wrap" Margin="0,12,0,0" Visibility="Collapsed" />
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
             <Button Content="Cancelar" Style="{StaticResource Secondary}" IsCancel="True" />

@@ -9,8 +9,8 @@
 
         <TextBlock Text="Nome neste computador" Margin="0,0,0,4" />
         <TextBox x:Name="NameBox" AutomationProperties.Name="Nome neste computador" />
-        <TextBlock x:Name="HostNameText" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap" />
-        <TextBlock Foreground="{StaticResource Muted}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"
+        <TextBlock x:Name="HostNameText" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap" />
+        <TextBlock Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"
                    Text="O nome muda só aqui. O PC remoto e os outros computadores continuam com o nome original." />
 
         <DockPanel Margin="0,18,0,0" LastChildFill="False">

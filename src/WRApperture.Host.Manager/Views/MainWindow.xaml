@@ -16,34 +16,34 @@
             <Setter Property="Margin" Value="0,0,0,8" />
         </Style>
         <Style x:Key="Label" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource Muted}" />
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
         </Style>
     </Window.Resources>
 
     <DockPanel>
         <!-- Read-only banner -->
-        <Border DockPanel.Dock="Top" Background="{StaticResource WarningBackground}" Padding="16,8"
+        <Border DockPanel.Dock="Top" Background="{DynamicResource WarningBackground}" Padding="16,8"
                 Visibility="{Binding IsReadOnly, Converter={StaticResource BoolToVis}}">
             <DockPanel>
                 <Button DockPanel.Dock="Right" Content="Reabrir como administrador" Style="{StaticResource Secondary}" Command="{Binding ElevateCommand}" />
-                <TextBlock VerticalAlignment="Center" Foreground="{StaticResource Warning}" TextWrapping="Wrap"
+                <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource Warning}" TextWrapping="Wrap"
                            Text="Modo somente leitura: abra como administrador para publicar, remover, preparar o PC ou gerar token." />
             </DockPanel>
         </Border>
 
         <!-- Status bar -->
-        <Border DockPanel.Dock="Bottom" Padding="16,6" BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0">
+        <Border DockPanel.Dock="Bottom" Padding="16,6" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0">
             <Border.Style>
                 <Style TargetType="Border">
-                    <Setter Property="Background" Value="{StaticResource Surface}" />
+                    <Setter Property="Background" Value="{DynamicResource Surface}" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsWarning}" Value="True">
-                            <Setter Property="Background" Value="{StaticResource WarningBackground}" />
+                            <Setter Property="Background" Value="{DynamicResource WarningBackground}" />
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </Border.Style>
-            <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" Foreground="{StaticResource Muted}" />
+            <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource Muted}" />
         </Border>
 
         <Grid Margin="16">
@@ -62,13 +62,15 @@
                     <Button Content="Editar" Style="{StaticResource Secondary}" Margin="0,0,8,6" Command="{Binding EditCommand}" />
                     <Button Content="Remover" Style="{StaticResource Secondary}" Margin="0,0,8,6" Command="{Binding RemoveCommand}" />
                     <Button Content="⟳" Style="{StaticResource Secondary}" Margin="0,0,8,6" Padding="10,6" ToolTip="Atualizar" Command="{Binding RefreshCommand}" />
+                    <Button x:Name="ThemeButton" Content="◐" Style="{StaticResource Secondary}" Margin="0,0,8,6" Padding="10,6" ToolTip="Tema claro ou escuro"
+                            Click="OnThemeClick" AutomationProperties.Name="Tema" />
                 </WrapPanel>
-                <TextBlock DockPanel.Dock="Top" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,0,0,8"
+                <TextBlock DockPanel.Dock="Top" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,0,0,8"
                            TextWrapping="Wrap"
                            Text="Dica: arraste atalhos ou programas .exe e solte nesta janela, ou copie-os no Explorer (Ctrl+C) e cole aqui (Ctrl+V)." />
 
                 <Grid>
-                    <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="6">
+                    <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6">
                         <Grid>
                             <ListView ItemsSource="{Binding Apps}" SelectedItem="{Binding SelectedApp}" BorderThickness="0" Background="Transparent"
                                       MouseDoubleClick="OnAppDoubleClick" Margin="2" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -80,8 +82,8 @@
                                                    RenderOptions.BitmapScalingMode="HighQuality" />
                                             <StackPanel>
                                                 <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
-                                                <TextBlock Text="{Binding Path}" Foreground="{StaticResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding Details}" Foreground="{StaticResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding Path}" Foreground="{DynamicResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding Details}" Foreground="{DynamicResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
                                         </DockPanel>
                                     </DataTemplate>
@@ -91,7 +93,7 @@
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False" MaxWidth="360"
                                         Visibility="{Binding HasNoApps, Converter={StaticResource BoolToVis}}">
                                 <TextBlock Text="Nenhum app publicado" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" />
-                                <TextBlock Foreground="{StaticResource Muted}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,6,0,0"
+                                <TextBlock Foreground="{DynamicResource Muted}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,6,0,0"
                                            Text="Arraste para cá atalhos (da área de trabalho ou do Menu Iniciar) ou programas .exe." />
                             </StackPanel>
                         </Grid>
@@ -100,7 +102,7 @@
             </DockPanel>
 
             <!-- This PC -->
-            <Border Grid.Column="2" Background="{StaticResource Surface}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
+            <Border Grid.Column="2" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock Text="Este PC" Style="{StaticResource SectionTitle}" />
@@ -113,11 +115,11 @@
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Text" Value="!" />
-                                                    <Setter Property="Foreground" Value="{StaticResource Warning}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource Warning}" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsOk}" Value="True">
                                                             <Setter Property="Text" Value="✓" />
-                                                            <Setter Property="Foreground" Value="#15803D" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource Success}" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -125,7 +127,7 @@
                                         </TextBlock>
                                         <StackPanel>
                                             <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
-                                            <TextBlock Text="{Binding Detail}" Foreground="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap">
+                                            <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Style.Triggers>
@@ -167,7 +169,7 @@
                             <TextBlock Grid.Row="3" Text="Pareado" Style="{StaticResource Label}" />
                             <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Paired}" TextWrapping="Wrap" />
                         </Grid>
-                        <TextBlock Text="Fingerprint" Foreground="{StaticResource Muted}" Margin="0,4,0,2" />
+                        <TextBlock Text="Fingerprint" Foreground="{DynamicResource Muted}" Margin="0,4,0,2" />
                         <TextBox Text="{Binding Fingerprint, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" BorderThickness="0"
                                  Background="Transparent" Padding="0" />
 

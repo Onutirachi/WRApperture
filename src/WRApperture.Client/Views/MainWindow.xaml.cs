@@ -3,12 +3,22 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using WRApperture.Client.ViewModels;
+using WRApperture.Ui;
 
 namespace WRApperture.Client.Views;
 
 public partial class MainWindow : Window
 {
-    public MainWindow() => InitializeComponent();
+    public MainWindow()
+    {
+        InitializeComponent();
+
+        // Theme choices go right before the last group ("Remover host").
+        var menu = MoreButton.ContextMenu!;
+        var lastSeparator = menu.Items.IndexOf(menu.Items.OfType<Separator>().Last());
+        ThemeMenu.AddTo(menu, lastSeparator);
+        menu.Items.Insert(lastSeparator, new Separator());
+    }
 
     private MainViewModel Vm => (MainViewModel)DataContext;
 

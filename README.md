@@ -84,6 +84,7 @@ dotnet run --project src/WRApperture.Client
    - Apps remotos abertos são fechados antes, porque o Windows não mistura os dois modos.
    - Outro usuário logado é desconectado e os programas dele continuam abertos.
    - Essa preparação exige o host 0.6.0 ou mais recente. Com um host mais antigo, o Windows pergunta como numa conexão remota comum.
+6. O visual segue o modo claro/escuro do Windows. Para fixar um tema, use o menu **⋯** (cliente) ou o botão **◐** (app do host).
 
 **Abrir sem alerta de segurança.** Desde a atualização de abril de 2026, o Windows mostra um alerta a cada abertura de um arquivo `.rdp` não assinado.
 - Ao abrir um app pela primeira vez, o cliente oferece **"Abrir apps sem alerta"**. Também está no menu **⋯**.

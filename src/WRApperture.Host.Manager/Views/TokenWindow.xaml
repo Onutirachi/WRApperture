@@ -15,9 +15,9 @@
                 <RowDefinition />
                 <RowDefinition />
             </Grid.RowDefinitions>
-            <TextBlock Text="Endereço" Foreground="{StaticResource Muted}" Margin="0,0,0,4" />
+            <TextBlock Text="Endereço" Foreground="{DynamicResource Muted}" Margin="0,0,0,4" />
             <TextBlock x:Name="AddressText" Grid.Column="1" TextWrapping="Wrap" />
-            <TextBlock Grid.Row="1" Text="Porta" Foreground="{StaticResource Muted}" />
+            <TextBlock Grid.Row="1" Text="Porta" Foreground="{DynamicResource Muted}" />
             <TextBlock x:Name="PortText" Grid.Row="1" Grid.Column="1" />
         </Grid>
 
@@ -27,11 +27,11 @@
             <TextBox x:Name="TokenBox" IsReadOnly="True" FontFamily="Consolas" FontSize="13" />
         </DockPanel>
 
-        <TextBlock Text="Fingerprint (confira no cliente ao parear)" Margin="0,12,0,4" Foreground="{StaticResource Muted}" />
+        <TextBlock Text="Fingerprint (confira no cliente ao parear)" Margin="0,12,0,4" Foreground="{DynamicResource Muted}" />
         <TextBox x:Name="FingerprintBox" IsReadOnly="True" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Padding="0" />
 
-        <Border Background="{StaticResource WarningBackground}" CornerRadius="4" Padding="10" Margin="0,14,0,0">
-            <TextBlock Foreground="{StaticResource Warning}" TextWrapping="Wrap"
+        <Border Background="{DynamicResource WarningBackground}" CornerRadius="4" Padding="10" Margin="0,14,0,0">
+            <TextBlock Foreground="{DynamicResource Warning}" TextWrapping="Wrap"
                        Text="Clientes pareados com o token anterior precisam do novo token: no cliente, use Atualizar e informe-o quando for pedido." />
         </Border>
 

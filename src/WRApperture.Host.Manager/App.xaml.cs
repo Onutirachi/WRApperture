@@ -43,6 +43,7 @@ public partial class App : Application
             .BuildServiceProvider();
 
         Log.Information("Host manager started (admin: {Admin})", isAdmin);
+        WRApperture.Ui.ThemeManager.Initialize(this);
         var window = new MainWindow { DataContext = _services.GetRequiredService<ManagerViewModel>() };
         MainWindow = window;
         window.Show();

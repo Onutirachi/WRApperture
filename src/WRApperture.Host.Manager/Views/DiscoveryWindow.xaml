@@ -7,7 +7,7 @@
         <TextBlock DockPanel.Dock="Top" Text="Marque os apps que devem aparecer nos clientes" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
         <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
             <TextBox x:Name="SearchBox" TextChanged="OnSearchChanged" AutomationProperties.Name="Buscar" />
-            <TextBlock Text="Buscar…" Foreground="{StaticResource Muted}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
+            <TextBlock Text="Buscar…" Foreground="{DynamicResource Muted}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Visibility" Value="Collapsed" />
@@ -22,12 +22,12 @@
         </Grid>
 
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <TextBlock x:Name="CountText" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,0,16,0" />
+            <TextBlock x:Name="CountText" VerticalAlignment="Center" Foreground="{DynamicResource Muted}" Margin="0,0,16,0" />
             <Button Content="Cancelar" Style="{StaticResource Secondary}" IsCancel="True" />
             <Button Content="Publicar selecionados" Style="{StaticResource Primary}" Margin="8,0,0,0" IsDefault="True" Click="OnPublish" />
         </StackPanel>
 
-        <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="6">
+        <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6">
             <ListBox x:Name="List" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -35,9 +35,9 @@
                             <StackPanel>
                                 <TextBlock>
                                     <Run Text="{Binding App.DisplayName, Mode=OneWay}" FontWeight="SemiBold" />
-                                    <Run Text="{Binding Badge, Mode=OneWay}" Foreground="#15803D" />
+                                    <Run Text="{Binding Badge, Mode=OneWay}" Foreground="{DynamicResource Success}" />
                                 </TextBlock>
-                                <TextBlock Text="{Binding App.ExecutablePath}" Foreground="{StaticResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding App.ExecutablePath}" Foreground="{DynamicResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis" />
                             </StackPanel>
                         </CheckBox>
                     </DataTemplate>

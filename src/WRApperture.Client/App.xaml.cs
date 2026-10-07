@@ -60,6 +60,7 @@ public partial class App : Application
             .BuildServiceProvider();
 
         Log.Information("Client started");
+        WRApperture.Ui.ThemeManager.Initialize(this);
         var window = new MainWindow { DataContext = _services.GetRequiredService<MainViewModel>() };
         MainWindow = window;
         window.Show();

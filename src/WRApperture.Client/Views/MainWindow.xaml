@@ -15,7 +15,7 @@
 
     <DockPanel>
         <!-- Toolbar -->
-        <Border DockPanel.Dock="Top" Background="{StaticResource Surface}" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="16,12">
+        <Border DockPanel.Dock="Top" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1" Padding="16,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -24,12 +24,12 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Host:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource Muted}" />
+                    <TextBlock Text="Host:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource Muted}" />
                     <ComboBox Width="240" ItemsSource="{Binding Hosts}" SelectedItem="{Binding SelectedHost}"
                               DisplayMemberPath="Label" IsEnabled="{Binding HasHost}" AutomationProperties.Name="Host selecionado" />
                     <Button Content="Adicionar host" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding AddHostCommand}" />
                     <Button Content="⟳ Atualizar" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding RefreshCommand}" ToolTip="Buscar a lista de apps no host" />
-                    <Button Content="⋯" Style="{StaticResource Secondary}" Margin="8,0,0,0" Padding="10,6" IsEnabled="{Binding HasHost}"
+                    <Button x:Name="MoreButton" Content="⋯" Style="{StaticResource Secondary}" Margin="8,0,0,0" Padding="10,6" IsEnabled="{Binding HasHost}"
                             ToolTip="Mais opções" Click="OnMoreClick" AutomationProperties.Name="Mais opções">
                         <Button.ContextMenu>
                             <ContextMenu>
@@ -49,7 +49,7 @@
 
                 <Grid Grid.Column="2" Width="220">
                     <TextBox x:Name="Search" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Buscar apps" />
-                    <TextBlock Text="Buscar apps…" Foreground="{StaticResource Muted}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                    <TextBlock Text="Buscar apps…" Foreground="{DynamicResource Muted}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -66,13 +66,13 @@
         </Border>
 
         <!-- Status bar -->
-        <Border DockPanel.Dock="Bottom" Padding="16,6" BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0">
+        <Border DockPanel.Dock="Bottom" Padding="16,6" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0">
             <Border.Style>
                 <Style TargetType="Border">
-                    <Setter Property="Background" Value="{StaticResource Surface}" />
+                    <Setter Property="Background" Value="{DynamicResource Surface}" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsWarning}" Value="True">
-                            <Setter Property="Background" Value="{StaticResource WarningBackground}" />
+                            <Setter Property="Background" Value="{DynamicResource WarningBackground}" />
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
@@ -80,10 +80,10 @@
             <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{StaticResource Muted}" />
+                        <Setter Property="Foreground" Value="{DynamicResource Muted}" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsWarning}" Value="True">
-                                <Setter Property="Foreground" Value="{StaticResource Warning}" />
+                                <Setter Property="Foreground" Value="{DynamicResource Warning}" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -96,13 +96,13 @@
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420"
                         Visibility="{Binding HasNoHost, Converter={StaticResource BoolToVis}}">
                 <TextBlock Text="Nenhum host configurado" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" />
-                <TextBlock TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,16" Foreground="{StaticResource Muted}"
+                <TextBlock TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,16" Foreground="{DynamicResource Muted}"
                            Text="No PC remoto, gere um token com 'wrahost agent token' e informe-o aqui junto com o endereço do PC." />
                 <Button Content="Adicionar host" Style="{StaticResource Primary}" HorizontalAlignment="Center" Command="{Binding AddHostCommand}" />
             </StackPanel>
 
             <!-- Empty state: host without apps -->
-            <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource Muted}" TextWrapping="Wrap" MaxWidth="420" TextAlignment="Center"
+            <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" MaxWidth="420" TextAlignment="Center"
                        Text="Nenhum app publicado neste host. No PC remoto, publique pelo atalho &quot;WRApperture (Host)&quot; do Menu Iniciar e clique em Atualizar."
                        Visibility="{Binding HasNoApps, Converter={StaticResource BoolToVis}}" />
 
@@ -121,7 +121,7 @@
                         <Setter Property="Width" Value="128" />
                         <Setter Property="Height" Value="120" />
                         <Setter Property="Margin" Value="6" />
-                        <Setter Property="Foreground" Value="{StaticResource Text}" />
+                        <Setter Property="Foreground" Value="{DynamicResource Text}" />
                         <Setter Property="ToolTip" Value="{Binding ToolTip}" />
                         <Setter Property="AutomationProperties.Name" Value="{Binding DisplayName}" />
                         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -131,20 +131,20 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListBoxItem">
-                                    <Border x:Name="Bd" Background="{StaticResource Surface}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="6" Padding="8">
+                                    <Border x:Name="Bd" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="8">
                                         <ContentPresenter />
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource TileHover}" />
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}" />
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileHover}" />
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}" />
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource TileSelected}" />
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}" />
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileSelected}" />
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}" />
                                         </Trigger>
                                         <Trigger Property="IsKeyboardFocused" Value="True">
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}" />
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -175,7 +175,7 @@
                     <DataTemplate DataType="{x:Type vm:AppTileViewModel}">
                         <StackPanel>
                             <Grid Width="48" Height="48" Margin="0,6,0,8">
-                                <Border CornerRadius="8" Background="{StaticResource Accent}">
+                                <Border CornerRadius="8" Background="{DynamicResource Accent}">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Visibility" Value="Collapsed" />
@@ -215,16 +215,16 @@
             </ListBox>
 
             <!-- Progress overlay: releasing the host / opening an app (blocks clicks meanwhile) -->
-            <Grid Background="#B3F4F5F7" Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVis}}">
-                <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Border}" BorderThickness="1"
+            <Grid Background="{DynamicResource Overlay}" Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVis}}">
+                <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
                         CornerRadius="8" Padding="28,22" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.15" />
                     </Border.Effect>
                     <StackPanel>
                         <Grid Width="40" Height="40" HorizontalAlignment="Center" Margin="0,0,0,14">
-                            <Ellipse Stroke="{StaticResource Border}" StrokeThickness="4" />
-                            <Path Stroke="{StaticResource Accent}" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                            <Ellipse Stroke="{DynamicResource Border}" StrokeThickness="4" />
+                            <Path Stroke="{DynamicResource Accent}" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                   Data="M 20,2 A 18,18 0 0 1 38,20" RenderTransformOrigin="0.5,0.5">
                                 <Path.RenderTransform>
                                     <RotateTransform x:Name="SpinnerRotation" />
@@ -242,7 +242,7 @@
                             </Path>
                         </Grid>
                         <TextBlock Text="{Binding ProgressMessage}" FontSize="15" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" />
-                        <TextBlock Text="{Binding ProgressDetail}" Foreground="{StaticResource Muted}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,0" />
+                        <TextBlock Text="{Binding ProgressDetail}" Foreground="{DynamicResource Muted}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,0" />
                     </StackPanel>
                 </Border>
             </Grid>

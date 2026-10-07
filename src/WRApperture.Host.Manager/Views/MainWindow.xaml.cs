@@ -48,6 +48,19 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(() => Vm.AddFilesCommand.Execute(files));
     }
 
+    private void OnThemeClick(object sender, RoutedEventArgs e)
+    {
+        if (ThemeButton.ContextMenu is null)
+        {
+            ThemeButton.ContextMenu = new System.Windows.Controls.ContextMenu();
+            WRApperture.Ui.ThemeMenu.AddTo(ThemeButton.ContextMenu);
+        }
+
+        ThemeButton.ContextMenu.PlacementTarget = ThemeButton;
+        ThemeButton.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        ThemeButton.ContextMenu.IsOpen = true;
+    }
+
     private void OnAppDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (Vm.EditCommand.CanExecute(null))
