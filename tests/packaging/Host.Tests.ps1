@@ -1,6 +1,10 @@
 ﻿# Pester 3.4 (ships with Windows PowerShell 5.1). Run: Invoke-Pester tests\packaging
 $scripts = Join-Path $PSScriptRoot '..\..\packaging\host'
 
+# Output assertions are in English; the scripts run as child processes and inherit this.
+$previousLanguage = $env:WRAPPERTURE_LANG
+$env:WRAPPERTURE_LANG = 'en'
+
 function Invoke-Script([string]$Name, [string[]]$Arguments) {
     $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts $Name) @Arguments *>&1 | Out-String
     return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output }
@@ -16,7 +20,7 @@ Describe 'Install-WRAppertureHost' {
             $r = Invoke-Script 'Install-WRAppertureHost.ps1' @('-InstallDir', $dir)
 
             $r.ExitCode | Should Be 2
-            $r.Output | Should Match 'administrador'
+            $r.Output | Should Match 'administrator'
             $dir | Should Not Exist
         }
     }
@@ -26,14 +30,14 @@ Describe 'Install-WRAppertureHost' {
         $r = Invoke-Script 'Install-WRAppertureHost.ps1' @('-InstallDir', $dir, '-DryRun')
 
         $r.ExitCode | Should Be 0
-        $r.Output | Should Match '\[simulação\] Copiar binários'
-        $r.Output | Should Match '\[simulação\] Criar atalho "WRApperture \(Host\)"'
-        $r.Output | Should Match '\[simulação\] Preparar o host'
-        $r.Output | Should Match '\[simulação\] Gerar token'
-        $r.Output | Should Match '\[simulação\] (Registrar|Atualizar) o serviço WRAppertureAgent'
-        $r.Output | Should Match 'reinício automático'
-        $r.Output | Should Match 'porta TCP 5080 no firewall \(Domain,Private\)'
-        $r.Output | Should Match '\[simulação\] Iniciar o serviço'
+        $r.Output | Should Match '\[dry run\] Copy binaries'
+        $r.Output | Should Match '\[dry run\] Create the "WRApperture \(Host\)" shortcut'
+        $r.Output | Should Match '\[dry run\] Prepare the host'
+        $r.Output | Should Match '\[dry run\] Generate a pairing token'
+        $r.Output | Should Match '\[dry run\] (Register|Update) the WRAppertureAgent service'
+        $r.Output | Should Match 'automatic restart'
+        $r.Output | Should Match 'TCP port 5080 in the firewall \(Domain,Private\)'
+        $r.Output | Should Match '\[dry run\] Start the WRAppertureAgent service'
         $dir | Should Not Exist
         Get-Service WRAppertureAgent -ErrorAction SilentlyContinue | Should BeNullOrEmpty
     }
@@ -42,6 +46,16 @@ Describe 'Install-WRAppertureHost' {
         $r = Invoke-Script 'Install-WRAppertureHost.ps1' @('-InstallDir', (Join-Path $TestDrive 'pub'), '-DryRun', '-AllowPublicNetwork')
 
         $r.Output | Should Match 'Domain,Private,Public'
+    }
+
+    It 'speaks Portuguese when the language is pt-BR' {
+        $env:WRAPPERTURE_LANG = 'pt-BR'
+        try { $r = Invoke-Script 'Install-WRAppertureHost.ps1' @('-InstallDir', (Join-Path $TestDrive 'pt'), '-DryRun') }
+        finally { $env:WRAPPERTURE_LANG = 'en' }
+
+        $r.ExitCode | Should Be 0
+        $r.Output | Should Match '\[simulação\] Copiar binários'
+        $r.Output | Should Match 'Simulação concluída'
     }
 }
 
@@ -62,7 +76,7 @@ Describe 'Uninstall-WRAppertureHost' {
         $r.ExitCode | Should Be 0
         $r.Output | Should Match 'wrahost revert'
         $r.Output | Should Match 'wrahost agent reset'
-        $r.Output | Should Match "\[simulação\] Apagar"
+        $r.Output | Should Match "\[dry run\] Delete"
         Join-Path $dir 'wrahost.exe' | Should Exist
     }
 
@@ -73,3 +87,5 @@ Describe 'Uninstall-WRAppertureHost' {
         $r.Output | Should Not Match 'wrahost revert'
     }
 }
+
+$env:WRAPPERTURE_LANG = $previousLanguage
