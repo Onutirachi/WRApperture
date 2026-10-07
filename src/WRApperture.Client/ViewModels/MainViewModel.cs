@@ -1,0 +1,357 @@
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
+using System.Windows.Data;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
+using WRApperture.Client.Core;
+using WRApperture.Client.Core.Agent;
+using WRApperture.Client.Core.Credentials;
+using WRApperture.Client.Core.Launch;
+using WRApperture.Client.Core.Model;
+using WRApperture.Client.Core.Shortcuts;
+using WRApperture.Client.Core.Storage;
+using WRApperture.Client.Services;
+using WRApperture.Shared;
+
+namespace WRApperture.Client.ViewModels;
+
+/// <summary>Combo item; updated in place so the ComboBox selection never flickers.</summary>
+public sealed partial class HostOption(PairedHost host) : ObservableObject
+{
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Label))]
+    private PairedHost _host = host;
+
+    public string Label => string.Equals(Host.DisplayName, Host.Address, StringComparison.OrdinalIgnoreCase)
+        ? Host.DisplayName
+        : $"{Host.DisplayName} ({Host.Address})";
+}
+
+public sealed partial class MainViewModel : ObservableObject
+{
+    private readonly HostStore _store;
+    private readonly IconStore _icons;
+    private readonly RemoteAppLauncher _launcher;
+    private readonly HostSync _sync;
+    private readonly ICredentialStore _credentials;
+    private readonly IDialogService _dialogs;
+    private readonly ILogger<MainViewModel> _logger;
+    private ClientState _state;
+
+    public MainViewModel(HostStore store, IconStore icons, RemoteAppLauncher launcher, HostSync sync,
+        ICredentialStore credentials, IDialogService dialogs, ILogger<MainViewModel> logger)
+    {
+        _store = store;
+        _icons = icons;
+        _launcher = launcher;
+        _sync = sync;
+        _credentials = credentials;
+        _dialogs = dialogs;
+        _logger = logger;
+        _state = store.Load();
+
+        AppsView = CollectionViewSource.GetDefaultView(Apps);
+        AppsView.Filter = o => o is AppTileViewModel t &&
+            (string.IsNullOrWhiteSpace(SearchText) || t.DisplayName.Contains(SearchText.Trim(), StringComparison.CurrentCultureIgnoreCase));
+
+        foreach (var host in _state.Hosts)
+        {
+            Hosts.Add(new HostOption(host));
+        }
+
+        SelectedHost = Hosts.FirstOrDefault(h => h.Host.Id == _state.SelectedHostId) ?? Hosts.FirstOrDefault();
+    }
+
+    public ObservableCollection<HostOption> Hosts { get; } = [];
+    public ObservableCollection<AppTileViewModel> Apps { get; } = [];
+    public ICollectionView AppsView { get; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasHost), nameof(HasNoHost))]
+    [NotifyCanExecuteChangedFor(nameof(RefreshCommand), nameof(RemoveHostCommand), nameof(SaveCredentialsCommand), nameof(DeleteCredentialsCommand))]
+    private HostOption? _selectedHost;
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RefreshCommand))]
+    private bool _isBusy;
+
+    [ObservableProperty]
+    private string _status = string.Empty;
+
+    [ObservableProperty]
+    private bool _isWarning;
+
+    public bool HasHost => SelectedHost is not null;
+    public bool HasNoHost => SelectedHost is null;
+    public bool HasNoApps => HasHost && Apps.Count == 0 && !IsBusy;
+
+    partial void OnSearchTextChanged(string value) => AppsView.Refresh();
+
+    partial void OnIsBusyChanged(bool value) => OnPropertyChanged(nameof(HasNoApps));
+
+    partial void OnSelectedHostChanged(HostOption? value)
+    {
+        ShowCachedApps();
+        if (value is not null)
+        {
+            _state = _state with { SelectedHostId = value.Host.Id };
+            _store.Save(_state);
+            _ = RefreshAsync();
+        }
+    }
+
+    [RelayCommand]
+    private void AddHost()
+    {
+        var result = _dialogs.AddHost();
+        if (result is not null)
+        {
+            SavePaired(result, existing: null);
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRefresh))]
+    private async Task RefreshAsync()
+    {
+        if (SelectedHost is not { } option)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        SetStatus("Sincronizando…", warning: false);
+        try
+        {
+            var synced = await _sync.SyncAsync(option.Host);
+            ReplaceHost(synced);
+            SetStatus($"{synced.Apps.Count} app(s) · sincronizado às {DateTime.Now:HH:mm}", warning: false);
+        }
+        catch (AgentUnreachableException ex)
+        {
+            _logger.LogWarning(ex, "Host {Address} offline", option.Host.Address);
+            var when = option.Host.LastSyncUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? "nunca";
+            SetStatus($"Host offline — exibindo a última lista conhecida (sincronizada em {when}).", warning: true);
+        }
+        catch (InvalidTokenException ex)
+        {
+            SetStatus(ex.Message, warning: true);
+            if (_dialogs.Confirm("Token inválido", ex.Message + "\n\nDeseja informar um novo token agora?"))
+            {
+                var result = _dialogs.AddHost(option.Host.Address, option.Host.AgentPort);
+                if (result is not null)
+                {
+                    SavePaired(result, option.Host);
+                }
+            }
+        }
+        catch (CertificateChangedException ex)
+        {
+            SetStatus("A identidade do host mudou. Conexão bloqueada.", warning: true);
+            var message = $"{ex.Message}\n\nFingerprint confirmado:\n{CertificateFingerprint.Format(option.Host.PinnedFingerprint)}\n\n" +
+                          $"Fingerprint apresentado agora:\n{CertificateFingerprint.Format(ex.ObservedFingerprint)}\n\n" +
+                          "Confira com 'wrahost agent show' no host. Confiar no novo fingerprint?";
+            if (_dialogs.Confirm("Identidade do host mudou", message))
+            {
+                ReplaceHost(option.Host with { PinnedFingerprint = ex.ObservedFingerprint });
+                _logger.LogWarning("User accepted new fingerprint for {Address}", option.Host.Address);
+                IsBusy = false;
+                await RefreshAsync();
+            }
+        }
+        catch (AgentException ex)
+        {
+            SetStatus(ex.Message, warning: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogError(ex, "Failed to store sync results for {Address}", option.Host.Address);
+            SetStatus($"Erro ao salvar dados locais: {ex.Message}", warning: true);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private bool CanRefresh() => SelectedHost is not null && !IsBusy;
+
+    [RelayCommand]
+    private void OpenApp(AppTileViewModel? tile)
+    {
+        if (tile is null || SelectedHost is not { } option)
+        {
+            return;
+        }
+
+        try
+        {
+            _launcher.Launch(option.Host, tile.App);
+            SetStatus($"Abrindo {tile.DisplayName}…", warning: false);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            _logger.LogError(ex, "Failed to launch {Alias}", tile.App.Alias);
+            _dialogs.Error($"Não foi possível abrir {tile.DisplayName}: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void CreateShortcut(AppTileViewModel? tile)
+    {
+        if (tile is null || SelectedHost is not { } option)
+        {
+            return;
+        }
+
+        try
+        {
+            var rdp = _launcher.WriteRdpFile(option.Host, tile.App);
+            var png = _icons.PngPath(option.Host.Id, tile.App.Alias);
+            var ico = _icons.IcoPath(option.Host.Id, tile.App.Alias);
+            if (File.Exists(png))
+            {
+                File.WriteAllBytes(ico, IcoWriter.FromPng(File.ReadAllBytes(png)));
+            }
+
+            var lnk = DesktopShortcuts.Create(tile.DisplayName, rdp, File.Exists(ico) ? ico : RemoteAppLauncher.MstscPath);
+            SetStatus($"Atalho criado: {Path.GetFileName(lnk)}", warning: false);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or System.Runtime.InteropServices.COMException)
+        {
+            _logger.LogError(ex, "Failed to create shortcut for {Alias}", tile.App.Alias);
+            _dialogs.Error($"Não foi possível criar o atalho: {ex.Message}");
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(HasHost))]
+    private void SaveCredentials()
+    {
+        var host = SelectedHost!.Host;
+        var input = _dialogs.AskCredentials(host.DisplayName, host.RdpUserName);
+        if (input is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _credentials.Save(host.Address, input.UserName, input.Password);
+            ReplaceHost(host with { RdpUserName = input.UserName });
+            SetStatus("Credenciais salvas no Windows. Os apps abrirão sem pedir senha.", warning: false);
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            _dialogs.Error(ex.Message);
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(HasHost))]
+    private void DeleteCredentials()
+    {
+        var host = SelectedHost!.Host;
+        _credentials.Delete(host.Address);
+        ReplaceHost(host with { RdpUserName = null });
+        SetStatus("Credenciais removidas. A próxima conexão pedirá usuário e senha.", warning: false);
+    }
+
+    [RelayCommand(CanExecute = nameof(HasHost))]
+    private void RemoveHost()
+    {
+        var option = SelectedHost!;
+        if (!_dialogs.Confirm("Remover host", $"Remover {option.Label} deste computador? Atalhos já criados deixarão de funcionar."))
+        {
+            return;
+        }
+
+        _icons.DeleteHostFiles(option.Host.Id);
+        _credentials.Delete(option.Host.Address);
+        _state = _state with { Hosts = _state.Hosts.Where(h => h.Id != option.Host.Id).ToList() };
+        Hosts.Remove(option);
+        SelectedHost = Hosts.FirstOrDefault();
+        _state = _state with { SelectedHostId = SelectedHost?.Host.Id };
+        _store.Save(_state);
+        if (SelectedHost is null)
+        {
+            SetStatus(string.Empty, warning: false);
+        }
+    }
+
+    private void SavePaired(AddHostResult result, PairedHost? existing)
+    {
+        // Same address as an existing host => update it (keeps Id, cache, credentials).
+        existing ??= _state.Hosts.FirstOrDefault(h =>
+            string.Equals(h.Address, result.Address, StringComparison.OrdinalIgnoreCase) && h.AgentPort == result.AgentPort);
+
+        var host = (existing ?? new PairedHost
+        {
+            Id = Guid.NewGuid(),
+            DisplayName = result.Pairing.Host.HostName,
+            Address = result.Address,
+            AgentPort = result.AgentPort,
+            ProtectedToken = string.Empty,
+            PinnedFingerprint = string.Empty,
+        }) with
+        {
+            ProtectedToken = HostStore.ProtectToken(result.Token),
+            PinnedFingerprint = result.Pairing.ObservedFingerprint,
+            RdpPort = result.Pairing.Host.RdpPort,
+        };
+
+        _logger.LogInformation("Paired host {Address}:{Port}", host.Address, host.AgentPort);
+        if (existing is null)
+        {
+            _state = _state with { Hosts = [.. _state.Hosts, host] };
+            _store.Save(_state);
+            var option = new HostOption(host);
+            Hosts.Add(option);
+            SelectedHost = option;
+        }
+        else
+        {
+            ReplaceHost(host);
+            _ = RefreshAsync();
+        }
+    }
+
+    private void ReplaceHost(PairedHost host)
+    {
+        _state = _state with { Hosts = _state.Hosts.Select(h => h.Id == host.Id ? host : h).ToList() };
+        _store.Save(_state);
+
+        var option = Hosts.FirstOrDefault(h => h.Host.Id == host.Id);
+        if (option is not null)
+        {
+            option.Host = host;
+        }
+
+        if (ReferenceEquals(option, SelectedHost))
+        {
+            ShowCachedApps();
+        }
+    }
+
+    private void ShowCachedApps()
+    {
+        Apps.Clear();
+        if (SelectedHost is { } option)
+        {
+            foreach (var app in option.Host.Apps.OrderBy(a => a.DisplayName, StringComparer.CurrentCultureIgnoreCase))
+            {
+                Apps.Add(new AppTileViewModel(app, _icons.PngPath(option.Host.Id, app.Alias)));
+            }
+        }
+
+        OnPropertyChanged(nameof(HasNoApps));
+    }
+
+    private void SetStatus(string text, bool warning)
+    {
+        Status = text;
+        IsWarning = warning;
+    }
+}

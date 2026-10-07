@@ -48,3 +48,8 @@
 
 ## R7. Logging
 - **Decision**: Serilog em arquivo, em `%LOCALAPPDATA%\WRApperture\logs\client-.log`. Token e senha nunca são passados ao logger.
+
+## R8. Descobertos na implementação
+- **Tema do Windows**: o WPF herda `SystemColors` nos controles padrão. Em temas escuros ou de contraste, o texto ficava branco sobre os tiles brancos. Por isso o `App.xaml` fixa as chaves de `SystemColors` com a paleta clara do app.
+- **Credenciais de teste**: `CredWriteW` com `CRED_TYPE_DOMAIN_PASSWORD` rejeita alvos que não parecem host (erro 87). O teste de integração usa `TERMSRV/wrapperture-unit-<guid>.invalid` e remove a credencial no fim.
+- **DPAPI**: um `hosts.json` copiado de outro usuário ou PC não descriptografa. O caso vira `InvalidTokenException` com orientação para parear de novo, em vez de uma exceção não tratada.

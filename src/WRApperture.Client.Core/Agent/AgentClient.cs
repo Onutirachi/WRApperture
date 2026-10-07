@@ -11,8 +11,16 @@ public sealed record PairingResult(HostInfoDto Host, string ObservedFingerprint)
 
 public sealed record IconResult(bool NotModified, byte[]? Png, string? ETag);
 
+/// <summary>Read operations of the agent API (seam for tests).</summary>
+public interface IAgentApi : IDisposable
+{
+    Task<HostInfoDto> GetHostInfoAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<AppSummaryDto>> GetAppsAsync(CancellationToken ct = default);
+    Task<IconResult> GetIconAsync(string alias, int size, string? etag, CancellationToken ct = default);
+}
+
 /// <summary>Talks to a host agent over HTTPS with certificate pinning.</summary>
-public sealed class AgentClient : IDisposable
+public sealed class AgentClient : IAgentApi
 {
     public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
@@ -32,8 +40,22 @@ public sealed class AgentClient : IDisposable
     public static AgentClient ForHost(PairedHost host)
     {
         var validator = CertificatePinValidator.Pinned(host.PinnedFingerprint);
-        return new AgentClient(CreateHttp(host.Address, host.AgentPort, HostStore.UnprotectToken(host.ProtectedToken), validator),
+        return new AgentClient(CreateHttp(host.Address, host.AgentPort, ReadToken(host), validator),
             validator, host.Address, host.AgentPort);
+    }
+
+    /// <summary>DPAPI data only decrypts for the user/machine that created it (e.g. a copied hosts.json fails).</summary>
+    private static string ReadToken(PairedHost host)
+    {
+        try
+        {
+            return HostStore.UnprotectToken(host.ProtectedToken);
+        }
+        catch (Exception ex) when (ex is System.Security.Cryptography.CryptographicException or FormatException)
+        {
+            throw new InvalidTokenException(
+                "O token salvo deste host não pode ser lido neste usuário/computador. Informe o token de pareamento novamente.", ex);
+        }
     }
 
     /// <summary>

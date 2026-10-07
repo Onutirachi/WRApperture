@@ -109,6 +109,15 @@ public sealed class AgentClientTlsTests : IAsyncLifetime
     }
 
     [Fact]
+    public void Unreadable_protected_token_is_reported_as_invalid_token()
+    {
+        var host = Samples.Host("127.0.0.1") with { AgentPort = Port, ProtectedToken = Convert.ToBase64String(new byte[64]) };
+
+        var ex = Assert.Throws<InvalidTokenException>(() => AgentClient.ForHost(host));
+        Assert.Contains("não pode ser lido", ex.Message);
+    }
+
+    [Fact]
     public async Task Unreachable_agent_reports_address_and_port()
     {
         var ex = await Assert.ThrowsAsync<AgentUnreachableException>(() => AgentClient.PairAsync("127.0.0.1", 1, Token));

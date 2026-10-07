@@ -13,7 +13,8 @@ Abra apps individuais de um PC Windows (host) a partir de outro computador (clie
 | `WRApperture.Host.Agent` | ✅ | Serviço HTTPS (porta 5080) que expõe apps, ícones e dados de conexão ao cliente, protegido por token de pareamento |
 | `WRApperture.Shared` | ✅ | Contrato da API (rotas, DTOs, fingerprint de certificado), compartilhado entre o Agent e o Client |
 | `WRApperture.Host.Manager` | ⏳ | Interface gráfica do host |
-| `WRApperture.Client` | ⏳ | Lista os apps do host e abre com um clique |
+| `WRApperture.Client` | ✅ | App WPF: pareia com o host, mostra os apps em grade e abre cada um em sua janela com um clique |
+| `WRApperture.Client.Core` | ✅ | Lógica do cliente: pareamento com pinning, cache offline, geração de `.rdp`, credenciais e atalhos |
 
 ## Uso rápido do `wrahost` (no host, terminal **como administrador**)
 
@@ -40,7 +41,23 @@ dotnet run --project src/WRApperture.Host.Agent
 
 Na primeira execução, o agente cria um certificado autoassinado em `LocalMachine\My`. A API está descrita em [contracts/http-api.md](specs/20261007-105635-host-agent/contracts/http-api.md). A instalação como serviço do Windows fica para a feature de empacotamento.
 
-Para abrir o app no cliente enquanto o app cliente não fica pronto, crie um `.rdp` com o conteúdo abaixo:
+## Cliente (no outro computador)
+
+```powershell
+dotnet run --project src/WRApperture.Client
+```
+
+1. Clique em **Adicionar host** e informe o IP ou nome do PC remoto, a porta `5080` e o token.
+2. Confira se o fingerprint exibido é igual ao de `wrahost agent show` no host e confirme.
+3. Clique em um app: só a janela dele abre. Vários apps compartilham a mesma sessão.
+4. Opcional: no menu **⋯**, use **Salvar credenciais do host…** para abrir sem digitar a senha. Com o botão direito em um app, use **Criar atalho na área de trabalho**.
+
+Na primeira conexão, o Windows pode avisar sobre o certificado RDP do host. Marque "Não perguntar novamente para conexões com este computador".
+Os dados do cliente ficam em `%LOCALAPPDATA%\WRApperture\client`. O token fica protegido com DPAPI e a senha fica no Gerenciador de Credenciais do Windows.
+
+### Sem o cliente: `.rdp` manual
+
+Para abrir um app sem o cliente, crie um `.rdp` com o conteúdo abaixo:
 
 ```
 full address:s:<IP-OU-NOME-DO-HOST>

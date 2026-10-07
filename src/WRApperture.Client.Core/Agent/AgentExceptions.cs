@@ -3,8 +3,10 @@ namespace WRApperture.Client.Core.Agent;
 /// <summary>Base for agent errors. Messages are user-facing (PT-BR) and suggest an action.</summary>
 public class AgentException(string message, Exception? inner = null) : Exception(message, inner);
 
-public sealed class InvalidTokenException()
-    : AgentException("Token de pareamento inválido ou revogado. Gere um novo com 'wrahost agent token' no host e informe-o aqui.");
+public sealed class InvalidTokenException(
+    string message = "Token de pareamento inválido ou revogado. Gere um novo com 'wrahost agent token' no host e informe-o aqui.",
+    Exception? inner = null)
+    : AgentException(message, inner);
 
 public sealed class TooManyAttemptsException()
     : AgentException("O host bloqueou temporariamente este computador por excesso de tentativas. Aguarde alguns minutos.");
