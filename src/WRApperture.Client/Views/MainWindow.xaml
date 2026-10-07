@@ -196,24 +196,8 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <TextBlock Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Text" Value="{Binding Initial}" />
-                                                <Setter Property="FontSize" Value="22" />
-                                                <Setter Property="FontWeight" Value="SemiBold" />
-                                                <Style.Triggers>
-                                                    <!-- Desktop tile: monitor glyph (Segoe MDL2 Assets "TVMonitor") -->
-                                                    <DataTrigger Binding="{Binding IsDesktop}" Value="True">
-                                                        <Setter Property="Text" Value="&#xE7F4;" />
-                                                        <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
-                                                        <Setter Property="FontSize" Value="26" />
-                                                        <Setter Property="FontWeight" Value="Normal" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
+                                    <TextBlock Text="{Binding Initial}" Foreground="White" FontSize="22" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
                                 <Image Source="{Binding Icon}" RenderOptions.BitmapScalingMode="HighQuality" />
                             </Grid>

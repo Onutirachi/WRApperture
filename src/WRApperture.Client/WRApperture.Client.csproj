@@ -30,7 +30,7 @@
 
   <!-- Shortcut icons: the client's own icon and the corner badge (built by scripts/build-icons.ps1). -->
   <ItemGroup>
-    <Resource Include="../../assets/icons/client.png" Link="Assets/client.png" />
+    <Resource Include="../../assets/icons/desktop.xaml" Link="Assets/desktop.xaml" />
     <Resource Include="../../assets/icons/badge.xaml" Link="Assets/badge.xaml" />
   </ItemGroup>
 

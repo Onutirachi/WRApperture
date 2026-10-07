@@ -23,7 +23,7 @@ public sealed class AppTileViewModel(CachedApp app, string iconPath, bool isDesk
         : IsRenamed ? Strings.T("client.tile.renamedTip", DisplayName, App.DisplayName) : DisplayName)
         + "\n" + Strings.T("client.tile.moreTip");
     public string Initial => DisplayName.Length > 0 ? DisplayName[..1].ToUpperInvariant() : "?";
-    public ImageSource? Icon { get; } = LoadIcon(iconPath);
+    public ImageSource? Icon { get; } = isDesktop ? Services.Artwork.DesktopImage : LoadIcon(iconPath);
 
     /// <summary>The cached PNG (tray menu); empty for the desktop tile.</summary>
     public string IconPath { get; } = iconPath;

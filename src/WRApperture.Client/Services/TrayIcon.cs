@@ -101,11 +101,11 @@ internal sealed class TrayIcon : IDisposable
         return item;
     }
 
-    /// <summary>The app's cached icon; otherwise the same blue tile as the grid (monitor glyph or initial).</summary>
+    /// <summary>The desktop art, the app's cached icon, or the grid's blue tile with the initial.</summary>
     private Image? ImageFor(AppTileViewModel tile)
     {
         var pixels = (int)Math.Round(MenuIconSize * _menu.DeviceDpi / 96.0);
-        var image = LoadImage(tile.IconPath, pixels) ?? RenderTile(tile, pixels);
+        var image = tile.IsDesktop ? RenderDesktop(pixels) : LoadImage(tile.IconPath, pixels) ?? RenderTile(tile, pixels);
         if (image is not null)
         {
             _images.Add(image);
@@ -138,15 +138,21 @@ internal sealed class TrayIcon : IDisposable
         }
     }
 
-    /// <summary>Draws the grid's fallback tile with WPF (same accent color, glyph and font) as a menu image.</summary>
+    /// <summary>The desktop item's art, drawn as vectors at menu size.</summary>
+    private static Bitmap RenderDesktop(int pixels)
+    {
+        using var stream = new MemoryStream(Artwork.ToPng(Artwork.Desktop, pixels));
+        using var decoded = Image.FromStream(stream);
+        return new Bitmap(decoded);
+    }
+
+    /// <summary>Draws the grid's fallback tile with WPF (same accent color, initial and font) as a menu image.</summary>
     private static Bitmap RenderTile(AppTileViewModel tile, int pixels)
     {
         var accent = System.Windows.Application.Current.TryFindResource("Accent") as System.Windows.Media.Brush
                      ?? System.Windows.Media.Brushes.RoyalBlue;
-        var text = tile.IsDesktop ? "" : tile.Initial; // Segoe MDL2 Assets "TVMonitor", as in the grid
-        var font = new System.Windows.Media.Typeface(tile.IsDesktop ? "Segoe MDL2 Assets" : "Segoe UI");
-        var glyph = new System.Windows.Media.FormattedText(text, System.Globalization.CultureInfo.CurrentUICulture,
-            System.Windows.FlowDirection.LeftToRight, font, pixels * (tile.IsDesktop ? 0.62 : 0.6),
+        var glyph = new System.Windows.Media.FormattedText(tile.Initial, System.Globalization.CultureInfo.CurrentUICulture,
+            System.Windows.FlowDirection.LeftToRight, new System.Windows.Media.Typeface("Segoe UI"), pixels * 0.6,
             System.Windows.Media.Brushes.White, 1.0);
 
         var visual = new System.Windows.Media.DrawingVisual();

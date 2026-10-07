@@ -6,9 +6,9 @@
     Renders each SVG with WPF at every icon size (sharper than scaling one big image down) and writes:
       assets/icons/WRApperture.ico       client app (WRApperture.exe)
       assets/icons/WRApperture.Host.ico  host app, agent and wrahost
-      assets/icons/client.png            256 px, base of the client's own shortcuts
-      assets/icons/badge.png             256 px preview of the corner badge on shortcuts created by the client
-      assets/icons/badge.xaml            the same badge as vector shapes, drawn by the client at each icon size
+      assets/icons/badge.xaml            corner badge on shortcuts created by the client (vector, drawn at each size)
+      assets/icons/desktop.xaml          "Desktop" art: grid tile, tray item and desktop shortcut (vector)
+      assets/icons/*.png                 256 px previews of the vector art, for reviewing the drawings
     The outputs are committed, so a normal build does not need this script: run it after changing a drawing.
 
     Supported SVG subset (what CorelDRAW exports for these drawings): <path d>, <polygon points>, <circle>,
@@ -173,9 +173,10 @@ function Write-DrawingXaml($Art, [string]$Path) {
 }
 
 foreach ($icon in @(
-        @{ Svg = 'client.svg'; Ico = 'WRApperture.ico'; Png = 'client.png' },
-        @{ Svg = 'host.svg'; Ico = 'WRApperture.Host.ico'; Png = $null },
-        @{ Svg = 'badge.svg'; Ico = $null; Png = 'badge.png' })) {
+        @{ Svg = 'client.svg'; Ico = 'WRApperture.ico'; Png = $null; Xaml = $null },
+        @{ Svg = 'host.svg'; Ico = 'WRApperture.Host.ico'; Png = $null; Xaml = $null },
+        @{ Svg = 'badge.svg'; Ico = $null; Png = 'badge.png'; Xaml = 'badge.xaml' },
+        @{ Svg = 'desktop.svg'; Ico = $null; Png = 'desktop.png'; Xaml = 'desktop.xaml' })) {
     $art = Read-Drawing (Join-Path $IconsDir $icon.Svg)
     if ($icon.Ico) {
         $images = foreach ($size in $IconSizes) { [pscustomobject]@{ Size = $size; Png = (ConvertTo-Png $art $size) } }
@@ -184,10 +185,10 @@ foreach ($icon in @(
     }
     if ($icon.Png) {
         [IO.File]::WriteAllBytes((Join-Path $IconsDir $icon.Png), (ConvertTo-Png $art 256))
-        Write-Host "$($icon.Png): 256 px"
+        Write-Host "$($icon.Png): 256 px preview"
     }
-    if ($icon.Svg -eq 'badge.svg') {
-        Write-DrawingXaml $art (Join-Path $IconsDir 'badge.xaml')
-        Write-Host 'badge.xaml: vector'
+    if ($icon.Xaml) {
+        Write-DrawingXaml $art (Join-Path $IconsDir $icon.Xaml)
+        Write-Host "$($icon.Xaml): vector"
     }
 }
