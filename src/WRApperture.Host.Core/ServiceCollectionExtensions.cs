@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using WRApperture.Host.Core.Abstractions;
 using WRApperture.Host.Core.Platform;
 using WRApperture.Host.Core.Publishing;
+using WRApperture.Host.Core.Readiness;
 
 namespace WRApperture.Host.Core;
 
@@ -15,6 +16,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFileSystemProbe, FileSystemProbe>();
         services.AddSingleton<IFirewallRules, ComFirewallRules>();
         services.AddSingleton<IAppPublisher, AppPublisher>();
+        services.AddSingleton<IHostPreparation, HostPreparation>();
         return services;
     }
 }
