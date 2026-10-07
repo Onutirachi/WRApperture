@@ -63,10 +63,12 @@
                     <Button Content="Remover" Style="{StaticResource Secondary}" Margin="0,0,8,6" Command="{Binding RemoveCommand}" />
                     <Button Content="⟳" Style="{StaticResource Secondary}" Margin="0,0,8,6" Padding="10,6" ToolTip="Atualizar" Command="{Binding RefreshCommand}" />
                 </WrapPanel>
+                <TextBlock DockPanel.Dock="Top" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,0,0,8"
+                           TextWrapping="Wrap"
+                           Text="Dica: arraste atalhos ou programas .exe e solte nesta janela, ou copie-os no Explorer (Ctrl+C) e cole aqui (Ctrl+V)." />
 
                 <Grid>
-                    <Border x:Name="DropZone" Background="{StaticResource Surface}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="6"
-                            AllowDrop="True" DragEnter="OnDragEnter" DragOver="OnDragOver" DragLeave="OnDragLeave" Drop="OnDrop">
+                    <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="6">
                         <Grid>
                             <ListView ItemsSource="{Binding Apps}" SelectedItem="{Binding SelectedApp}" BorderThickness="0" Background="Transparent"
                                       MouseDoubleClick="OnAppDoubleClick" Margin="2" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -93,13 +95,6 @@
                                            Text="Arraste para cá atalhos (da área de trabalho ou do Menu Iniciar) ou programas .exe." />
                             </StackPanel>
                         </Grid>
-                    </Border>
-
-                    <!-- Highlight while dragging files over the window -->
-                    <Border x:Name="DropHighlight" Visibility="Collapsed" IsHitTestVisible="False" CornerRadius="6"
-                            BorderBrush="{StaticResource Accent}" BorderThickness="2" Background="#1A2563EB">
-                        <TextBlock Text="Solte para publicar" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource Accent}"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                 </Grid>
             </DockPanel>

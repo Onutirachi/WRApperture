@@ -50,3 +50,11 @@ packaging/host/*                          atalho Menu Iniciar + exe no pacote
 - Janela principal capturada em `--read-only`: dados reais do PC (preparação, IP, porta, estado do agente). Layout corrigido após a primeira captura (botões sobrepostos ao título, valores crus "0"/"1", texto cortado).
 - `AppSourceInspector` verificado com arquivos reais via `wrahost inspect`: atalho MSI (CorelDRAW), argumentos (Git Bash, prompts do VS), ícone `.ico`, nome pela descrição do exe ("Mapa de caracteres"), recusas (app da Store ausente, `.ini`).
 - Não verificado aqui: editor, seletor e token em modo administrador (UIPI impede automatizar janela elevada). Validação pelo usuário.
+
+## Revisão: arrastar com a janela elevada (v0.4.1)
+
+- **Problema (teste do usuário)**: o cursor mostrava "proibido". O Windows (UIPI) bloqueia o arrastar OLE de um Explorer comum para uma janela de administrador.
+- **Decisão**: `ShellFileDrop`. A janela sai do OLE (`RevokeDragDrop`), aceita o arrastar clássico (`DragAcceptFiles`) e libera `WM_DROPFILES`, `WM_COPYDATA` e `WM_COPYGLOBALDATA` no filtro de mensagens (`ChangeWindowMessageFilterEx`). Em troca, não há destaque durante o arrastar, então a dica fica sempre visível.
+- **Alternativa sem arrastar**: Ctrl+C no Explorer e Ctrl+V na janela (lista de arquivos da área de transferência).
+- **Diagnóstico**: o log `manager-*.log` registra a configuração do arrastar e cada `WM_DROPFILES` recebido.
+- **Validação**: pelo usuário. A simulação automática do arrastar não foi confiável no Windows 11.

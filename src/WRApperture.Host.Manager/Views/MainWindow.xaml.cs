@@ -6,36 +6,46 @@ namespace WRApperture.Host.Manager.Views;
 
 public partial class MainWindow : Window
 {
-    public MainWindow() => InitializeComponent();
+    public MainWindow()
+    {
+        InitializeComponent();
+        // The window usually runs elevated, where OLE drag and drop from Explorer is blocked: use shell drops.
+        SourceInitialized += (_, _) => ShellFileDrop.Enable(this, OnFilesDropped);
+        // Alternative to dragging: Ctrl+C on shortcuts/programs in Explorer, Ctrl+V here.
+        CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste, OnPaste, (_, e) => e.CanExecute = Clipboard.ContainsFileDropList()));
+    }
+
+    private void OnPaste(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (Keyboard.FocusedElement is System.Windows.Controls.TextBox)
+        {
+            return; // let text boxes paste text normally
+        }
+
+        var files = Clipboard.GetFileDropList();
+        var paths = new string[files.Count];
+        files.CopyTo(paths, 0);
+        OnFilesDropped(paths);
+    }
 
     private ManagerViewModel Vm => (ManagerViewModel)DataContext;
 
-    private static bool HasFiles(DragEventArgs e) => e.Data.GetDataPresent(DataFormats.FileDrop);
-
-    private void OnDragEnter(object sender, DragEventArgs e)
+    private void OnFilesDropped(string[] files)
     {
-        if (HasFiles(e) && Vm.IsAdmin)
+        if (files.Length == 0)
         {
-            DropHighlight.Visibility = Visibility.Visible;
+            return;
         }
-    }
 
-    private void OnDragOver(object sender, DragEventArgs e)
-    {
-        e.Effects = HasFiles(e) && Vm.IsAdmin ? DragDropEffects.Copy : DragDropEffects.None;
-        e.Handled = true;
-    }
-
-    private void OnDragLeave(object sender, DragEventArgs e) => DropHighlight.Visibility = Visibility.Collapsed;
-
-    private void OnDrop(object sender, DragEventArgs e)
-    {
-        DropHighlight.Visibility = Visibility.Collapsed;
-        if (e.Data.GetData(DataFormats.FileDrop) is string[] files && Vm.AddFilesCommand.CanExecute(files))
+        if (!Vm.AddFilesCommand.CanExecute(files))
         {
-            // Let the drag source (Explorer) finish before showing modal dialogs.
-            Dispatcher.BeginInvoke(() => Vm.AddFilesCommand.Execute(files));
+            MessageBox.Show(this, "Abra como administrador para publicar apps.", "WRApperture", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
         }
+
+        Activate();
+        // Let Explorer finish the drop before showing modal dialogs.
+        Dispatcher.BeginInvoke(() => Vm.AddFilesCommand.Execute(files));
     }
 
     private void OnAppDoubleClick(object sender, MouseButtonEventArgs e)
