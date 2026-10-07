@@ -125,7 +125,7 @@ Os componentes (Manager e Agent) precisam do ícone de cada app publicado em for
 ## Assumptions
 
 - O host roda Windows 10 ou 11 Pro, Enterprise ou Education. Home não é suportado, porque não tem servidor RDP.
-- O host aceita uma única sessão RDP por vez (limitação do Windows cliente). Abrir um RemoteApp desconecta quem estiver logado localmente. Isso é documentado, não contornado.
+- O host aceita uma única sessão RDP por vez (limitação do Windows cliente). Abrir um RemoteApp desconecta quem estiver logado localmente. Isso é documentado, não contornado. Vários apps simultâneos do mesmo cliente e usuário compartilham essa única sessão (cada um em janela própria). Um segundo cliente ou outro usuário toma a sessão.
 - O usuário que conecta pelo cliente tem conta no host com permissão de Área de Trabalho Remota (administradores ou grupo "Usuários da Área de Trabalho Remota"). O gerenciamento desses grupos fica fora desta feature.
 - Apps UWP/Store ficam fora do escopo da v1.
 - A fonte da verdade dos apps publicados é a própria configuração do Windows. Não existe banco de dados separado.
