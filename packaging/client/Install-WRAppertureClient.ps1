@@ -25,52 +25,80 @@ param(
 $ErrorActionPreference = 'Stop'
 $ExeName = 'WRApperture.exe'
 
+# Translations: Localization.ps1 sits next to this script (package, install folder) or in packaging\ (repo).
+$localizer = @('Localization.ps1', '..\Localization.ps1') | ForEach-Object { Join-Path $PSScriptRoot $_ } | Where-Object { Test-Path $_ } | Select-Object -First 1
+if ($localizer) { . $localizer }
+else {
+    function T([string]$Key) { (@($Key) + $args) -join ' ' }
+}
+
 function Invoke-Step([string]$Description, [scriptblock]$Action) {
-    if ($DryRun) { Write-Host "[simulação] $Description" -ForegroundColor DarkYellow; return }
+    if ($DryRun) { Write-Host (T 'installer.dryRun.step' $Description) -ForegroundColor DarkYellow; return }
     Write-Host "==> $Description" -ForegroundColor Cyan
     & $Action
+}
+
+# Start Menu shortcuts that point into the install folder (their names depend on the language used at install time).
+function Get-OwnShortcuts {
+    if (-not (Test-Path $StartMenuDir)) { return }
+    $prefix = $InstallDir.TrimEnd('\') + '\'
+    $shell = New-Object -ComObject WScript.Shell
+    Get-ChildItem -Path $StartMenuDir -Filter '*.lnk' | Where-Object {
+        $shell.CreateShortcut($_.FullName).TargetPath.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)
+    }
+    [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
 }
 
 try {
     $source = Join-Path $PSScriptRoot $ExeName
     if (-not $DryRun -and -not (Test-Path $source)) {
-        throw "Arquivo '$ExeName' não encontrado ao lado do instalador. Extraia o pacote completo antes de instalar."
+        throw (T 'installer.missingFile' $ExeName)
     }
 
     $target = Join-Path $InstallDir $ExeName
     $running = Get-Process -Name ([IO.Path]::GetFileNameWithoutExtension($ExeName)) -ErrorAction SilentlyContinue |
         Where-Object { $_.Path -eq $target }
     if ($running) {
-        Invoke-Step 'Fechar o WRApperture em execução para atualizar' {
+        Invoke-Step (T 'installer.client.install.closeRunning') {
             $running | ForEach-Object { $null = $_.CloseMainWindow(); if (-not $_.WaitForExit(5000)) { $_.Kill() } }
         }
     }
 
-    Invoke-Step "Copiar o cliente para $InstallDir" {
+    Invoke-Step (T 'installer.client.install.copy' $InstallDir) {
         New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
         Copy-Item -Path $source -Destination $InstallDir -Force
-        foreach ($file in 'Uninstall-WRAppertureClient.ps1', 'Desinstalar.cmd') {
+        foreach ($file in 'Uninstall-WRAppertureClient.ps1', 'Desinstalar.cmd', 'Localization.ps1') {
             $extra = Join-Path $PSScriptRoot $file
             if (Test-Path $extra) { Copy-Item -Path $extra -Destination $InstallDir -Force }
         }
+        # Translations, so the uninstaller run from the install folder speaks the user's language.
+        $catalog = Join-Path $PSScriptRoot 'localization'
+        if (Test-Path $catalog) {
+            Remove-Item -Recurse -Force (Join-Path $InstallDir 'localization') -ErrorAction SilentlyContinue
+            Copy-Item -Path $catalog -Destination $InstallDir -Recurse -Force
+        }
     }
 
-    Invoke-Step 'Criar atalhos "WRApperture" e "Desinstalar WRApperture" no Menu Iniciar' {
+    $uninstallName = T 'installer.client.shortcut.uninstallName'
+    Invoke-Step (T 'installer.client.install.shortcuts' $uninstallName) {
+        # Drops shortcuts from a previous install, possibly named in another language.
+        Get-OwnShortcuts | Remove-Item -Force
+
         New-Item -ItemType Directory -Force -Path $StartMenuDir | Out-Null
         $shell = New-Object -ComObject WScript.Shell
         $shortcut = $shell.CreateShortcut((Join-Path $StartMenuDir 'WRApperture.lnk'))
         $shortcut.TargetPath = $target
         $shortcut.WorkingDirectory = $InstallDir
-        $shortcut.Description = 'Abrir apps de outro computador (WRApperture)'
+        $shortcut.Description = T 'installer.client.shortcut.description'
         $shortcut.Save()
 
         $uninstallCmd = Join-Path $InstallDir 'Desinstalar.cmd'
         if (Test-Path $uninstallCmd) {
-            $uninstall = $shell.CreateShortcut((Join-Path $StartMenuDir 'Desinstalar WRApperture.lnk'))
+            $uninstall = $shell.CreateShortcut((Join-Path $StartMenuDir "$uninstallName.lnk"))
             $uninstall.TargetPath = $uninstallCmd
             $uninstall.WorkingDirectory = $env:TEMP   # never inside the folder being deleted
             $uninstall.IconLocation = "$target,0"
-            $uninstall.Description = 'Remover o WRApperture deste computador'
+            $uninstall.Description = T 'installer.client.shortcut.uninstallDescription'
             $uninstall.Save()
         }
 
@@ -78,13 +106,13 @@ try {
     }
 
     Write-Host ''
-    if ($DryRun) { Write-Host 'Simulação concluída.' -ForegroundColor DarkYellow; exit 0 }
-    Write-Host 'Cliente WRApperture instalado. Abra "WRApperture" pelo Menu Iniciar.' -ForegroundColor Green
-    Write-Host 'Para desinstalar: Menu Iniciar → "Desinstalar WRApperture".'
+    if ($DryRun) { Write-Host (T 'installer.dryRun.done') -ForegroundColor DarkYellow; exit 0 }
+    Write-Host (T 'installer.client.install.done') -ForegroundColor Green
+    Write-Host (T 'installer.client.install.howToUninstall' $uninstallName)
     if ($Launch) { Start-Process -FilePath $target }
     exit 0
 }
 catch {
-    Write-Host "Falha na instalação: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host (T 'installer.installFailed' $_.Exception.Message) -ForegroundColor Red
     exit 1
 }

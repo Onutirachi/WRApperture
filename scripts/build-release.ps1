@@ -60,14 +60,28 @@ foreach ($p in $projects) {
     }
 }
 
+# Installer translations: the shared loader plus localization\<language>\installer.json for every language folder.
+function Copy-InstallerLocalization([string]$Destination) {
+    Copy-ScriptWithBom (Join-Path $root 'packaging\Localization.ps1') (Join-Path $Destination 'Localization.ps1')
+    foreach ($language in Get-ChildItem (Join-Path $root 'localization') -Directory) {
+        $catalog = Join-Path $language.FullName 'installer.json'
+        if (Test-Path $catalog) {
+            $target = Join-Path $Destination "localization\$($language.Name)"
+            New-Item -ItemType Directory -Force $target | Out-Null
+            Copy-Item $catalog $target
+        }
+    }
+}
+
 Write-Host '==> Assembling host package' -ForegroundColor Cyan
 New-Item -ItemType Directory -Force $hostDir | Out-Null
 Copy-Item (Join-Path $publishDir 'wrahost\wrahost.exe'), (Join-Path $publishDir 'manager\WRApperture.Host.exe') $hostDir
 Copy-Item (Join-Path $publishDir 'agent\WRApperture.Agent.exe'), (Join-Path $publishDir 'agent\appsettings.json') $hostDir
-Copy-Item (Join-Path $root 'packaging\host\Instalar.cmd'), (Join-Path $root 'packaging\host\Desinstalar.cmd'), (Join-Path $root 'packaging\host\LEIA-ME.txt') $hostDir
+Copy-Item (Join-Path $root 'packaging\host\Instalar.cmd'), (Join-Path $root 'packaging\host\Desinstalar.cmd'), (Join-Path $root 'packaging\host\LEIA-ME.txt'), (Join-Path $root 'packaging\host\README.txt') $hostDir
 foreach ($script in 'Install-WRAppertureHost.ps1', 'Uninstall-WRAppertureHost.ps1') {
     Copy-ScriptWithBom (Join-Path $root "packaging\host\$script") (Join-Path $hostDir $script)
 }
+Copy-InstallerLocalization $hostDir
 
 Write-Host '==> Assembling client package' -ForegroundColor Cyan
 New-Item -ItemType Directory -Force $clientDir | Out-Null
@@ -76,9 +90,21 @@ Copy-Item (Join-Path $root 'packaging\client\Instalar.cmd'), (Join-Path $root 'p
 foreach ($script in 'Install-WRAppertureClient.ps1', 'Uninstall-WRAppertureClient.ps1') {
     Copy-ScriptWithBom (Join-Path $root "packaging\client\$script") (Join-Path $clientDir $script)
 }
+Copy-InstallerLocalization $clientDir
 
-Compress-Archive -Path (Join-Path $hostDir '*') -DestinationPath "$hostDir.zip"
-Compress-Archive -Path (Join-Path $clientDir '*') -DestinationPath "$clientDir.zip"
+# Not Compress-Archive: on Windows PowerShell 5.1 it writes subfolder entries ("localization\en\...") with
+# backslashes, which non-Windows unzip tools turn into odd file names. Zip entries use "/".
+Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+foreach ($package in $hostDir, $clientDir) {
+    $zip = [IO.Compression.ZipFile]::Open("$package.zip", [IO.Compression.ZipArchiveMode]::Create)
+    try {
+        foreach ($file in Get-ChildItem $package -Recurse -File) {
+            $entry = $file.FullName.Substring($package.Length + 1).Replace('\', '/')
+            [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $file.FullName, $entry, [IO.Compression.CompressionLevel]::Optimal)
+        }
+    }
+    finally { $zip.Dispose() }
+}
 Remove-Item -Recurse -Force $publishDir
 
 Write-Host ''

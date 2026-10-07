@@ -24,8 +24,17 @@ param(
     [switch]$DryRun
 )
 
+# Translations: Localization.ps1 sits next to this script (package, install folder) or in packaging\ (repo).
+# It reads the catalog up front, so messages keep working after the install folder is deleted.
+$localizer = @('Localization.ps1', '..\Localization.ps1') | ForEach-Object { Join-Path $PSScriptRoot $_ } | Where-Object { Test-Path $_ } | Select-Object -First 1
+if ($localizer) { . $localizer }
+else {
+    function T([string]$Key) { (@($Key) + $args) -join ' ' }
+    function Test-WRYes([string]$Answer) { $Answer -match '^\s*[yY]' }
+}
+
 function Exit-Script([int]$Code) {
-    if ($Interactive) { [void](Read-Host 'Pressione Enter para fechar') }
+    if ($Interactive) { [void](Read-Host (T 'installer.pressEnter')) }
     exit $Code
 }
 
@@ -34,7 +43,7 @@ $ServiceName = 'WRAppertureAgent'
 $FirewallRule = 'WRAppertureAgent-TCP'
 
 function Invoke-Step([string]$Description, [scriptblock]$Action) {
-    if ($DryRun) { Write-Host "[simulação] $Description" -ForegroundColor DarkYellow; return }
+    if ($DryRun) { Write-Host (T 'installer.dryRun.step' $Description) -ForegroundColor DarkYellow; return }
     Write-Host "==> $Description" -ForegroundColor Cyan
     & $Action
 }
@@ -45,55 +54,55 @@ function Test-IsAdministrator {
 }
 
 if (-not $DryRun -and -not (Test-IsAdministrator)) {
-    Write-Host 'Execute a desinstalação como administrador (use o Desinstalar.cmd).' -ForegroundColor Red
+    Write-Host (T 'installer.host.uninstall.needsAdmin') -ForegroundColor Red
     Exit-Script 2
 }
 
 if ($Interactive -and -not $Purge) {
-    Write-Host 'Desinstalar o WRApperture deste PC (host).' -ForegroundColor Cyan
-    $answer = Read-Host 'Desfazer também a preparação do PC e apagar o token? Os clientes precisarão parear de novo. (s/N)'
-    $Purge = $answer -match '^\s*[sSyY]'
+    Write-Host (T 'installer.host.uninstall.title') -ForegroundColor Cyan
+    $answer = Read-Host (T 'installer.host.uninstall.askPurge')
+    $Purge = Test-WRYes $answer
 }
 
 try {
     if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
-        Invoke-Step "Parar e remover o serviço $ServiceName" {
+        Invoke-Step (T 'installer.host.uninstall.removeService' $ServiceName) {
             Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue
             sc.exe delete $ServiceName | Out-Null
         }
     }
 
     foreach ($manager in @(Get-Process -Name 'WRApperture.Host' -ErrorAction SilentlyContinue)) {
-        Invoke-Step 'Fechar o WRApperture (Host) em execução' { $manager.Kill(); $manager.WaitForExit(5000) | Out-Null }
+        Invoke-Step (T 'installer.host.uninstall.closeManager') { $manager.Kill(); $manager.WaitForExit(5000) | Out-Null }
     }
 
     $managerShortcut = Join-Path ([Environment]::GetFolderPath('CommonPrograms')) 'WRApperture (Host).lnk'
     if (Test-Path $managerShortcut) {
-        Invoke-Step 'Remover atalho "WRApperture (Host)" do Menu Iniciar' { Remove-Item -Force $managerShortcut }
+        Invoke-Step (T 'installer.host.uninstall.removeShortcut') { Remove-Item -Force $managerShortcut }
     }
 
     if (Get-NetFirewallRule -Name $FirewallRule -ErrorAction SilentlyContinue) {
-        Invoke-Step 'Remover a regra de firewall do agente' { Remove-NetFirewallRule -Name $FirewallRule }
+        Invoke-Step (T 'installer.host.uninstall.removeFirewall') { Remove-NetFirewallRule -Name $FirewallRule }
     }
 
     $wrahost = Join-Path $InstallDir 'wrahost.exe'
     if ($Purge) {
         if ($DryRun -or (Test-Path $wrahost)) {
-            Invoke-Step 'Desfazer a preparação do host (wrahost revert)' { & $wrahost revert | Out-Host }
-            Invoke-Step 'Apagar token, configurações e certificado do agente (wrahost agent reset)' { & $wrahost agent reset | Out-Host }
+            Invoke-Step (T 'installer.host.uninstall.revert') { & $wrahost revert | Out-Host }
+            Invoke-Step (T 'installer.host.uninstall.reset') { & $wrahost agent reset | Out-Host }
         }
         else {
-            Write-Host "wrahost.exe não encontrado em $InstallDir; preparação e configurações não foram revertidas." -ForegroundColor DarkYellow
+            Write-Host (T 'installer.host.uninstall.wrahostMissing' $InstallDir) -ForegroundColor DarkYellow
         }
     }
 
-    Invoke-Step 'Remover a pasta de instalação do PATH do sistema' {
+    Invoke-Step (T 'installer.host.uninstall.removePath') {
         $parts = [Environment]::GetEnvironmentVariable('Path', 'Machine') -split ';' | Where-Object { $_ -and $_ -ne $InstallDir }
         [Environment]::SetEnvironmentVariable('Path', ($parts -join ';'), 'Machine')
     }
 
     if (Test-Path $InstallDir) {
-        Invoke-Step "Apagar $InstallDir" {
+        Invoke-Step (T 'installer.deleteFolder' $InstallDir) {
             # This script may be running from inside InstallDir.
             Set-Location $env:TEMP
             Remove-Item -Recurse -Force $InstallDir
@@ -101,14 +110,14 @@ try {
     }
 
     Write-Host ''
-    if ($DryRun) { Write-Host 'Simulação concluída.' -ForegroundColor DarkYellow; Exit-Script 0 }
-    Write-Host 'WRApperture removido deste computador.' -ForegroundColor Green
+    if ($DryRun) { Write-Host (T 'installer.dryRun.done') -ForegroundColor DarkYellow; Exit-Script 0 }
+    Write-Host (T 'installer.host.uninstall.done') -ForegroundColor Green
     if (-not $Purge) {
-        Write-Host 'Apps publicados, preparação do host e token foram mantidos (uma reinstalação os reaproveita).'
+        Write-Host (T 'installer.host.uninstall.kept')
     }
     Exit-Script 0
 }
 catch {
-    Write-Host "Falha na desinstalação: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host (T 'installer.uninstallFailed' $_.Exception.Message) -ForegroundColor Red
     Exit-Script 1
 }
