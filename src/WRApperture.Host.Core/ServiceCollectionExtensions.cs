@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFileSystemProbe, FileSystemProbe>();
         services.AddSingleton<IFirewallRules, ComFirewallRules>();
         services.AddSingleton<IUserRegistryAccess, WindowsUserRegistryAccess>();
+        services.AddSingleton<Sessions.ISessionProvider, WindowsSessionProvider>();
         services.AddSingleton<ILanguageBarSettings, LanguageBarSettings>();
         services.AddSingleton<IStartMenuShortcuts, StartMenuShortcuts>();
         services.AddSingleton<IShortcutResolver, ShortcutResolver>();

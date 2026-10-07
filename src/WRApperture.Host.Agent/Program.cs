@@ -3,6 +3,7 @@ using WRApperture.Host.Agent.Certificates;
 using WRApperture.Host.Agent.Endpoints;
 using WRApperture.Host.Agent.Icons;
 using WRApperture.Host.Agent.Security;
+using WRApperture.Host.Agent.Sessions;
 using WRApperture.Host.Core;
 using WRApperture.Host.Core.Agent;
 using WRApperture.Shared;
@@ -53,6 +54,8 @@ builder.Services.AddSingleton<FailedAuthLimiter>();
 builder.Services.AddSingleton<IconCache>();
 builder.Services.AddSingleton<AgentIdentity>();
 builder.Services.AddSingleton<AgentCertificateManager>();
+builder.Services.AddSingleton<SessionWatcher>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<SessionWatcher>());
 
 // Runs only with the real Kestrel server (never under TestServer), so tests don't touch the cert store.
 builder.WebHost.ConfigureKestrel(kestrel =>
@@ -70,6 +73,7 @@ try
     var app = builder.Build();
     app.UseMiddleware<TokenAuthMiddleware>();
     app.MapAgentApi();
+    app.MapSessionApi();
 
     app.Lifetime.ApplicationStarted.Register(() =>
     {

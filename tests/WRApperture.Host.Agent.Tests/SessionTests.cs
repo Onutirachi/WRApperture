@@ -1,0 +1,116 @@
+using System.Net;
+using System.Net.Http.Json;
+using Microsoft.Extensions.DependencyInjection;
+using WRApperture.Host.Agent.Sessions;
+using WRApperture.Host.Core.Sessions;
+using WRApperture.Shared;
+
+namespace WRApperture.Host.Agent.Tests;
+
+public class SessionTests : IDisposable
+{
+    private readonly AgentFactory _factory = new();
+
+    public void Dispose() => _factory.Dispose();
+
+    private static HostSession S(int id, string user, SessionKind kind, SessionConnectState state = SessionConnectState.Active, bool console = false) =>
+        new(id, user, "PC", state, console, kind);
+
+    [Fact]
+    public async Task Session_routes_require_token()
+    {
+        var client = _factory.CreateClient();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync(ApiContract.Session)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await client.PostAsJsonAsync(ApiContract.SessionRelease, new SessionReleaseRequestDto("joao"))).StatusCode);
+        Assert.Empty(_factory.Sessions.LoggedOff);
+    }
+
+    [Fact]
+    public async Task Status_reports_blocking_desktop_sessions_of_the_user()
+    {
+        _factory.Sessions.All.AddRange([S(1, "joao", SessionKind.Desktop, console: true), S(2, "maria", SessionKind.Desktop, SessionConnectState.Disconnected)]);
+
+        var status = await _factory.CreateAuthorizedClient().GetFromJsonAsync<SessionStatusDto>($"{ApiContract.Session}?user=joao");
+
+        Assert.True(status!.Busy);
+        var busy = Assert.Single(status.Sessions);
+        Assert.Equal(@"PC\joao", busy.User);
+        Assert.True(busy.IsConsole);
+    }
+
+    [Fact]
+    public async Task Status_is_free_with_only_remoteapp_sessions()
+    {
+        _factory.Sessions.All.Add(S(3, "joao", SessionKind.RemoteApp, SessionConnectState.Disconnected));
+
+        var status = await _factory.CreateAuthorizedClient().GetFromJsonAsync<SessionStatusDto>(ApiContract.Session);
+
+        Assert.False(status!.Busy);
+    }
+
+    [Fact]
+    public async Task Release_logs_off_only_the_users_desktop_sessions()
+    {
+        _factory.Sessions.All.AddRange(
+        [
+            S(1, "joao", SessionKind.Desktop, console: true),
+            S(2, "joao", SessionKind.Desktop, SessionConnectState.Disconnected),
+            S(3, "joao", SessionKind.RemoteApp, SessionConnectState.Disconnected),
+            S(4, "maria", SessionKind.Desktop, SessionConnectState.Disconnected),
+        ]);
+
+        var response = await _factory.CreateAuthorizedClient().PostAsJsonAsync(ApiContract.SessionRelease, new SessionReleaseRequestDto(@"PC\joao"));
+        var result = await response.Content.ReadFromJsonAsync<SessionReleaseResultDto>();
+
+        Assert.Equal(2, result!.Released);
+        Assert.False(result.Busy);
+        Assert.Equal([1, 2], _factory.Sessions.LoggedOff);
+    }
+
+    [Fact]
+    public async Task Release_with_unknown_user_targets_the_console_user_only()
+    {
+        _factory.Sessions.All.AddRange([S(1, "joao", SessionKind.Desktop, console: true), S(4, "maria", SessionKind.Desktop, SessionConnectState.Disconnected)]);
+
+        await _factory.CreateAuthorizedClient().PostAsJsonAsync(ApiContract.SessionRelease, new SessionReleaseRequestDto(null));
+
+        Assert.Equal([1], _factory.Sessions.LoggedOff);
+    }
+
+    [Fact]
+    public async Task Release_never_touches_another_users_session()
+    {
+        _factory.Sessions.All.Add(S(1, "maria", SessionKind.Desktop, console: true));
+
+        var result = await (await _factory.CreateAuthorizedClient()
+            .PostAsJsonAsync(ApiContract.SessionRelease, new SessionReleaseRequestDto("joao"))).Content.ReadFromJsonAsync<SessionReleaseResultDto>();
+
+        Assert.Equal(0, result!.Released);
+        Assert.Empty(_factory.Sessions.LoggedOff);
+    }
+
+    [Fact]
+    public void Watcher_starts_desktop_once_when_host_screen_shows_a_remoteapp_session()
+    {
+        _ = _factory.Server; // build the host
+        var watcher = _factory.Services.GetRequiredService<SessionWatcher>();
+        _factory.Sessions.All.Add(S(5, "joao", SessionKind.RemoteApp, console: true));
+
+        Assert.Equal(5, watcher.Tick());
+        Assert.Null(watcher.Tick());
+        Assert.Equal([5], _factory.Sessions.ShellStarted);
+    }
+
+    [Fact]
+    public void Watcher_ignores_remoteapp_sessions_not_on_the_host_screen()
+    {
+        _ = _factory.Server;
+        var watcher = _factory.Services.GetRequiredService<SessionWatcher>();
+        _factory.Sessions.All.Add(S(5, "joao", SessionKind.RemoteApp));
+
+        Assert.Null(watcher.Tick());
+        Assert.Empty(_factory.Sessions.ShellStarted);
+    }
+}
