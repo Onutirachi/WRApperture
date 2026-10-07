@@ -9,7 +9,7 @@
   - Token: 32 bytes aleatórios (`RandomNumberGenerator`) codificados em Base64Url, com 43 caracteres.
   - Armazenamento: `SHA-256(salt ‖ UTF8(token))` com salt aleatório de 16 bytes, gravados em `HKLM\SOFTWARE\WRApperture\Agent` (`TokenHash` e `TokenSalt` como REG_BINARY).
   - Verificação com `CryptographicOperations.FixedTimeEquals`.
-  - O agente relê o hash a cada requisição, com cache de 5 s, para que a regeneração valha sem reiniciar.
+  - O agente relê o hash do registro a cada requisição (custo de microssegundos, sem cache), para que a regeneração valha na hora, sem reiniciar.
 - **Rationale**: Com 256 bits de entropia, um KDF lento (PBKDF2) não acrescenta segurança e só aumentaria a latência. O salt impede tabelas pré-computadas. A leitura no HKLM segue o princípio II: passa por `IAgentSettingsStore` no Core.
 - **Header**: `X-WRApperture-Token`.
 

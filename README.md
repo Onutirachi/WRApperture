@@ -10,7 +10,8 @@ Abra apps individuais de um PC Windows (host) a partir de outro computador (clie
 |---|---|---|
 | `WRApperture.Host.Core` | ✅ | Publica apps (registro `TSAppAllowList`), prepara o host (RDP, NLA, firewall), descobre apps instalados e extrai ícones |
 | `wrahost` (CLI) | ✅ | Linha de comando sobre o Core, para uso manual e automação |
-| `WRApperture.Host.Agent` | ⏳ | Serviço HTTP que expõe os apps ao cliente |
+| `WRApperture.Host.Agent` | ✅ | Serviço HTTPS (porta 5080) que expõe apps, ícones e dados de conexão ao cliente, protegido por token de pareamento |
+| `WRApperture.Shared` | ✅ | Contrato da API (rotas, DTOs, fingerprint de certificado), compartilhado entre o Agent e o Client |
 | `WRApperture.Host.Manager` | ⏳ | Interface gráfica do host |
 | `WRApperture.Client` | ⏳ | Lista os apps do host e abre com um clique |
 
@@ -27,6 +28,17 @@ $wrahost = "src\WRApperture.Host.Cli\bin\Debug\net8.0-windows10.0.17763.0\wrahos
 & $wrahost list
 & $wrahost unpublish bloco-de-notas
 ```
+
+## Agente (no host, terminal **como administrador**)
+
+```powershell
+& $wrahost agent token     # gera o token de pareamento (exibido uma vez; regenerar revoga o anterior)
+& $wrahost agent show      # porta, pareamento e fingerprint do certificado
+netsh advfirewall firewall add rule name="WRApperture Agent" dir=in action=allow protocol=TCP localport=5080
+dotnet run --project src/WRApperture.Host.Agent
+```
+
+Na primeira execução, o agente cria um certificado autoassinado em `LocalMachine\My`. A API está descrita em [contracts/http-api.md](specs/20261007-105635-host-agent/contracts/http-api.md). A instalação como serviço do Windows fica para a feature de empacotamento.
 
 Para abrir o app no cliente enquanto o app cliente não fica pronto, crie um `.rdp` com o conteúdo abaixo:
 

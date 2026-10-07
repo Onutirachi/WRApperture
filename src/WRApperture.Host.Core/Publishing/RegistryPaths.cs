@@ -12,6 +12,7 @@ internal static class RegistryPaths
 
     public const string ToolRoot = @"SOFTWARE\WRApperture";
     public const string PreparationSnapshot = ToolRoot + @"\PreparationSnapshot";
+    public const string AgentSettings = ToolRoot + @"\Agent";
 
     /// <summary>DWORD value written on apps created by this tool.</summary>
     public const string ManagedMarker = "WRApperture";

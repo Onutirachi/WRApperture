@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using WRApperture.Host.Core.Abstractions;
+using WRApperture.Host.Core.Agent;
+using WRApperture.Host.Core.HostInfo;
 using WRApperture.Host.Core.Discovery;
 using WRApperture.Host.Core.Icons;
 using WRApperture.Host.Core.Platform;
@@ -24,6 +26,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IHostPreparation, HostPreparation>();
         services.AddSingleton<IAppDiscovery, AppDiscovery>();
         services.AddSingleton<IIconProvider, IconProvider>();
+        services.AddSingleton<IAgentSettingsStore, AgentSettingsStore>();
+        services.AddSingleton<IHostInfoProvider, HostInfoProvider>();
         return services;
     }
 }

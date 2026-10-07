@@ -30,6 +30,8 @@ try
         root.Subcommands.Add(command);
     }
 
+    root.Subcommands.Add(AgentCommands.Create(services));
+
     return root.Parse(args).Invoke();
 }
 finally

@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WRApperture.Host.Core\WRApperture.Host.Core.csproj" />
+    <ProjectReference Include="..\WRApperture.Shared\WRApperture.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
