@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using WRApperture.Host.Core.Models;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Manager.Views;
 
@@ -32,7 +33,7 @@ public partial class DiscoveryWindow : Window
     private void UpdateCount()
     {
         var count = _choices.Count(c => c.IsSelected);
-        CountText.Text = count == 0 ? $"{_choices.Count} apps encontrados" : $"{count} selecionado(s)";
+        CountText.Text = count == 0 ? Strings.T("manager.discovery.found", _choices.Count) : Strings.T("manager.discovery.selected", count);
     }
 
     private void OnPublish(object sender, RoutedEventArgs e)
@@ -46,6 +47,6 @@ public partial class DiscoveryWindow : Window
         public DiscoveredApp App { get; } = app;
         public bool IsSelected { get; set; }
         public bool CanSelect => App.PublishedAlias is null;
-        public string Badge => App.PublishedAlias is null ? string.Empty : "  · já publicado";
+        public string Badge => App.PublishedAlias is null ? string.Empty : "  · " + Strings.T("manager.discovery.alreadyPublished");
     }
 }

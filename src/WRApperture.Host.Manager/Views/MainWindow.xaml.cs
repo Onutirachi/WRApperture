@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
 using WRApperture.Host.Manager.ViewModels;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Manager.Views;
 
@@ -39,7 +40,7 @@ public partial class MainWindow : Window
 
         if (!Vm.AddFilesCommand.CanExecute(files))
         {
-            MessageBox.Show(this, "Abra como administrador para publicar apps.", "WRApperture", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, Strings.T("manager.main.adminRequired"), "WRApperture", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 

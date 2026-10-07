@@ -1,13 +1,14 @@
 <Window x:Class="WRApperture.Host.Manager.Views.DiscoveryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Publicar apps do Menu Iniciar" Width="620" Height="560" MinHeight="360" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        xmlns:loc="clr-namespace:WRApperture.Ui;assembly=WRApperture.Ui"
+        Title="{loc:T manager.discovery.title}" Width="620" Height="560" MinHeight="360" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         Style="{StaticResource BaseWindow}">
     <DockPanel Margin="20">
-        <TextBlock DockPanel.Dock="Top" Text="Marque os apps que devem aparecer nos clientes" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
+        <TextBlock DockPanel.Dock="Top" Text="{loc:T manager.discovery.heading}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
         <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
-            <TextBox x:Name="SearchBox" TextChanged="OnSearchChanged" AutomationProperties.Name="Buscar" />
-            <TextBlock Text="Buscar…" Foreground="{DynamicResource Muted}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
+            <TextBox x:Name="SearchBox" TextChanged="OnSearchChanged" AutomationProperties.Name="{loc:T manager.discovery.searchField}" />
+            <TextBlock Text="{loc:T manager.discovery.search}" Foreground="{DynamicResource Muted}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Visibility" Value="Collapsed" />
@@ -23,8 +24,8 @@
 
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
             <TextBlock x:Name="CountText" VerticalAlignment="Center" Foreground="{DynamicResource Muted}" Margin="0,0,16,0" />
-            <Button Content="Cancelar" Style="{StaticResource Secondary}" IsCancel="True" />
-            <Button Content="Publicar selecionados" Style="{StaticResource Primary}" Margin="8,0,0,0" IsDefault="True" Click="OnPublish" />
+            <Button Content="{loc:T manager.discovery.cancel}" Style="{StaticResource Secondary}" IsCancel="True" />
+            <Button Content="{loc:T manager.discovery.publish}" Style="{StaticResource Primary}" Margin="8,0,0,0" IsDefault="True" Click="OnPublish" />
         </StackPanel>
 
         <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6">

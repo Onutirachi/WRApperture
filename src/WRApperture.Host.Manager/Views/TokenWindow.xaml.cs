@@ -1,5 +1,6 @@
 using System.Windows;
 using WRApperture.Host.Manager.Services;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Manager.Views;
 
@@ -18,6 +19,6 @@ public partial class TokenWindow : Window
     private void OnCopy(object sender, RoutedEventArgs e)
     {
         Clipboard.SetText(TokenBox.Text);
-        CopyButton.Content = "Copiado ✓";
+        CopyButton.Content = Strings.T("manager.token.copied");
     }
 }

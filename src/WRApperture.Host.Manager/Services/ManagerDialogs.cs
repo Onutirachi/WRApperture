@@ -3,6 +3,7 @@ using Microsoft.Win32;
 using WRApperture.Host.Core;
 using WRApperture.Host.Core.Models;
 using WRApperture.Host.Manager.Views;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Manager.Services;
 
@@ -55,8 +56,8 @@ internal sealed class ManagerDialogs(IIconProvider icons) : IManagerDialogs
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Escolha programas ou atalhos para publicar",
-            Filter = "Programas e atalhos (*.exe;*.lnk)|*.exe;*.lnk",
+            Title = Strings.T("manager.pick.title"),
+            Filter = $"{Strings.T("manager.pick.filter")} (*.exe;*.lnk)|*.exe;*.lnk",
             Multiselect = true,
             DereferenceLinks = false, // keep .lnk so its name and arguments are used
         };

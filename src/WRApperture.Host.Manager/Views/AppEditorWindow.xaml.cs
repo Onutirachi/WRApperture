@@ -3,6 +3,7 @@ using System.Windows.Media;
 using Microsoft.Win32;
 using WRApperture.Host.Core.Models;
 using WRApperture.Host.Manager.Services;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Manager.Views;
 
@@ -26,8 +27,8 @@ public partial class AppEditorWindow : Window
 
         Title = input.Title;
         Heading.Text = input.Title;
-        AliasText.Text = input.Alias is null ? "O identificador é gerado ao publicar." : $"Identificador: {input.Alias}";
-        SaveButton.Content = input.Alias is null ? "Publicar" : "Salvar";
+        AliasText.Text = input.Alias is null ? Strings.T("manager.editor.aliasPending") : Strings.T("manager.editor.alias", input.Alias);
+        SaveButton.Content = Strings.T(input.Alias is null ? "manager.editor.publish" : "manager.editor.save");
         NameBox.Text = input.DisplayName;
         PathBox.Text = input.ExecutablePath;
         ArgsBox.Text = input.Arguments ?? string.Empty;
@@ -44,7 +45,7 @@ public partial class AppEditorWindow : Window
 
     private void OnBrowse(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog { Filter = "Programas (*.exe)|*.exe", FileName = PathBox.Text };
+        var dialog = new OpenFileDialog { Filter = $"{Strings.T("manager.editor.browseFilter")} (*.exe)|*.exe", FileName = PathBox.Text };
         if (dialog.ShowDialog(this) == true)
         {
             PathBox.Text = dialog.FileName;

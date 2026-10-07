@@ -1,12 +1,13 @@
 <Window x:Class="WRApperture.Host.Manager.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:WRApperture.Ui;assembly=WRApperture.Ui"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:WRApperture.Host.Manager.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:ManagerViewModel}"
-        Title="WRApperture — PC host" Width="1040" Height="700" MinWidth="760" MinHeight="480"
+        Title="{loc:T manager.main.title}" Width="1040" Height="700" MinWidth="760" MinHeight="480"
         WindowStartupLocation="CenterScreen" Style="{StaticResource BaseWindow}">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -25,9 +26,9 @@
         <Border DockPanel.Dock="Top" Background="{DynamicResource WarningBackground}" Padding="16,8"
                 Visibility="{Binding IsReadOnly, Converter={StaticResource BoolToVis}}">
             <DockPanel>
-                <Button DockPanel.Dock="Right" Content="Reabrir como administrador" Style="{StaticResource Secondary}" Command="{Binding ElevateCommand}" />
+                <Button DockPanel.Dock="Right" Content="{loc:T manager.main.elevate}" Style="{StaticResource Secondary}" Command="{Binding ElevateCommand}" />
                 <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource Warning}" TextWrapping="Wrap"
-                           Text="Modo somente leitura: abra como administrador para publicar, remover, preparar o PC ou gerar token." />
+                           Text="{loc:T manager.main.readOnly}" />
             </DockPanel>
         </Border>
 
@@ -55,26 +56,26 @@
 
             <!-- Published apps -->
             <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Apps publicados" Style="{StaticResource SectionTitle}" />
+                <TextBlock DockPanel.Dock="Top" Text="{loc:T manager.main.apps}" Style="{StaticResource SectionTitle}" />
                 <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-                    <Button Content="Adicionar programa ou atalho…" Style="{StaticResource Primary}" Margin="0,0,8,6" Command="{Binding AddFilesCommand}" />
-                    <Button Content="Do Menu Iniciar…" Style="{StaticResource Secondary}" Margin="0,0,8,6" Command="{Binding PublishInstalledCommand}" />
-                    <Button Content="Editar" Style="{StaticResource Secondary}" Margin="0,0,8,6" Command="{Binding EditCommand}" />
-                    <Button Content="Remover" Style="{StaticResource Secondary}" Margin="0,0,8,6" Command="{Binding RemoveCommand}" />
-                    <Button Content="⟳" Style="{StaticResource Secondary}" Margin="0,0,8,6" Padding="10,6" ToolTip="Atualizar" Command="{Binding RefreshCommand}" />
-                    <Button x:Name="ThemeButton" Content="◐" Style="{StaticResource Secondary}" Margin="0,0,8,6" Padding="10,6" ToolTip="Tema claro ou escuro"
-                            Click="OnThemeClick" AutomationProperties.Name="Tema" />
+                    <Button Content="{loc:T manager.main.addApp}" Style="{StaticResource Primary}" Margin="0,0,8,6" Command="{Binding AddFilesCommand}" />
+                    <Button Content="{loc:T manager.main.fromStartMenu}" Style="{StaticResource Secondary}" Margin="0,0,8,6" Command="{Binding PublishInstalledCommand}" />
+                    <Button Content="{loc:T manager.main.edit}" Style="{StaticResource Secondary}" Margin="0,0,8,6" Command="{Binding EditCommand}" />
+                    <Button Content="{loc:T manager.main.remove}" Style="{StaticResource Secondary}" Margin="0,0,8,6" Command="{Binding RemoveCommand}" />
+                    <Button Content="⟳" Style="{StaticResource Secondary}" Margin="0,0,8,6" Padding="10,6" ToolTip="{loc:T manager.main.refresh}" AutomationProperties.Name="{loc:T manager.main.refresh}" Command="{Binding RefreshCommand}" />
+                    <Button x:Name="ThemeButton" Content="◐" Style="{StaticResource Secondary}" Margin="0,0,8,6" Padding="10,6" ToolTip="{loc:T manager.main.themeTip}"
+                            Click="OnThemeClick" AutomationProperties.Name="{loc:T manager.main.theme}" />
                 </WrapPanel>
                 <TextBlock DockPanel.Dock="Top" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,0,0,8"
                            TextWrapping="Wrap"
-                           Text="Dica: arraste atalhos ou programas .exe e solte nesta janela, ou copie-os no Explorer (Ctrl+C) e cole aqui (Ctrl+V)." />
+                           Text="{loc:T manager.main.tip}" />
 
                 <Grid>
                     <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6">
                         <Grid>
                             <ListView ItemsSource="{Binding Apps}" SelectedItem="{Binding SelectedApp}" BorderThickness="0" Background="Transparent"
                                       MouseDoubleClick="OnAppDoubleClick" Margin="2" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                      AutomationProperties.Name="Apps publicados">
+                                      AutomationProperties.Name="{loc:T manager.main.apps}">
                                 <ListView.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:AppItemViewModel}">
                                         <DockPanel Margin="4,6">
@@ -92,9 +93,9 @@
 
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False" MaxWidth="360"
                                         Visibility="{Binding HasNoApps, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Text="Nenhum app publicado" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                <TextBlock Text="{loc:T manager.main.empty}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" />
                                 <TextBlock Foreground="{DynamicResource Muted}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,6,0,0"
-                                           Text="Arraste para cá atalhos (da área de trabalho ou do Menu Iniciar) ou programas .exe." />
+                                           Text="{loc:T manager.main.emptyHint}" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -105,7 +106,7 @@
             <Border Grid.Column="2" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="Este PC" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="{loc:T manager.main.thisPc}" Style="{StaticResource SectionTitle}" />
 
                         <ItemsControl ItemsSource="{Binding Readiness}">
                             <ItemsControl.ItemTemplate>
@@ -143,12 +144,12 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <Button Content="Preparar este PC" Style="{StaticResource Primary}" HorizontalAlignment="Left" Margin="20,4,0,0"
+                        <Button Content="{loc:T manager.main.prepare}" Style="{StaticResource Primary}" HorizontalAlignment="Left" Margin="20,4,0,0"
                                 Command="{Binding PrepareCommand}" Visibility="{Binding HasPendingReadiness, Converter={StaticResource BoolToVis}}" />
 
                         <Separator Margin="0,14" />
 
-                        <TextBlock Text="Conexão com os clientes" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="{loc:T manager.main.connection}" Style="{StaticResource SectionTitle}" />
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="86" />
@@ -160,22 +161,22 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <TextBlock Text="Agente" Style="{StaticResource Label}" Margin="0,0,0,4" />
+                            <TextBlock Text="{loc:T manager.main.agent}" Style="{StaticResource Label}" Margin="0,0,0,4" />
                             <TextBlock Grid.Column="1" Text="{Binding AgentState}" TextWrapping="Wrap" Margin="0,0,0,4" />
-                            <TextBlock Grid.Row="1" Text="Endereço" Style="{StaticResource Label}" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="1" Text="{loc:T manager.main.address}" Style="{StaticResource Label}" Margin="0,0,0,4" />
                             <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Addresses}" TextWrapping="Wrap" Margin="0,0,0,4" />
-                            <TextBlock Grid.Row="2" Text="Porta" Style="{StaticResource Label}" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="2" Text="{loc:T manager.main.port}" Style="{StaticResource Label}" Margin="0,0,0,4" />
                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Port}" Margin="0,0,0,4" />
-                            <TextBlock Grid.Row="3" Text="Pareado" Style="{StaticResource Label}" />
+                            <TextBlock Grid.Row="3" Text="{loc:T manager.main.paired}" Style="{StaticResource Label}" />
                             <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Paired}" TextWrapping="Wrap" />
                         </Grid>
-                        <TextBlock Text="Fingerprint" Foreground="{DynamicResource Muted}" Margin="0,4,0,2" />
+                        <TextBlock Text="{loc:T manager.main.fingerprint}" Foreground="{DynamicResource Muted}" Margin="0,4,0,2" />
                         <TextBox Text="{Binding Fingerprint, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" BorderThickness="0"
                                  Background="Transparent" Padding="0" />
 
                         <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                            <Button Content="Gerar novo token…" Style="{StaticResource Primary}" Command="{Binding NewTokenCommand}" />
-                            <Button Content="Reiniciar agente" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding RestartAgentCommand}"
+                            <Button Content="{loc:T manager.main.newToken}" Style="{StaticResource Primary}" Command="{Binding NewTokenCommand}" />
+                            <Button Content="{loc:T manager.main.restartAgent}" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding RestartAgentCommand}"
                                     IsEnabled="{Binding AgentInstalled}" />
                         </StackPanel>
                     </StackPanel>
