@@ -84,6 +84,41 @@ public class SessionPolicyTests
     }
 
     [Fact]
+    public void Desktop_mode_reuses_own_desktop_and_closes_own_remoteapps()
+    {
+        var plan = SessionPolicy.Plan(
+        [
+            S(1, "joao", SessionKind.Desktop, console: true),
+            S(2, "joao", SessionKind.RemoteApp, SessionConnectState.Disconnected),
+            S(3, "maria", SessionKind.Desktop),
+            S(4, "maria", SessionKind.RemoteApp, SessionConnectState.Disconnected),
+        ], @"PC\joao", desktop: true);
+
+        AssertPlan([2], [3], plan);
+    }
+
+    [Fact]
+    public void Desktop_mode_with_unknown_user_reuses_active_desktop_and_closes_remoteapps()
+    {
+        var plan = SessionPolicy.Plan(
+        [
+            S(1, "joao", SessionKind.Desktop, console: true),
+            S(2, "joao", SessionKind.RemoteApp),
+            S(3, "maria", SessionKind.Desktop, SessionConnectState.Disconnected),
+        ], null, desktop: true);
+
+        AssertPlan([2], [], plan);
+    }
+
+    [Fact]
+    public void Desktop_mode_on_a_free_host_or_own_desktop_has_an_empty_plan()
+    {
+        Assert.True(SessionPolicy.Plan([], "joao", desktop: true).IsEmpty);
+        Assert.True(SessionPolicy.Plan([S(1, "joao", SessionKind.Desktop, console: true)], "joao", desktop: true).IsEmpty);
+        Assert.True(SessionPolicy.Plan([S(1, "joao", SessionKind.Desktop)], null, desktop: true).IsEmpty);
+    }
+
+    [Fact]
     public void Console_on_remoteapp_is_detected_only_when_active_at_console()
     {
         Assert.Equal(4, SessionPolicy.ConsoleOnRemoteApp([S(4, "joao", SessionKind.RemoteApp, console: true)])!.Id);

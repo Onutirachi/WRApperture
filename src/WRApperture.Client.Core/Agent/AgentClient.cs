@@ -18,11 +18,14 @@ public interface IAgentApi : IDisposable
     Task<IReadOnlyList<AppSummaryDto>> GetAppsAsync(CancellationToken ct = default);
     Task<IconResult> GetIconAsync(string alias, int size, string? etag, CancellationToken ct = default);
 
-    /// <summary>Null when the agent predates session support (HTTP 404).</summary>
-    Task<SessionStatusDto?> GetSessionStatusAsync(string? rdpUser, CancellationToken ct = default);
+    /// <summary>
+    /// Null when the agent predates session support (HTTP 404). <paramref name="desktop"/> asks for the
+    /// full desktop rule; only send it to agents that announce <see cref="AgentFeatures.DesktopSession"/>.
+    /// </summary>
+    Task<SessionStatusDto?> GetSessionStatusAsync(string? rdpUser, bool desktop = false, CancellationToken ct = default);
 
-    /// <summary>Logs off the host desktop sessions that block RemoteApp; waits up to 45 s.</summary>
-    Task<SessionReleaseResultDto> ReleaseSessionAsync(string? rdpUser, CancellationToken ct = default);
+    /// <summary>Frees the host sessions that block the connection; waits up to 45 s.</summary>
+    Task<SessionReleaseResultDto> ReleaseSessionAsync(string? rdpUser, bool desktop = false, CancellationToken ct = default);
 }
 
 /// <summary>Talks to a host agent over HTTPS with certificate pinning.</summary>
@@ -117,20 +120,33 @@ public sealed class AgentClient : IAgentApi
         return new IconResult(false, await response.Content.ReadAsByteArrayAsync(ct), response.Headers.ETag?.ToString());
     }
 
-    public async Task<SessionStatusDto?> GetSessionStatusAsync(string? rdpUser, CancellationToken ct = default)
+    public async Task<SessionStatusDto?> GetSessionStatusAsync(string? rdpUser, bool desktop = false, CancellationToken ct = default)
     {
-        var query = string.IsNullOrWhiteSpace(rdpUser) ? string.Empty : "?user=" + Uri.EscapeDataString(rdpUser.Trim());
+        var parameters = new List<string>();
+        if (!string.IsNullOrWhiteSpace(rdpUser))
+        {
+            parameters.Add("user=" + Uri.EscapeDataString(rdpUser.Trim()));
+        }
+
+        if (desktop)
+        {
+            parameters.Add("mode=" + SessionModes.Desktop);
+        }
+
+        var query = parameters.Count == 0 ? string.Empty : "?" + string.Join('&', parameters);
         using var response = await SendAsync(new HttpRequestMessage(HttpMethod.Get, ApiContract.Session + query), ct, allowNotFound: true);
         return response.StatusCode == HttpStatusCode.NotFound
             ? null
             : await response.Content.ReadFromJsonAsync<SessionStatusDto>(ct);
     }
 
-    public async Task<SessionReleaseResultDto> ReleaseSessionAsync(string? rdpUser, CancellationToken ct = default)
+    public async Task<SessionReleaseResultDto> ReleaseSessionAsync(string? rdpUser, bool desktop = false, CancellationToken ct = default)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, ApiContract.SessionRelease)
         {
-            Content = JsonContent.Create(new SessionReleaseRequestDto(string.IsNullOrWhiteSpace(rdpUser) ? null : rdpUser.Trim())),
+            Content = JsonContent.Create(new SessionReleaseRequestDto(
+                string.IsNullOrWhiteSpace(rdpUser) ? null : rdpUser.Trim(),
+                desktop ? SessionModes.Desktop : null)),
         };
         using var response = await SendAsync(request, ct, timeout: TimeSpan.FromSeconds(ApiContract.SessionReleaseTimeoutSeconds));
         return await response.Content.ReadFromJsonAsync<SessionReleaseResultDto>(ct)

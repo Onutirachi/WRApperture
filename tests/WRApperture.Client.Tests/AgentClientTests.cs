@@ -235,6 +235,34 @@ public class AgentClientHttpTests
         Assert.Contains("\"joao\"", body);
     }
 
+    [Fact]
+    public async Task Desktop_mode_is_sent_only_when_asked()
+    {
+        var seen = new List<string>();
+        using var client = Create(request =>
+        {
+            seen.Add(request.Method == HttpMethod.Get
+                ? request.RequestUri!.PathAndQuery
+                : request.Content!.ReadAsStringAsync().Result);
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = request.Method == HttpMethod.Get
+                    ? JsonContent.Create(new SessionStatusDto(false, []))
+                    : JsonContent.Create(new SessionReleaseResultDto(0, false)),
+            };
+        });
+
+        await client.GetSessionStatusAsync(null, desktop: true);
+        await client.GetSessionStatusAsync("joao", desktop: true);
+        await client.ReleaseSessionAsync("joao", desktop: true);
+        await client.ReleaseSessionAsync("joao");
+
+        Assert.Equal("/api/session?mode=desktop", seen[0]);
+        Assert.Equal("/api/session?user=joao&mode=desktop", seen[1]);
+        Assert.Contains("\"mode\":\"desktop\"", seen[2]);
+        Assert.Contains("\"mode\":null", seen[3]);
+    }
+
     private static AgentClient Create(Func<HttpRequestMessage, HttpResponseMessage> respond) =>
         new(new HttpClient(new StubHandler(respond)) { BaseAddress = new Uri("https://host:5080") },
             CertificatePinValidator.Pinned("X"), "host", 5080);

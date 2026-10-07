@@ -55,11 +55,21 @@ public sealed record ReleasePlan(IReadOnlyList<HostSession> Logoff, IReadOnlyLis
 /// </list>
 /// When the client does not know its RDP user (credentials not saved), the users with an active
 /// desktop session are assumed to be the connecting person.
+/// <para>
+/// Full desktop connections (<paramref name="desktop"/>) invert the first rule: the user's desktop
+/// session is simply reconnected (programs kept), while the user's RemoteApp sessions are logged off
+/// (reconnected as a desktop they would show no taskbar). Other users are disconnected as above.
+/// </para>
 /// </summary>
 public static class SessionPolicy
 {
-    public static ReleasePlan Plan(IEnumerable<HostSession> sessions, string? rdpUser)
+    public static ReleasePlan Plan(IEnumerable<HostSession> sessions, string? rdpUser, bool desktop = false)
     {
+        if (desktop)
+        {
+            return PlanDesktop(sessions, rdpUser);
+        }
+
         var all = sessions.Where(s => !string.IsNullOrEmpty(s.User)).ToList();
         Func<HostSession, bool> isSameUser;
 
@@ -82,6 +92,31 @@ public static class SessionPolicy
                                         // With an unknown user an active RemoteApp session may be our own
                                         // (opening a second app): disconnecting it would close the open apps.
                                         (userKnown || s.Kind != SessionKind.RemoteApp)).ToList();
+        return new ReleasePlan(logoff, disconnect);
+    }
+
+    private static ReleasePlan PlanDesktop(IEnumerable<HostSession> sessions, string? rdpUser)
+    {
+        var all = sessions.Where(s => !string.IsNullOrEmpty(s.User)).ToList();
+        Func<HostSession, bool> isSameUser;
+
+        if (!string.IsNullOrWhiteSpace(rdpUser))
+        {
+            isSameUser = s => RdpUserMatcher.Matches(rdpUser, s);
+        }
+        else
+        {
+            // Unknown user: active desktops and RemoteApp sessions (only WRApperture creates them) are
+            // assumed to be the connecting person's; the desktop is reused, the RemoteApps are closed.
+            var activeUsers = all
+                .Where(s => s.State == SessionConnectState.Active)
+                .Select(s => s.User)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            isSameUser = s => s.Kind == SessionKind.RemoteApp || activeUsers.Contains(s.User);
+        }
+
+        var logoff = all.Where(s => s.Kind == SessionKind.RemoteApp && isSameUser(s)).ToList();
+        var disconnect = all.Where(s => s.State == SessionConnectState.Active && !isSameUser(s)).ToList();
         return new ReleasePlan(logoff, disconnect);
     }
 

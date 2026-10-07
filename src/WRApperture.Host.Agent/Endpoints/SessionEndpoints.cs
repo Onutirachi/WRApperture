@@ -7,13 +7,21 @@ internal static class SessionEndpoints
 {
     public static void MapSessionApi(this WebApplication app)
     {
-        app.MapGet(ApiContract.Session, (string? user, ISessionProvider sessions) =>
-            Results.Ok(Status(SessionPolicy.Plan(sessions.List(), user))));
+        app.MapGet(ApiContract.Session, (string? user, string? mode, ISessionProvider sessions) =>
+            SessionModes.TryParse(mode, out var desktop)
+                ? Results.Ok(Status(SessionPolicy.Plan(sessions.List(), user, desktop)))
+                : BadMode(mode));
 
         app.MapPost(ApiContract.SessionRelease, async (SessionReleaseRequestDto request, ISessionProvider sessions,
             ILogger<SessionReleaseRequestDto> logger, CancellationToken ct) =>
         {
-            var plan = SessionPolicy.Plan(sessions.List(), request.User);
+            if (!SessionModes.TryParse(request.Mode, out var desktop))
+            {
+                return BadMode(request.Mode);
+            }
+
+            var target = desktop ? "a full desktop" : "a RemoteApp";
+            var plan = SessionPolicy.Plan(sessions.List(), request.User, desktop);
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(TimeSpan.FromSeconds(ApiContract.SessionReleaseTimeoutSeconds - 5));
 
@@ -21,19 +29,19 @@ internal static class SessionEndpoints
             // Disconnect other users first: a pending logoff must not be interrupted by Windows' "allow?" prompt.
             foreach (var session in plan.Disconnect)
             {
-                logger.LogWarning("Disconnecting active session {Session} of {Domain}\\{User} (programs stay open) so a RemoteApp can start",
-                    session.Id, session.Domain, session.User);
+                logger.LogWarning("Disconnecting active session {Session} of {Domain}\\{User} (programs stay open) so {Target} can start",
+                    session.Id, session.Domain, session.User, target);
                 released += await RunAsync(() => sessions.Disconnect(session.Id), session, logger, timeout.Token);
             }
 
             foreach (var session in plan.Logoff)
             {
-                logger.LogWarning("Logging off desktop session {Session} of {Domain}\\{User} ({State}, console: {Console}) so a RemoteApp can start",
-                    session.Id, session.Domain, session.User, session.State, session.IsConsole);
+                logger.LogWarning("Logging off {Kind} session {Session} of {Domain}\\{User} ({State}, console: {Console}) so {Target} can start",
+                    session.Kind, session.Id, session.Domain, session.User, session.State, session.IsConsole, target);
                 released += await RunAsync(() => sessions.Logoff(session.Id), session, logger, timeout.Token);
             }
 
-            var stillBusy = !SessionPolicy.Plan(sessions.List(), request.User).IsEmpty;
+            var stillBusy = !SessionPolicy.Plan(sessions.List(), request.User, desktop).IsEmpty;
             return Results.Ok(new SessionReleaseResultDto(released, stillBusy));
         });
     }
@@ -52,6 +60,9 @@ internal static class SessionEndpoints
         }
     }
 
+    private static IResult BadMode(string? mode) => Results.BadRequest(
+        new ApiErrorDto(ApiContract.Errors.BadRequest, $"Modo de sessão desconhecido: {mode}"));
+
     private static SessionStatusDto Status(ReleasePlan plan)
     {
         var items = plan.Logoff.Select(s => Dto(s, SessionActions.Logoff))
@@ -64,5 +75,6 @@ internal static class SessionEndpoints
         string.IsNullOrEmpty(s.Domain) ? s.User : $@"{s.Domain}\{s.User}",
         s.State == SessionConnectState.Disconnected ? "desconectada" : "em uso",
         s.IsConsole,
-        action);
+        action,
+        s.Kind == SessionKind.RemoteApp ? SessionModes.RemoteApp : SessionModes.Desktop);
 }

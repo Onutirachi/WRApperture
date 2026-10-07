@@ -100,7 +100,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     public bool HasHost => SelectedHost is not null;
     public bool HasNoHost => SelectedHost is null;
-    public bool HasNoApps => HasHost && Apps.Count == 0 && !IsBusy;
+    public bool HasNoApps => SelectedHost is { Host.Apps.Count: 0 } && !IsBusy; // the desktop tile is always there
 
     partial void OnSearchTextChanged(string value) => AppsView.Refresh();
 
@@ -222,7 +222,7 @@ public sealed partial class MainViewModel : ObservableObject
             }
         }
 
-        if (!await EnsureHostFreeAsync(option))
+        if (!await EnsureHostFreeAsync(option, tile.IsDesktop))
         {
             ProgressMessage = null;
             ProgressDetail = null;
@@ -231,8 +231,8 @@ public sealed partial class MainViewModel : ObservableObject
 
         try
         {
-            using var process = _launcher.Launch(option.Host, tile.App);
-            ProgressMessage = $"Abrindo {tile.DisplayName}…";
+            using var process = tile.IsDesktop ? _launcher.LaunchDesktop(option.Host) : _launcher.Launch(option.Host, tile.App);
+            ProgressMessage = tile.IsDesktop ? "Abrindo a área de trabalho…" : $"Abrindo {tile.DisplayName}…";
             ProgressDetail = "Conectando ao PC remoto.";
             await RemoteAppLauncher.WaitForRdpWindowAsync(process, TimeSpan.FromSeconds(15));
             SetStatus($"{tile.DisplayName} aberto.", warning: false);
@@ -263,14 +263,23 @@ public sealed partial class MainViewModel : ObservableObject
     /// A user cannot have a desktop session and a RemoteApp session on Windows client editions.
     /// If the host is in local use, ask (or, if configured, just proceed) and log that session off.
     /// Returns false when the app must not be launched.
+    /// For the full desktop (<paramref name="desktop"/>) the user's own desktop is reused and their open
+    /// RemoteApps are closed instead; agents older than 0.6.0 only know the RemoteApp rule (which would
+    /// log off the very desktop being opened), so nothing is released and Windows handles it as usual.
     /// </summary>
-    private async Task<bool> EnsureHostFreeAsync(HostOption option)
+    private async Task<bool> EnsureHostFreeAsync(HostOption option, bool desktop = false)
     {
         var host = option.Host;
+        if (desktop && !host.Supports(AgentFeatures.DesktopSession))
+        {
+            _logger.LogInformation("Agent of {Address} has no desktop session rule; opening the desktop without releasing", host.Address);
+            return true;
+        }
+
         try
         {
             using var agent = _agents(host);
-            var status = await agent.GetSessionStatusAsync(host.RdpUserName);
+            var status = await agent.GetSessionStatusAsync(host.RdpUserName, desktop);
             if (status is not { Busy: true })
             {
                 return true;
@@ -293,11 +302,13 @@ public sealed partial class MainViewModel : ObservableObject
             }
 
             IsBusy = true;
-            ProgressMessage = status.Sessions.Any(s => s.Action == SessionActions.Logoff)
-                ? "Desconectando sua sessão no PC remoto…"
-                : "Liberando o PC remoto…";
-            ProgressDetail = "Isso pode levar alguns segundos. O app abre em seguida.";
-            var result = await agent.ReleaseSessionAsync(host.RdpUserName);
+            ProgressMessage = !status.Sessions.Any(s => s.Action == SessionActions.Logoff) ? "Liberando o PC remoto…"
+                : desktop ? "Fechando os apps remotos abertos…"
+                : "Desconectando sua sessão no PC remoto…";
+            ProgressDetail = desktop
+                ? "Isso pode levar alguns segundos. A área de trabalho abre em seguida."
+                : "Isso pode levar alguns segundos. O app abre em seguida.";
+            var result = await agent.ReleaseSessionAsync(host.RdpUserName, desktop);
             _logger.LogInformation("Released {Count} host sessions on {Address}", result.Released, host.Address);
             if (result.Busy)
             {
@@ -308,7 +319,7 @@ public sealed partial class MainViewModel : ObservableObject
             // Give Windows a moment to finish tearing down the session before the RDP connection.
             await Task.Delay(TimeSpan.FromSeconds(2));
             var who = string.Join(", ", status.Sessions.Select(s => s.User).Distinct());
-            SetStatus($"PC remoto liberado ({who}) para abrir o app.", warning: false);
+            SetStatus($"PC remoto liberado ({who}) para abrir {(desktop ? "a área de trabalho" : "o app")}.", warning: false);
             return true;
         }
         catch (AgentException ex)
@@ -376,7 +387,7 @@ public sealed partial class MainViewModel : ObservableObject
     private void RenameApp(AppTileViewModel? tile)
     {
         tile ??= SelectedApp;
-        if (tile is null)
+        if (tile is not { CanRename: true })
         {
             return;
         }
@@ -400,7 +411,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Local name only (null restores the host's); the host is never changed.</summary>
     private void SetAppName(AppTileViewModel tile, string? name)
     {
-        if (SelectedHost is not { } option)
+        if (SelectedHost is not { } option || !tile.CanRename)
         {
             return;
         }
@@ -431,6 +442,14 @@ public sealed partial class MainViewModel : ObservableObject
 
         try
         {
+            if (tile.IsDesktop)
+            {
+                var desktopLnk = DesktopShortcuts.Create($"{option.Host.DisplayName} — Área de trabalho",
+                    _launcher.WriteDesktopRdpFile(option.Host), RemoteAppLauncher.MstscPath);
+                SetStatus($"Atalho criado: {Path.GetFileName(desktopLnk)}", warning: false);
+                return;
+            }
+
             var rdp = _launcher.WriteRdpFile(option.Host, tile.App);
             var png = _icons.PngPath(option.Host.Id, tile.App.Alias);
             var ico = _icons.IcoPath(option.Host.Id, tile.App.Alias);
@@ -562,6 +581,7 @@ public sealed partial class MainViewModel : ObservableObject
         Apps.Clear();
         if (SelectedHost is { } option)
         {
+            Apps.Add(AppTileViewModel.Desktop()); // always first
             foreach (var app in option.Host.Apps.OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase))
             {
                 Apps.Add(new AppTileViewModel(app, _icons.PngPath(option.Host.Id, app.Alias)));

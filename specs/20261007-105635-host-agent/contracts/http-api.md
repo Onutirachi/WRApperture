@@ -8,6 +8,13 @@ Base: `https://<host>:<port>` (padrão 5080). JSON em camelCase. As constantes f
 | GET | `/api/host` | token | `200 HostInfoDto` | 401, 429 |
 | GET | `/api/apps` | token | `200 AppSummaryDto[]` (só `ShowInList=true`, ordenado por nome) | 401, 429 |
 | GET | `/api/apps/{alias}/icon?size=48` | token | `200 image/png` + `ETag`. `304` se `If-None-Match` casar | 400 (size fora de 16–256), 401, 404, 429 |
+| GET | `/api/session?user=<rdp>&mode=remoteapp\|desktop` | token | `200 SessionStatusDto` (sessões no caminho e a ação de cada uma) | 400 (modo desconhecido), 401, 429 |
+| POST | `/api/session/release` `{ user, mode }` | token | `200 SessionReleaseResultDto` | 400, 401, 429 |
+
+**Sessões** (`20261007-123424-session-handoff`, modo `desktop` em `20261007-150633-full-desktop`):
+- Sem `mode`, ou com `remoteapp`, a regra é: sessões de área de trabalho do usuário recebem logoff e sessões ativas de outros usuários são desconectadas.
+- Com `desktop`, as sessões RemoteApp do usuário recebem logoff, a área de trabalho dele é reaproveitada e as sessões ativas de outros usuários são desconectadas.
+- O modo `desktop` só existe a partir do agente 0.6.0. Esses agentes informam `features: ["desktop-session"]` em `/api/host`; o cliente só usa o modo quando a feature aparece.
 
 **Auth**: header `X-WRApperture-Token: <token>`.
 - Token ausente, inválido ou host não pareado: `401` com `ApiErrorDto { error: "unauthorized" }`.
@@ -16,7 +23,7 @@ Base: `https://<host>:<port>` (padrão 5080). JSON em camelCase. As constantes f
 **Exemplos**
 ```json
 // GET /api/host
-{ "hostName": "PC-ESCRITORIO", "rdpPort": 3389, "agentVersion": "0.1.0", "certificateFingerprint": "AB12..." }
+{ "hostName": "PC-ESCRITORIO", "rdpPort": 3389, "agentVersion": "0.6.0", "certificateFingerprint": "AB12...", "features": ["desktop-session"] }
 // GET /api/apps
 [ { "alias": "bloco-de-notas", "displayName": "Bloco de Notas", "iconUrl": "/api/apps/bloco-de-notas/icon" } ]
 ```

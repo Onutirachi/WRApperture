@@ -32,6 +32,7 @@ public class HostSyncTests : IDisposable
 
         Assert.Equal(["notepad", "calc"], synced.Apps.Select(a => a.Alias));
         Assert.Equal(3390, synced.RdpPort);
+        Assert.True(synced.Supports(AgentFeatures.DesktopSession));
         Assert.NotNull(synced.LastSyncUtc);
         Assert.Equal([1, 2, 3], File.ReadAllBytes(_icons.PngPath(host.Id, "notepad")));
         Assert.Equal("\"e-notepad\"", synced.Apps[0].IconETag);
@@ -105,7 +106,7 @@ public class HostSyncTests : IDisposable
         public List<int> IconSizes { get; } = [];
 
         public Task<HostInfoDto> GetHostInfoAsync(CancellationToken ct = default) =>
-            Task.FromResult(new HostInfoDto("PC", 3390, "0.1.0", "FP"));
+            Task.FromResult(new HostInfoDto("PC", 3390, "0.6.0", "FP", [AgentFeatures.DesktopSession]));
 
         public Task<IReadOnlyList<AppSummaryDto>> GetAppsAsync(CancellationToken ct = default) =>
             ThrowOnApps is not null
@@ -128,10 +129,10 @@ public class HostSyncTests : IDisposable
             return Task.FromResult(NotModified ? new IconResult(true, null, etag) : new IconResult(false, [1, 2, 3], $"\"e-{alias}\""));
         }
 
-        public Task<SessionStatusDto?> GetSessionStatusAsync(string? rdpUser, CancellationToken ct = default) =>
+        public Task<SessionStatusDto?> GetSessionStatusAsync(string? rdpUser, bool desktop = false, CancellationToken ct = default) =>
             Task.FromResult<SessionStatusDto?>(null);
 
-        public Task<SessionReleaseResultDto> ReleaseSessionAsync(string? rdpUser, CancellationToken ct = default) =>
+        public Task<SessionReleaseResultDto> ReleaseSessionAsync(string? rdpUser, bool desktop = false, CancellationToken ct = default) =>
             Task.FromResult(new SessionReleaseResultDto(0, false));
 
         public void Dispose()

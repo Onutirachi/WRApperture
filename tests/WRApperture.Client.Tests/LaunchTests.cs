@@ -69,6 +69,23 @@ public class RdpFileBuilderTests
         Assert.Equal("Contas", Parse(rdp)["remoteapplicationname"]);
         Assert.Equal("||calc", Parse(rdp)["remoteapplicationprogram"]);
     }
+
+    [Fact]
+    public void Desktop_file_opens_the_full_desktop_with_the_same_connection()
+    {
+        var host = Samples.Host(rdpPort: 3390, user: @"PC\joao");
+        var desktop = Parse(RdpFileBuilder.BuildDesktop(host));
+        var app = Parse(RdpFileBuilder.Build(host, host.Apps[0]));
+
+        Assert.Equal("0", desktop["remoteapplicationmode"]);
+        Assert.Equal("2", desktop["screen mode id"]);
+        Assert.Equal("1", desktop["dynamic resolution"]);
+        Assert.False(desktop.ContainsKey("remoteapplicationprogram"));
+        Assert.False(desktop.ContainsKey("alternate shell"));
+        Assert.Equal(app["full address"], desktop["full address"]);
+        Assert.Equal(app["username"], desktop["username"]);
+        Assert.Equal(app["redirectclipboard"], desktop["redirectclipboard"]);
+    }
 }
 
 public class RemoteAppLauncherTests : IDisposable
@@ -91,6 +108,21 @@ public class RemoteAppLauncherTests : IDisposable
         Assert.Equal(new byte[] { 0xFF, 0xFE }, bytes[..2]);
         Assert.Contains("||bloco-de-notas", Encoding.Unicode.GetString(bytes));
         Assert.EndsWith("mstsc.exe", starter.FileName, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal($"\"{file}\"", starter.Arguments);
+    }
+
+    [Fact]
+    public void Desktop_launch_writes_its_own_file_next_to_the_apps()
+    {
+        var starter = new RecordingStarter();
+        var launcher = new RemoteAppLauncher(_dir.Paths, starter);
+        var host = Samples.Host();
+
+        launcher.LaunchDesktop(host);
+
+        var file = launcher.DesktopRdpFilePath(host);
+        Assert.Equal(Path.GetDirectoryName(launcher.RdpFilePath(host, host.Apps[0])), Path.GetDirectoryName(file));
+        Assert.Contains("remoteapplicationmode:i:0", File.ReadAllText(file, Encoding.Unicode));
         Assert.Equal($"\"{file}\"", starter.Arguments);
     }
 

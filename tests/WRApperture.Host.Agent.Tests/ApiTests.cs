@@ -93,6 +93,7 @@ public class ApiTests : IDisposable
         Assert.Equal(3390, info.RdpPort);
         Assert.Equal(AgentFactory.Fingerprint, info.CertificateFingerprint);
         Assert.False(string.IsNullOrWhiteSpace(info.AgentVersion));
+        Assert.Contains(AgentFeatures.DesktopSession, info.Features!);
     }
 
     [Fact]

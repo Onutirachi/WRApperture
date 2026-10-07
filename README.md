@@ -79,6 +79,11 @@ dotnet run --project src/WRApperture.Client
 2. Confira se o fingerprint exibido é igual ao de `wrahost agent show` no host e confirme.
 3. Dê duplo clique em um app (ou selecione e tecle Enter): só a janela dele abre. Vários apps compartilham a mesma sessão.
 4. Opcional: no menu **⋯**, use **Salvar credenciais do host…** para abrir sem digitar a senha. Com o botão direito em um app, use **Criar atalho na área de trabalho** ou **Renomear…** (F2). O novo nome vale só neste computador; o PC remoto não muda.
+5. O primeiro bloco da grade, **Área de trabalho**, abre o PC remoto inteiro em tela cheia, com as mesmas credenciais e sem o alerta de segurança.
+   - Se você já estiver logado lá, a sessão é reaproveitada com os programas abertos.
+   - Apps remotos abertos são fechados antes, porque o Windows não mistura os dois modos.
+   - Outro usuário logado é desconectado e os programas dele continuam abertos.
+   - Essa preparação exige o host 0.6.0 ou mais recente. Com um host mais antigo, o Windows pergunta como numa conexão remota comum.
 
 **Abrir sem alerta de segurança.** Desde a atualização de abril de 2026, o Windows mostra um alerta a cada abertura de um arquivo `.rdp` não assinado.
 - Ao abrir um app pela primeira vez, o cliente oferece **"Abrir apps sem alerta"**. Também está no menu **⋯**.

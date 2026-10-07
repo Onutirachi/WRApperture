@@ -97,6 +97,52 @@ public class SessionTests : IDisposable
     }
 
     [Fact]
+    public async Task Desktop_mode_reuses_the_users_desktop_and_logs_off_its_remoteapps()
+    {
+        _factory.Sessions.All.AddRange(
+        [
+            S(1, "joao", SessionKind.Desktop, console: true),
+            S(3, "joao", SessionKind.RemoteApp, SessionConnectState.Disconnected),
+        ]);
+        var client = _factory.CreateAuthorizedClient();
+
+        var status = await client.GetFromJsonAsync<SessionStatusDto>($"{ApiContract.Session}?user=joao&mode=desktop");
+        var busy = Assert.Single(status!.Sessions);
+        Assert.Equal(SessionActions.Logoff, busy.Action);
+        Assert.Equal(SessionModes.RemoteApp, busy.Kind);
+
+        var result = await (await client.PostAsJsonAsync(ApiContract.SessionRelease, new SessionReleaseRequestDto("joao", SessionModes.Desktop)))
+            .Content.ReadFromJsonAsync<SessionReleaseResultDto>();
+
+        Assert.Equal([3], _factory.Sessions.LoggedOff);
+        Assert.False(result!.Busy);
+    }
+
+    [Fact]
+    public async Task Unknown_mode_is_rejected_without_touching_sessions()
+    {
+        _factory.Sessions.All.Add(S(1, "joao", SessionKind.Desktop, console: true));
+        var client = _factory.CreateAuthorizedClient();
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync($"{ApiContract.Session}?mode=full")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await client.PostAsJsonAsync(ApiContract.SessionRelease, new SessionReleaseRequestDto("joao", "full"))).StatusCode);
+        Assert.Empty(_factory.Sessions.LoggedOff);
+    }
+
+    [Theory]
+    [InlineData(null, true, false)]
+    [InlineData("", true, false)]
+    [InlineData("remoteapp", true, false)]
+    [InlineData("Desktop", true, true)]
+    [InlineData("full", false, false)]
+    public void Session_modes_parse(string? value, bool valid, bool desktop)
+    {
+        Assert.Equal(valid, SessionModes.TryParse(value, out var isDesktop));
+        Assert.Equal(desktop, isDesktop);
+    }
+
+    [Fact]
     public void Watcher_starts_desktop_once_when_host_screen_shows_a_remoteapp_session()
     {
         _ = _factory.Server; // build the host

@@ -34,12 +34,18 @@ public sealed class RemoteAppLauncher(
     public string RdpFilePath(PairedHost host, CachedApp app) =>
         Path.Combine(paths.HostRdp(host.Id), ClientPaths.SafeFileName(app.Alias) + ".rdp");
 
-    public string WriteRdpFile(PairedHost host, CachedApp app)
+    /// <summary>"@" never appears in aliases ([A-Za-z0-9_-]), so this cannot collide with an app's file.</summary>
+    public string DesktopRdpFilePath(PairedHost host) => Path.Combine(paths.HostRdp(host.Id), "@desktop.rdp");
+
+    public string WriteRdpFile(PairedHost host, CachedApp app) => Write(RdpFilePath(host, app), RdpFileBuilder.Build(host, app));
+
+    public string WriteDesktopRdpFile(PairedHost host) => Write(DesktopRdpFilePath(host), RdpFileBuilder.BuildDesktop(host));
+
+    private string Write(string file, string contents)
     {
-        var file = RdpFilePath(host, app);
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
         // UTF-16 LE with BOM: the encoding mstsc itself writes.
-        File.WriteAllText(file, RdpFileBuilder.Build(host, app), Encoding.Unicode);
+        File.WriteAllText(file, contents, Encoding.Unicode);
         // Signed files from the trusted publisher open without the Windows security warning.
         // On failure the unsigned file still works (with the warning).
         signer?.TrySign(file);
@@ -63,6 +69,13 @@ public sealed class RemoteAppLauncher(
     {
         var file = WriteRdpFile(host, app);
         _logger.LogInformation("Launching RemoteApp {Alias} on {Address}", app.Alias, host.Address);
+        return starter.Start(MstscPath, $"\"{file}\"");
+    }
+
+    public Process? LaunchDesktop(PairedHost host)
+    {
+        var file = WriteDesktopRdpFile(host);
+        _logger.LogInformation("Launching full desktop on {Address}", host.Address);
         return starter.Start(MstscPath, $"\"{file}\"");
     }
 

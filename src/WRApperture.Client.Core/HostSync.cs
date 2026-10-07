@@ -46,6 +46,6 @@ public sealed class HostSync(IconStore icons, Func<PairedHost, IAgentApi> client
         }
 
         _logger.LogInformation("Synced host {Host}: {Count} apps", host.Address, cached.Count);
-        return host with { Apps = cached, RdpPort = info.RdpPort, LastSyncUtc = time.GetUtcNow() };
+        return host with { Apps = cached, RdpPort = info.RdpPort, AgentFeatures = info.Features ?? [], LastSyncUtc = time.GetUtcNow() };
     }
 }

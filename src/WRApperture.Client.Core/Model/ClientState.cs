@@ -40,6 +40,11 @@ public sealed record PairedHost
     /// </summary>
     public bool AskBeforeReleasingSession { get; init; }
     public IReadOnlyList<CachedApp> Apps { get; init; } = [];
+
+    /// <summary>Capabilities the agent announced on the last sync (see <c>AgentFeatures</c>).</summary>
+    public IReadOnlyList<string> AgentFeatures { get; init; } = [];
+
+    public bool Supports(string feature) => AgentFeatures.Contains(feature, StringComparer.OrdinalIgnoreCase);
     public DateTimeOffset? LastSyncUtc { get; init; }
 }
 

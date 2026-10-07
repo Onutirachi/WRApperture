@@ -9,7 +9,7 @@
         <TextBlock x:Name="SessionsText" TextWrapping="Wrap" Margin="0,0,0,10" />
 
         <Border x:Name="LogoffWarning" Background="{StaticResource WarningBackground}" CornerRadius="4" Padding="10">
-            <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Warning}"
+            <TextBlock x:Name="LogoffWarningText" TextWrapping="Wrap" Foreground="{StaticResource Warning}"
                        Text="Para abrir o app, essa sessão será encerrada (logoff). Os programas abertos no PC remoto serão fechados e o que não foi salvo será perdido." />
         </Border>
 
