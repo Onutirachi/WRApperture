@@ -113,6 +113,12 @@ public class HostSyncTests : IDisposable
             return Task.FromResult(NotModified ? new IconResult(true, null, etag) : new IconResult(false, [1, 2, 3], $"\"e-{alias}\""));
         }
 
+        public Task<SessionStatusDto?> GetSessionStatusAsync(string? rdpUser, CancellationToken ct = default) =>
+            Task.FromResult<SessionStatusDto?>(null);
+
+        public Task<SessionReleaseResultDto> ReleaseSessionAsync(string? rdpUser, CancellationToken ct = default) =>
+            Task.FromResult(new SessionReleaseResultDto(0, false));
+
         public void Dispose()
         {
         }

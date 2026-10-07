@@ -40,11 +40,13 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly IDialogService _dialogs;
     private readonly IRdpSigner _signer;
     private readonly ISigningSetup _signingSetup;
+    private readonly Func<PairedHost, IAgentApi> _agents;
     private readonly ILogger<MainViewModel> _logger;
     private ClientState _state;
 
     public MainViewModel(HostStore store, IconStore icons, RemoteAppLauncher launcher, HostSync sync,
         ICredentialStore credentials, IDialogService dialogs, IRdpSigner signer, ISigningSetup signingSetup,
+        Func<PairedHost, IAgentApi> agents,
         ILogger<MainViewModel> logger)
     {
         _store = store;
@@ -55,6 +57,7 @@ public sealed partial class MainViewModel : ObservableObject
         _dialogs = dialogs;
         _signer = signer;
         _signingSetup = signingSetup;
+        _agents = agents;
         _logger = logger;
         _state = store.Load();
 
@@ -102,6 +105,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     partial void OnSelectedHostChanged(HostOption? value)
     {
+        OnPropertyChanged(nameof(AutoReleaseSession));
         ShowCachedApps();
         if (value is not null)
         {
@@ -215,6 +219,11 @@ public sealed partial class MainViewModel : ObservableObject
             }
         }
 
+        if (!await EnsureHostFreeAsync(option))
+        {
+            return;
+        }
+
         try
         {
             _launcher.Launch(option.Host, tile.App);
@@ -224,6 +233,79 @@ public sealed partial class MainViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to launch {Alias}", tile.App.Alias);
             _dialogs.Error($"Não foi possível abrir {tile.DisplayName}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// A user cannot have a desktop session and a RemoteApp session on Windows client editions.
+    /// If the host is in local use, ask (or, if configured, just proceed) and log that session off.
+    /// Returns false when the app must not be launched.
+    /// </summary>
+    private async Task<bool> EnsureHostFreeAsync(HostOption option)
+    {
+        var host = option.Host;
+        try
+        {
+            using var agent = _agents(host);
+            var status = await agent.GetSessionStatusAsync(host.RdpUserName);
+            if (status is not { Busy: true })
+            {
+                return true;
+            }
+
+            if (!host.AutoReleaseSession)
+            {
+                var decision = _dialogs.AskReleaseSession(host.DisplayName, status.Sessions);
+                if (decision is null)
+                {
+                    SetStatus("Abertura cancelada: o PC remoto continua em uso.", warning: false);
+                    return false;
+                }
+
+                if (decision.Always)
+                {
+                    ReplaceHost(host with { AutoReleaseSession = true });
+                    OnPropertyChanged(nameof(AutoReleaseSession));
+                }
+            }
+
+            IsBusy = true;
+            SetStatus($"Encerrando a sessão local de {host.DisplayName}…", warning: false);
+            var result = await agent.ReleaseSessionAsync(host.RdpUserName);
+            _logger.LogInformation("Released {Count} host sessions on {Address}", result.Released, host.Address);
+            if (result.Busy)
+            {
+                _dialogs.Error($"Não foi possível encerrar a sessão local de {host.DisplayName}. Faça logoff no PC remoto e tente de novo.");
+                return false;
+            }
+
+            // Give Windows a moment to finish tearing down the session before the RDP connection.
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            return true;
+        }
+        catch (AgentException ex)
+        {
+            // Offline agent, old agent or auth problems: keep the previous behavior and just launch.
+            _logger.LogWarning(ex, "Host session check skipped for {Address}", host.Address);
+            return true;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>Menu toggle: log off the host's local session without asking.</summary>
+    public bool AutoReleaseSession
+    {
+        get => SelectedHost?.Host.AutoReleaseSession ?? false;
+        set
+        {
+            if (SelectedHost is { } option && option.Host.AutoReleaseSession != value)
+            {
+                ReplaceHost(option.Host with { AutoReleaseSession = value });
+                OnPropertyChanged();
+            }
         }
     }
 

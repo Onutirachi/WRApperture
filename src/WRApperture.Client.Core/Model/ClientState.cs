@@ -20,6 +20,9 @@ public sealed record PairedHost
     public required string PinnedFingerprint { get; init; }
     public int RdpPort { get; init; } = DefaultRdpPort;
     public string? RdpUserName { get; init; }
+
+    /// <summary>Log off the host's local desktop session without asking before opening an app.</summary>
+    public bool AutoReleaseSession { get; init; }
     public IReadOnlyList<CachedApp> Apps { get; init; } = [];
     public DateTimeOffset? LastSyncUtc { get; init; }
 }

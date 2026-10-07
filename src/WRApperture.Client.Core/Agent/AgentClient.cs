@@ -17,6 +17,12 @@ public interface IAgentApi : IDisposable
     Task<HostInfoDto> GetHostInfoAsync(CancellationToken ct = default);
     Task<IReadOnlyList<AppSummaryDto>> GetAppsAsync(CancellationToken ct = default);
     Task<IconResult> GetIconAsync(string alias, int size, string? etag, CancellationToken ct = default);
+
+    /// <summary>Null when the agent predates session support (HTTP 404).</summary>
+    Task<SessionStatusDto?> GetSessionStatusAsync(string? rdpUser, CancellationToken ct = default);
+
+    /// <summary>Logs off the host desktop sessions that block RemoteApp; waits up to 45 s.</summary>
+    Task<SessionReleaseResultDto> ReleaseSessionAsync(string? rdpUser, CancellationToken ct = default);
 }
 
 /// <summary>Talks to a host agent over HTTPS with certificate pinning.</summary>
@@ -111,14 +117,37 @@ public sealed class AgentClient : IAgentApi
         return new IconResult(false, await response.Content.ReadAsByteArrayAsync(ct), response.Headers.ETag?.ToString());
     }
 
+    public async Task<SessionStatusDto?> GetSessionStatusAsync(string? rdpUser, CancellationToken ct = default)
+    {
+        var query = string.IsNullOrWhiteSpace(rdpUser) ? string.Empty : "?user=" + Uri.EscapeDataString(rdpUser.Trim());
+        using var response = await SendAsync(new HttpRequestMessage(HttpMethod.Get, ApiContract.Session + query), ct, allowNotFound: true);
+        return response.StatusCode == HttpStatusCode.NotFound
+            ? null
+            : await response.Content.ReadFromJsonAsync<SessionStatusDto>(ct);
+    }
+
+    public async Task<SessionReleaseResultDto> ReleaseSessionAsync(string? rdpUser, CancellationToken ct = default)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, ApiContract.SessionRelease)
+        {
+            Content = JsonContent.Create(new SessionReleaseRequestDto(string.IsNullOrWhiteSpace(rdpUser) ? null : rdpUser.Trim())),
+        };
+        using var response = await SendAsync(request, ct, timeout: TimeSpan.FromSeconds(ApiContract.SessionReleaseTimeoutSeconds));
+        return await response.Content.ReadFromJsonAsync<SessionReleaseResultDto>(ct)
+               ?? throw new AgentException("Resposta inválida do host.");
+    }
+
     public void Dispose() => _http.Dispose();
 
-    private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct, bool allowNotModified = false)
+    private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct,
+        bool allowNotModified = false, bool allowNotFound = false, TimeSpan? timeout = null)
     {
         HttpResponseMessage response;
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        deadline.CancelAfter(timeout ?? RequestTimeout);
         try
         {
-            response = await _http.SendAsync(request, ct);
+            response = await _http.SendAsync(request, deadline.Token);
         }
         catch (HttpRequestException ex)
         {
@@ -129,7 +158,7 @@ public sealed class AgentClient : IAgentApi
 
             throw new AgentUnreachableException(_address, _port, ex);
         }
-        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
         {
             throw new AgentUnreachableException(_address, _port, ex);
         }
@@ -138,7 +167,9 @@ public sealed class AgentClient : IAgentApi
             request.Dispose();
         }
 
-        if (response.IsSuccessStatusCode || (allowNotModified && response.StatusCode == HttpStatusCode.NotModified))
+        if (response.IsSuccessStatusCode ||
+            (allowNotModified && response.StatusCode == HttpStatusCode.NotModified) ||
+            (allowNotFound && response.StatusCode == HttpStatusCode.NotFound))
         {
             return response;
         }
@@ -184,7 +215,7 @@ public sealed class AgentClient : IAgentApi
         var http = new HttpClient(handler)
         {
             BaseAddress = new UriBuilder(Uri.UriSchemeHttps, address.Trim(), port).Uri,
-            Timeout = RequestTimeout,
+            Timeout = Timeout.InfiniteTimeSpan, // per-request deadlines in SendAsync (release can take 45 s)
         };
         http.DefaultRequestHeaders.Add(ApiContract.TokenHeader, token);
         return http;

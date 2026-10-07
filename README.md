@@ -86,6 +86,11 @@ dotnet run --project src/WRApperture.Client
 
 Na primeira conexão, o Windows pode avisar sobre o certificado RDP do host. Marque "Não perguntar novamente para conexões com este computador".
 
+**Alternar entre usar o PC remoto localmente e pelo cliente.** No Windows Pro, um usuário não pode ter ao mesmo tempo a sessão local e os apps remotos.
+- **Abrir um app com alguém logado no PC remoto:** o cliente avisa e, com a sua confirmação, encerra (logoff) a sessão local antes de abrir. **Os programas abertos lá são fechados.** Você pode marcar "sempre encerrar automaticamente", que também fica disponível no menu **⋯**. Sessões de **outros** usuários nunca são encerradas.
+- **Logar no PC remoto com apps abertos no cliente:** o Windows desconecta o cliente, e o agente inicia a área de trabalho nessa sessão. Você continua com os mesmos programas abertos no PC, sem perder trabalho.
+- Para diagnóstico, rode `wrahost sessions` no host. Ele lista as sessões e o tipo de cada uma.
+
 **Barra de idioma flutuante.** O `wrahost prepare` (rodado pelo instalador do host) oculta a barra de idioma nos perfis carregados. Para outro usuário do host, ele mesmo roda `wrahost langbar hide`, sem precisar de administrador. A mudança vale a partir de uma **nova sessão**: faça logoff da sessão remota antes de testar.
 Os dados do cliente ficam em `%LOCALAPPDATA%\WRApperture\client`. O token fica protegido com DPAPI e a senha fica no Gerenciador de Credenciais do Windows.
 

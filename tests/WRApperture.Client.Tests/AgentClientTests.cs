@@ -192,6 +192,49 @@ public class AgentClientHttpTests
         Assert.Equal("\"new\"", result.ETag);
     }
 
+    [Fact]
+    public async Task Session_status_sends_user_and_parses_result()
+    {
+        HttpRequestMessage? seen = null;
+        using var client = Create(request =>
+        {
+            seen = request;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent.Create(new SessionStatusDto(true, [new BusySessionDto(@"PC\joao", "em uso", true)])),
+            };
+        });
+
+        var status = await client.GetSessionStatusAsync(@"PC\joao");
+
+        Assert.True(status!.Busy);
+        Assert.Equal("/api/session?user=PC%5Cjoao", seen!.RequestUri!.PathAndQuery);
+    }
+
+    [Fact]
+    public async Task Session_status_is_null_for_agents_without_session_support()
+    {
+        using var client = Create(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
+
+        Assert.Null(await client.GetSessionStatusAsync(null));
+    }
+
+    [Fact]
+    public async Task Release_posts_user_and_returns_result()
+    {
+        string? body = null;
+        using var client = Create(request =>
+        {
+            body = request.Content!.ReadAsStringAsync().Result;
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(new SessionReleaseResultDto(1, false)) };
+        });
+
+        var result = await client.ReleaseSessionAsync(" joao ");
+
+        Assert.Equal(1, result.Released);
+        Assert.Contains("\"joao\"", body);
+    }
+
     private static AgentClient Create(Func<HttpRequestMessage, HttpResponseMessage> respond) =>
         new(new HttpClient(new StubHandler(respond)) { BaseAddress = new Uri("https://host:5080") },
             CertificatePinValidator.Pinned("X"), "host", 5080);

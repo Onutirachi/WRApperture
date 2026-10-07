@@ -9,10 +9,16 @@ public sealed record AddHostResult(string Address, int AgentPort, string Token, 
 
 public sealed record CredentialsInput(string UserName, string Password);
 
+public sealed record ReleaseDecision(bool Always);
+
 public interface IDialogService
 {
     AddHostResult? AddHost(string? address = null, int? agentPort = null);
     CredentialsInput? AskCredentials(string hostName, string? userName);
+
+    /// <summary>Null when the user cancels.</summary>
+    ReleaseDecision? AskReleaseSession(string hostName, IReadOnlyList<BusySessionDto> sessions);
+
     bool Confirm(string title, string message);
     void Error(string message);
     void Info(string message);
@@ -32,6 +38,12 @@ internal sealed class DialogService : IDialogService
     {
         var window = new CredentialsWindow(hostName, userName) { Owner = Application.Current.MainWindow };
         return window.ShowDialog() == true ? window.Result : null;
+    }
+
+    public ReleaseDecision? AskReleaseSession(string hostName, IReadOnlyList<BusySessionDto> sessions)
+    {
+        var window = new ReleaseSessionWindow(hostName, sessions) { Owner = Application.Current.MainWindow };
+        return window.ShowDialog() == true ? new ReleaseDecision(window.Always) : null;
     }
 
     public bool Confirm(string title, string message) =>
