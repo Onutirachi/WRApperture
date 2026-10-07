@@ -50,7 +50,7 @@
   "connection.fingerprintPending": "(created when the agent starts)",
   "connection.noNetwork": "no network",
 
-  "agent.notInstalled": "not installed (run Instalar.cmd)",
+  "agent.notInstalled": "not installed (run the WRApperture Host setup)",
   "agent.running": "running",
   "agent.starting": "starting…",
   "agent.stopping": "stopping…",

@@ -7,7 +7,7 @@
         xmlns:vm="clr-namespace:WRApperture.Host.Manager.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:ManagerViewModel}"
-        Title="{loc:T manager.main.title}" Width="1040" Height="700" MinWidth="760" MinHeight="480"
+        Title="{loc:T manager.main.title}" Width="1040" Height="800" MinWidth="760" MinHeight="480"
         WindowStartupLocation="CenterScreen" Style="{StaticResource BaseWindow}">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
