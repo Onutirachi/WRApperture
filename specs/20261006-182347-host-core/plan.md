@@ -27,7 +27,7 @@ Todo acesso ao sistema passa por seams (`IRegistryAccess`, `IFirewallRules`, `IP
 
 **Storage**: Registro do Windows (HKLM): `TSAppAllowList` e `SOFTWARE\WRApperture` para o snapshot. Não há banco de dados.
 
-**Testing**: xUnit + FluentAssertions, com fakes em memória para os seams. Testes de integração reais são marcados com `[Trait("Category","Integration")]` e ficam fora do CI padrão.
+**Testing**: xUnit (Assert nativo; FluentAssertions v8 tem licença comercial), com fakes em memória para os seams. Testes de integração reais são marcados com `[Trait("Category","Integration")]` e ficam fora do CI padrão.
 
 **Target Platform**: Windows 10/11 Pro/Enterprise/Education x64.
 

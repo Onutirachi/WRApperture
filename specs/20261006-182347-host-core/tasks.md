@@ -16,7 +16,7 @@ description: "Task list for Host Core"
 
 - [ ] T001 Criar `WRApperture.sln`, `Directory.Build.props` (net8.0-windows, Nullable, TreatWarningsAsErrors, ImplicitUsings) e `.editorconfig` na raiz
 - [ ] T002 Criar `src/WRApperture.Host.Core/WRApperture.Host.Core.csproj` (classlib; DI.Abstractions, Logging.Abstractions, System.Drawing.Common)
-- [ ] T003 [P] Criar `tests/WRApperture.Host.Core.Tests/WRApperture.Host.Core.Tests.csproj` (xUnit, FluentAssertions, ref Core, `InternalsVisibleTo`)
+- [ ] T003 [P] Criar `tests/WRApperture.Host.Core.Tests/WRApperture.Host.Core.Tests.csproj` (xUnit, ref Core, `InternalsVisibleTo`)
 - [ ] T004 [P] Criar `src/WRApperture.Host.Cli/WRApperture.Host.Cli.csproj` (exe `wrahost`; System.CommandLine, Serilog, Serilog.Sinks.File, Serilog.Extensions.Logging; manifest `asInvoker`)
 
 ---
