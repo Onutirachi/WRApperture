@@ -35,7 +35,7 @@
   "tile.renamedTip": "{0}\nNo PC remoto: {1}",
   "desktop.name": "Área de trabalho",
   "desktop.tip": "Abre a área de trabalho inteira do PC remoto, em tela cheia",
-  "desktop.shortcutName": "{0} — Área de trabalho",
+  "shortcut.name": "{0} - {1}",
   "status.syncing": "Sincronizando…",
   "status.synced": "{0} app(s) · sincronizado às {1}",
   "status.never": "nunca",

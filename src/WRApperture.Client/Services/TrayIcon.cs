@@ -56,15 +56,35 @@ internal sealed class TrayIcon : IDisposable
         open.Click += (_, _) => _show();
         _menu.Items.Add(open);
 
-        if (_vm.SelectedHost is { } host)
+        if (_vm.Hosts.Count == 1)
         {
+            // One host: its apps right in the menu.
+            var host = _vm.Hosts[0];
             _menu.Items.Add(new ToolStripSeparator());
             _menu.Items.Add(new ToolStripMenuItem(host.Label) { Enabled = false });
-            foreach (var tile in _vm.Apps)
+            foreach (var tile in _vm.TilesFor(host))
             {
-                var item = new ToolStripMenuItem(tile.DisplayName, LoadImage(tile.IconPath));
-                item.Click += (_, _) => _vm.OpenAppCommand.Execute(tile);
-                _menu.Items.Add(item);
+                _menu.Items.Add(AppItem(host, tile));
+            }
+        }
+        else if (_vm.Hosts.Count > 1)
+        {
+            // Several hosts: one submenu each (the selected one in bold), so any host's app is one hover away.
+            _menu.Items.Add(new ToolStripSeparator());
+            foreach (var host in _vm.Hosts)
+            {
+                var submenu = new ToolStripMenuItem(host.Label);
+                if (ReferenceEquals(host, _vm.SelectedHost))
+                {
+                    submenu.Font = new Font(_menu.Font, FontStyle.Bold);
+                }
+
+                foreach (var tile in _vm.TilesFor(host))
+                {
+                    submenu.DropDownItems.Add(AppItem(host, tile));
+                }
+
+                _menu.Items.Add(submenu);
             }
         }
 
@@ -74,10 +94,30 @@ internal sealed class TrayIcon : IDisposable
         _menu.Items.Add(exit);
     }
 
-    /// <summary>Read into memory: Image.FromFile would keep the icon file locked during syncs.</summary>
-    private Image? LoadImage(string? path)
+    private ToolStripMenuItem AppItem(HostOption host, AppTileViewModel tile)
     {
-        if (path is null || !File.Exists(path))
+        var item = new ToolStripMenuItem(tile.DisplayName, ImageFor(tile));
+        item.Click += (_, _) => _vm.OpenFromTray(host, tile);
+        return item;
+    }
+
+    /// <summary>The app's cached icon; otherwise the same blue tile as the grid (monitor glyph or initial).</summary>
+    private Image? ImageFor(AppTileViewModel tile)
+    {
+        var pixels = (int)Math.Round(MenuIconSize * _menu.DeviceDpi / 96.0);
+        var image = LoadImage(tile.IconPath, pixels) ?? RenderTile(tile, pixels);
+        if (image is not null)
+        {
+            _images.Add(image);
+        }
+
+        return image;
+    }
+
+    /// <summary>Read into memory: Image.FromFile would keep the icon file locked during syncs.</summary>
+    private static Bitmap? LoadImage(string? path, int pixels)
+    {
+        if (string.IsNullOrEmpty(path) || !File.Exists(path))
         {
             return null;
         }
@@ -86,14 +126,45 @@ internal sealed class TrayIcon : IDisposable
         {
             using var stream = new MemoryStream(File.ReadAllBytes(path));
             using var original = Image.FromStream(stream);
-            var image = new Bitmap(original, MenuIconSize, MenuIconSize);
-            _images.Add(image);
+            var image = new Bitmap(pixels, pixels);
+            using var graphics = Graphics.FromImage(image);
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            graphics.DrawImage(original, 0, 0, pixels, pixels);
             return image;
         }
         catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException)
         {
             return null;
         }
+    }
+
+    /// <summary>Draws the grid's fallback tile with WPF (same accent color, glyph and font) as a menu image.</summary>
+    private static Bitmap RenderTile(AppTileViewModel tile, int pixels)
+    {
+        var accent = System.Windows.Application.Current.TryFindResource("Accent") as System.Windows.Media.Brush
+                     ?? System.Windows.Media.Brushes.RoyalBlue;
+        var text = tile.IsDesktop ? "" : tile.Initial; // Segoe MDL2 Assets "TVMonitor", as in the grid
+        var font = new System.Windows.Media.Typeface(tile.IsDesktop ? "Segoe MDL2 Assets" : "Segoe UI");
+        var glyph = new System.Windows.Media.FormattedText(text, System.Globalization.CultureInfo.CurrentUICulture,
+            System.Windows.FlowDirection.LeftToRight, font, pixels * (tile.IsDesktop ? 0.62 : 0.6),
+            System.Windows.Media.Brushes.White, 1.0);
+
+        var visual = new System.Windows.Media.DrawingVisual();
+        using (var context = visual.RenderOpen())
+        {
+            context.DrawRoundedRectangle(accent, null, new System.Windows.Rect(0, 0, pixels, pixels), pixels / 6.0, pixels / 6.0);
+            context.DrawText(glyph, new System.Windows.Point((pixels - glyph.Width) / 2, (pixels - glyph.Height) / 2));
+        }
+
+        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(pixels, pixels, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        bitmap.Render(visual);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using var stream = new MemoryStream();
+        encoder.Save(stream);
+        stream.Position = 0;
+        using var decoded = Image.FromStream(stream);
+        return new Bitmap(decoded);
     }
 
     private void DisposeImages()

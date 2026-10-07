@@ -12,8 +12,11 @@ namespace WRApperture.Client.Services;
 /// </summary>
 internal static class ShortcutIcons
 {
-    private static readonly int[] Sizes = [16, 24, 32, 48, 256];
-    private static readonly Lazy<BitmapSource> Badge = new(() => LoadResource("badge.png"));
+    // Includes the sizes Windows uses at 125% / 150% / 200% scaling, so it never has to stretch a smaller one.
+    private static readonly int[] Sizes = [16, 20, 24, 32, 40, 48, 64, 72, 96, 128, 256];
+
+    /// <summary>Vector badge (assets/icons/badge.xaml, a 1×1 drawing): sharp at any size, unlike a scaled bitmap.</summary>
+    private static readonly Lazy<Drawing> Badge = new(LoadBadge);
     private static readonly Lazy<BitmapSource> ClientIcon = new(() => LoadResource("client.png"));
 
     /// <summary>The remote app's icon with the badge on its bottom-right corner, as a multi-size .ico.</summary>
@@ -38,7 +41,11 @@ internal static class ShortcutIcons
             if (badge > 0)
             {
                 var side = Math.Round(size * badge);
-                context.DrawImage(Badge.Value, new Rect(size - side, size - side, side, side));
+                context.PushTransform(new TranslateTransform(size - side, size - side));
+                context.PushTransform(new ScaleTransform(side, side));
+                context.DrawDrawing(Badge.Value);
+                context.Pop();
+                context.Pop();
             }
         }
 
@@ -57,6 +64,14 @@ internal static class ShortcutIcons
         var image = BitmapFrame.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
         image.Freeze();
         return image;
+    }
+
+    private static Drawing LoadBadge()
+    {
+        using var stream = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/badge.xaml")).Stream;
+        var drawing = (Drawing)System.Windows.Markup.XamlReader.Load(stream);
+        drawing.Freeze();
+        return drawing;
     }
 
     private static BitmapSource LoadResource(string name)

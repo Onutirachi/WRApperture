@@ -35,7 +35,7 @@
   "tile.renamedTip": "{0}\nOn the remote PC: {1}",
   "desktop.name": "Desktop",
   "desktop.tip": "Opens the remote PC's whole desktop, full screen",
-  "desktop.shortcutName": "{0} — Desktop",
+  "shortcut.name": "{0} - {1}",
   "status.syncing": "Syncing…",
   "status.synced": "{0} app(s) · synced at {1}",
   "status.never": "never",

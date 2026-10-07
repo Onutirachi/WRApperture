@@ -495,7 +495,7 @@ public sealed partial class MainViewModel : ObservableObject
             if (tile.IsDesktop)
             {
                 var desktopIco = _icons.WriteIco(option.Host.Id, tile.App.Alias, ShortcutIcons.ForDesktop());
-                var desktopLnk = DesktopShortcuts.Create(Strings.T("client.desktop.shortcutName", option.Host.DisplayName),
+                var desktopLnk = DesktopShortcuts.Create(Strings.T("client.shortcut.name", tile.DisplayName, option.Host.DisplayName),
                     _launcher.WriteDesktopRdpFile(option.Host), desktopIco, directory);
                 SetStatus(Strings.T("client.status.shortcutCreated", Path.GetFileName(desktopLnk)), warning: false);
                 return;
@@ -508,7 +508,8 @@ public sealed partial class MainViewModel : ObservableObject
                 ? _icons.WriteIco(option.Host.Id, tile.App.Alias, ShortcutIcons.ForApp(File.ReadAllBytes(png)))
                 : RemoteAppLauncher.MstscPath;
 
-            var lnk = DesktopShortcuts.Create(tile.DisplayName, rdp, ico, directory);
+            // "<app> - <host>", so the same app published by two hosts gets two distinct shortcuts.
+            var lnk = DesktopShortcuts.Create(Strings.T("client.shortcut.name", tile.DisplayName, option.Host.DisplayName), rdp, ico, directory);
             SetStatus(Strings.T("client.status.shortcutCreated", Path.GetFileName(lnk)), warning: false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException
@@ -626,16 +627,39 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>A host's tiles as the grid shows them: the desktop first, then the apps by name.</summary>
+    public IReadOnlyList<AppTileViewModel> TilesFor(HostOption option) =>
+        new[] { AppTileViewModel.Desktop() }
+            .Concat(option.Host.Apps
+                .OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase)
+                .Select(app => new AppTileViewModel(app, _icons.PngPath(option.Host.Id, app.Alias))))
+            .ToList();
+
+    /// <summary>Tray menu: opens an app of any host, switching to that host first if needed.</summary>
+    public void OpenFromTray(HostOption option, AppTileViewModel tile)
+    {
+        if (!ReferenceEquals(SelectedHost, option))
+        {
+            SelectedHost = option; // rebuilds Apps from the cache right away (the sync runs in the background)
+        }
+
+        var match = Apps.FirstOrDefault(a => a.IsDesktop == tile.IsDesktop &&
+                                             string.Equals(a.App.Alias, tile.App.Alias, StringComparison.OrdinalIgnoreCase));
+        if (match is not null)
+        {
+            OpenAppCommand.Execute(match);
+        }
+    }
+
     private void ShowCachedApps()
     {
         var selectedAlias = SelectedApp?.App.Alias;
         Apps.Clear();
         if (SelectedHost is { } option)
         {
-            Apps.Add(AppTileViewModel.Desktop()); // always first
-            foreach (var app in option.Host.Apps.OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase))
+            foreach (var tile in TilesFor(option))
             {
-                Apps.Add(new AppTileViewModel(app, _icons.PngPath(option.Host.Id, app.Alias)));
+                Apps.Add(tile);
             }
         }
 

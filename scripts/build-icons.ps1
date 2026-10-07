@@ -7,7 +7,8 @@
       assets/icons/WRApperture.ico       client app (WRApperture.exe)
       assets/icons/WRApperture.Host.ico  host app, agent and wrahost
       assets/icons/client.png            256 px, base of the client's own shortcuts
-      assets/icons/badge.png             256 px, corner badge on shortcuts created by the client
+      assets/icons/badge.png             256 px preview of the corner badge on shortcuts created by the client
+      assets/icons/badge.xaml            the same badge as vector shapes, drawn by the client at each icon size
     The outputs are committed, so a normal build does not need this script: run it after changing a drawing.
 
     Supported SVG subset (what CorelDRAW exports for these drawings): <path d>, <polygon points>, <circle>,
@@ -32,7 +33,7 @@ if ([Threading.Thread]::CurrentThread.ApartmentState -ne 'STA') {
     exit $LASTEXITCODE
 }
 
-Add-Type -AssemblyName PresentationCore, WindowsBase
+Add-Type -AssemblyName PresentationCore, PresentationFramework, WindowsBase
 
 $IconSizes = 16, 20, 24, 32, 40, 48, 64, 96, 128, 256
 $Invariant = [Globalization.CultureInfo]::InvariantCulture
@@ -156,6 +157,21 @@ function Write-Ico([string]$Path, [object[]]$Images) {
     [IO.File]::WriteAllBytes($Path, $stream.ToArray())
 }
 
+# Vector copy of a drawing (XAML), for art the apps draw at arbitrary sizes, like the shortcut badge:
+# scaling a bitmap down to 14-20 px looks blurry, drawing the shapes at that size does not.
+function Write-DrawingXaml($Art, [string]$Path) {
+    $group = New-Object System.Windows.Media.DrawingGroup
+    $group.Children.Add($Art.Drawing)
+    # Normalize to a 1x1 box so the app can scale it to any rectangle.
+    $scale = 1 / [Math]::Max($Art.Width, $Art.Height)
+    $transform = New-Object System.Windows.Media.TransformGroup
+    $transform.Children.Add((New-Object System.Windows.Media.TranslateTransform(-$Art.X, -$Art.Y)))
+    $transform.Children.Add((New-Object System.Windows.Media.ScaleTransform($scale, $scale)))
+    $group.Transform = $transform
+    $group.Freeze()
+    [IO.File]::WriteAllText($Path, [System.Windows.Markup.XamlWriter]::Save($group), (New-Object Text.UTF8Encoding($false)))
+}
+
 foreach ($icon in @(
         @{ Svg = 'client.svg'; Ico = 'WRApperture.ico'; Png = 'client.png' },
         @{ Svg = 'host.svg'; Ico = 'WRApperture.Host.ico'; Png = $null },
@@ -169,5 +185,9 @@ foreach ($icon in @(
     if ($icon.Png) {
         [IO.File]::WriteAllBytes((Join-Path $IconsDir $icon.Png), (ConvertTo-Png $art 256))
         Write-Host "$($icon.Png): 256 px"
+    }
+    if ($icon.Svg -eq 'badge.svg') {
+        Write-DrawingXaml $art (Join-Path $IconsDir 'badge.xaml')
+        Write-Host 'badge.xaml: vector'
     }
 }
