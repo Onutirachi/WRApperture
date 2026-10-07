@@ -6,6 +6,7 @@ Requisitos: Windows 10/11 Pro, Enterprise ou Education (x64). Nao precisa de .NE
 INSTALAR (ou atualizar)
   1. Extraia este .zip numa pasta.
   2. De duplo clique em Instalar.cmd e aceite o pedido de administrador.
+     Responda se quer o atalho na area de trabalho (Enter = sim).
   3. Anote o ENDERECO, a PORTA e o TOKEN exibidos no final.
 
 PUBLICAR APPS

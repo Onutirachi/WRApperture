@@ -14,6 +14,15 @@
 .PARAMETER InstallDir
     Pasta de instalação. Padrão: "$env:ProgramFiles\WRApperture".
 
+.PARAMETER DesktopDir
+    Pasta do atalho "WRApperture (Host)" na área de trabalho. Padrão: área de trabalho pública (todos os usuários).
+
+.PARAMETER Interactive
+    Pergunta se deve criar o atalho na área de trabalho (Enter = sim). Usado pelo Instalar.cmd.
+
+.PARAMETER NoDesktopShortcut
+    Não cria o atalho na área de trabalho.
+
 .PARAMETER AllowPublicNetwork
     Libera o agente também em redes classificadas como Públicas.
 
@@ -23,6 +32,9 @@
 [CmdletBinding()]
 param(
     [string]$InstallDir = (Join-Path $env:ProgramFiles 'WRApperture'),
+    [string]$DesktopDir = [Environment]::GetFolderPath('CommonDesktopDirectory'),
+    [switch]$Interactive,
+    [switch]$NoDesktopShortcut,
     [switch]$AllowPublicNetwork,
     [switch]$DryRun
 )
@@ -38,6 +50,15 @@ $localizer = @('Localization.ps1', '..\Localization.ps1') | ForEach-Object { Joi
 if ($localizer) { . $localizer }
 else {
     function T([string]$Key) { (@($Key) + $args) -join ' ' }
+    function Test-WRYes([string]$Answer) { $Answer -match '^\s*[yY]' }
+}
+
+# Asked once by Instalar.cmd (-Interactive); Enter means yes. Without -Interactive the default is yes.
+function Get-DesktopShortcutChoice([string]$Path) {
+    if ($NoDesktopShortcut) { return $false }
+    if (-not $Interactive -or (Test-Path $Path)) { return $true }   # an update just refreshes it
+    $answer = Read-Host (T 'installer.desktopShortcut.question')
+    return [string]::IsNullOrWhiteSpace($answer) -or (Test-WRYes $answer)
 }
 
 function Write-Step([string]$Text) { Write-Host "==> $Text" -ForegroundColor Cyan }
@@ -72,6 +93,10 @@ if (-not $DryRun -and -not (Test-IsAdministrator)) {
 
 if ($DryRun) { Write-Host (T 'installer.host.install.dryRunMode' $InstallDir) -ForegroundColor DarkYellow }
 
+# Machine-wide install: the shortcut goes to the desktop shared by all users.
+$desktopShortcut = Join-Path $DesktopDir 'WRApperture (Host).lnk'
+$createDesktopShortcut = Get-DesktopShortcutChoice $desktopShortcut
+
 $newToken = $null
 try {
     foreach ($file in $Binaries) {
@@ -98,6 +123,19 @@ try {
             Copy-Item -Path $catalog -Destination $InstallDir -Recurse -Force
         }
     } | Out-Null
+
+    if ($createDesktopShortcut) {
+        Invoke-Step (T 'installer.desktopShortcut.create' $desktopShortcut) {
+            New-Item -ItemType Directory -Force -Path $DesktopDir | Out-Null
+            $shell = New-Object -ComObject WScript.Shell
+            $shortcut = $shell.CreateShortcut($desktopShortcut)
+            $shortcut.TargetPath = Join-Path $InstallDir 'WRApperture.Host.exe'
+            $shortcut.WorkingDirectory = $InstallDir
+            $shortcut.Description = T 'installer.host.shortcut.description'
+            $shortcut.Save()
+            [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
+        } | Out-Null
+    }
 
     Invoke-Step (T 'installer.host.install.shortcut') {
         $shell = New-Object -ComObject WScript.Shell

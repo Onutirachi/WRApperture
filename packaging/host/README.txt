@@ -6,6 +6,7 @@ Requirements: Windows 10/11 Pro, Enterprise or Education (x64). No .NET needed.
 INSTALL (or update)
   1. Extract this .zip to a folder.
   2. Double-click Instalar.cmd and accept the administrator prompt.
+     Answer whether you want a desktop shortcut (Enter = yes).
   3. Write down the ADDRESS, PORT and TOKEN shown at the end.
 
 PUBLISH APPS

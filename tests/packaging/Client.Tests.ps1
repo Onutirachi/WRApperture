@@ -44,7 +44,7 @@ function Invoke-Script([string]$Path, [string[]]$Arguments) {
 }
 
 function Install($pkg, $l, [string[]]$Extra = @()) {
-    Invoke-Script (Join-Path $pkg 'Install-WRAppertureClient.ps1') (@('-InstallDir', $l.Install, '-StartMenuDir', $l.Start) + $Extra)
+    Invoke-Script (Join-Path $pkg 'Install-WRAppertureClient.ps1') (@('-InstallDir', $l.Install, '-StartMenuDir', $l.Start, '-DesktopDir', $l.Desktop) + $Extra)
 }
 
 function Get-Uninstaller {
@@ -86,6 +86,36 @@ Describe 'Install-WRAppertureClient' {
         Join-Path $l.Install 'Desinstalar.cmd' | Should Exist
         Get-LinkTarget (Join-Path $l.Start 'Uninstall WRApperture.lnk') | Should Be (Join-Path $l.Install 'Desinstalar.cmd')
         $r.Output | Should Match 'WRApperture client installed'
+    }
+
+    It 'creates the desktop shortcut by default, and not with -NoDesktopShortcut' {
+        $pkg = New-Package; $l = New-Layout
+        (Install $pkg $l).ExitCode | Should Be 0
+        Get-LinkTarget (Join-Path $l.Desktop 'WRApperture.lnk') | Should Be (Join-Path $l.Install 'WRApperture.exe')
+
+        $other = New-Layout
+        (Install $pkg $other @('-NoDesktopShortcut')).ExitCode | Should Be 0
+        Join-Path $other.Desktop 'WRApperture.lnk' | Should Not Exist
+    }
+
+    It 'interactive install asks, with yes as the default answer' {
+        $pkg = New-Package
+        $script = Join-Path $pkg 'Install-WRAppertureClient.ps1'
+        foreach ($case in @(@{ Answer = ''; Expected = $true }, @{ Answer = 'n'; Expected = $false }, @{ Answer = 'y'; Expected = $true })) {
+            $l = New-Layout
+            "$($case.Answer)`n" | & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -InstallDir $l.Install `
+                -StartMenuDir $l.Start -DesktopDir $l.Desktop -Interactive *>&1 | Out-Null
+            (Test-Path (Join-Path $l.Desktop 'WRApperture.lnk')) | Should Be $case.Expected
+        }
+    }
+
+    It 'uninstall removes the desktop shortcut to the client' {
+        $pkg = New-Package; $l = New-Layout
+        Install $pkg $l | Out-Null
+
+        (Uninstall $l).ExitCode | Should Be 0
+
+        Join-Path $l.Desktop 'WRApperture.lnk' | Should Not Exist
     }
 
     It 'copies the translations into the install folder' {
@@ -196,7 +226,7 @@ Describe 'Uninstall-WRAppertureClient' {
         New-Item -ItemType Directory $rdpDir -Force | Out-Null
         Set-Content (Join-Path $rdpDir 'notepad.rdp') 'x'
         Set-Content (Join-Path $l.UserData 'client\hosts.json') ('{"hosts":[{"address":"wrapperture-pester-' + [guid]::NewGuid().ToString('N') + '.invalid"}]}')
-        New-Item -ItemType Directory $l.Desktop | Out-Null
+        New-Item -ItemType Directory -Force $l.Desktop | Out-Null
         $other = Join-Path $l.Desktop 'Other.txt'; Set-Content $other 'x'
         $shell = New-Object -ComObject WScript.Shell
         $ours = $shell.CreateShortcut((Join-Path $l.Desktop 'Bloco de Notas.lnk')); $ours.TargetPath = (Join-Path $rdpDir 'notepad.rdp'); $ours.Save()

@@ -8,6 +8,15 @@
 .PARAMETER StartMenuDir
     Pasta onde o atalho "WRApperture" é criado. Padrão: Menu Iniciar do usuário.
 
+.PARAMETER DesktopDir
+    Pasta do atalho "WRApperture" na área de trabalho. Padrão: área de trabalho do usuário.
+
+.PARAMETER Interactive
+    Pergunta se deve criar o atalho na área de trabalho (Enter = sim). Usado pelo Instalar.cmd.
+
+.PARAMETER NoDesktopShortcut
+    Não cria o atalho na área de trabalho.
+
 .PARAMETER Launch
     Abre o cliente ao final.
 
@@ -18,6 +27,9 @@
 param(
     [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Programs\WRApperture'),
     [string]$StartMenuDir = [Environment]::GetFolderPath('Programs'),
+    [string]$DesktopDir = [Environment]::GetFolderPath('DesktopDirectory'),
+    [switch]$Interactive,
+    [switch]$NoDesktopShortcut,
     [switch]$Launch,
     [switch]$DryRun
 )
@@ -30,6 +42,15 @@ $localizer = @('Localization.ps1', '..\Localization.ps1') | ForEach-Object { Joi
 if ($localizer) { . $localizer }
 else {
     function T([string]$Key) { (@($Key) + $args) -join ' ' }
+    function Test-WRYes([string]$Answer) { $Answer -match '^\s*[yY]' }
+}
+
+# Asked once by Instalar.cmd (-Interactive); Enter means yes. Without -Interactive the default is yes.
+function Get-DesktopShortcutChoice([string]$Path) {
+    if ($NoDesktopShortcut) { return $false }
+    if (-not $Interactive -or (Test-Path $Path)) { return $true }   # an update just refreshes it
+    $answer = Read-Host (T 'installer.desktopShortcut.question')
+    return [string]::IsNullOrWhiteSpace($answer) -or (Test-WRYes $answer)
 }
 
 function Invoke-Step([string]$Description, [scriptblock]$Action) {
@@ -56,6 +77,9 @@ try {
     }
 
     $target = Join-Path $InstallDir $ExeName
+    $desktopShortcut = Join-Path $DesktopDir 'WRApperture.lnk'
+    $createDesktopShortcut = Get-DesktopShortcutChoice $desktopShortcut
+
     $running = Get-Process -Name ([IO.Path]::GetFileNameWithoutExtension($ExeName)) -ErrorAction SilentlyContinue |
         Where-Object { $_.Path -eq $target }
     if ($running) {
@@ -103,6 +127,19 @@ try {
         }
 
         [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
+    }
+
+    if ($createDesktopShortcut) {
+        Invoke-Step (T 'installer.desktopShortcut.create' $desktopShortcut) {
+            New-Item -ItemType Directory -Force -Path $DesktopDir | Out-Null
+            $shell = New-Object -ComObject WScript.Shell
+            $shortcut = $shell.CreateShortcut($desktopShortcut)
+            $shortcut.TargetPath = $target
+            $shortcut.WorkingDirectory = $InstallDir
+            $shortcut.Description = T 'installer.client.shortcut.description'
+            $shortcut.Save()
+            [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
+        }
     }
 
     Write-Host ''

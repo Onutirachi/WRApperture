@@ -27,10 +27,15 @@ Describe 'Install-WRAppertureHost' {
 
     It 'dry run lists every step without touching the system' {
         $dir = Join-Path $TestDrive 'dry'
-        $r = Invoke-Script 'Install-WRAppertureHost.ps1' @('-InstallDir', $dir, '-DryRun')
+        $desktop = Join-Path $TestDrive 'desktop'
+        # The host may really be installed on the machine running the tests: compare, don't assume absence.
+        $serviceBefore = [bool](Get-Service WRAppertureAgent -ErrorAction SilentlyContinue)
+        $r = Invoke-Script 'Install-WRAppertureHost.ps1' @('-InstallDir', $dir, '-DesktopDir', $desktop, '-DryRun')
 
         $r.ExitCode | Should Be 0
         $r.Output | Should Match '\[dry run\] Copy binaries'
+        $r.Output | Should Match '\[dry run\] Create the desktop shortcut .*WRApperture \(Host\)\.lnk'
+        $desktop | Should Not Exist
         $r.Output | Should Match '\[dry run\] Create the "WRApperture \(Host\)" shortcut'
         $r.Output | Should Match '\[dry run\] Prepare the host'
         $r.Output | Should Match '\[dry run\] Generate a pairing token'
@@ -39,7 +44,14 @@ Describe 'Install-WRAppertureHost' {
         $r.Output | Should Match 'TCP port 5080 in the firewall \(Domain,Private\)'
         $r.Output | Should Match '\[dry run\] Start the WRAppertureAgent service'
         $dir | Should Not Exist
-        Get-Service WRAppertureAgent -ErrorAction SilentlyContinue | Should BeNullOrEmpty
+        [bool](Get-Service WRAppertureAgent -ErrorAction SilentlyContinue) | Should Be $serviceBefore
+    }
+
+    It 'dry run with -NoDesktopShortcut skips the desktop shortcut' {
+        $r = Invoke-Script 'Install-WRAppertureHost.ps1' @('-InstallDir', (Join-Path $TestDrive 'dry2'), '-NoDesktopShortcut', '-DryRun')
+
+        $r.ExitCode | Should Be 0
+        $r.Output | Should Not Match 'desktop shortcut'
     }
 
     It 'dry run with -AllowPublicNetwork includes the Public profile' {

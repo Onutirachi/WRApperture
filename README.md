@@ -26,7 +26,7 @@ Abra apps individuais de um PC Windows (host) a partir de outro computador (clie
 Os executáveis são autônomos e não precisam de .NET instalado.
 
 **Host** (PC cujos apps serão usados remotamente):
-1. Extraia `WRApperture-Host-<v>.zip` e dê duplo clique em `Instalar.cmd`, aceitando o UAC.
+1. Extraia `WRApperture-Host-<v>.zip` e dê duplo clique em `Instalar.cmd`, aceitando o UAC. Ele pergunta se deve criar o atalho "WRApperture (Host)" na área de trabalho (Enter = sim).
 2. O instalador:
    - prepara o host;
    - registra o agente como serviço automático, com reinício em caso de falha;
@@ -40,7 +40,7 @@ Rodar o instalador de novo atualiza a versão sem invalidar o token. Para desins
 
 Para usar no dia a dia não é preciso abrir o PowerShell: tudo tem um `.cmd` de duplo clique (`Instalar.cmd` e `Desinstalar.cmd`), que libera a execução de scripts só para aquela chamada.
 
-**Cliente** (outro computador): extraia `WRApperture-Client-<v>.zip` e dê duplo clique em `Instalar.cmd`. Não precisa de administrador. Os atalhos "WRApperture" e "Desinstalar WRApperture" aparecem no Menu Iniciar. O desinstalador pergunta se deve apagar também os PCs pareados e as senhas salvas.
+**Cliente** (outro computador): extraia `WRApperture-Client-<v>.zip` e dê duplo clique em `Instalar.cmd`. Não precisa de administrador. Os atalhos "WRApperture" e "Desinstalar WRApperture" aparecem no Menu Iniciar, e ele pergunta se deve criar também o atalho "WRApperture" na área de trabalho (Enter = sim). O desinstalador pergunta se deve apagar também os PCs pareados e as senhas salvas.
 
 Os executáveis não são assinados, então o SmartScreen pode exibir um aviso na primeira execução.
 

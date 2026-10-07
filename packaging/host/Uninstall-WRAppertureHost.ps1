@@ -19,6 +19,7 @@
 [CmdletBinding()]
 param(
     [string]$InstallDir = (Join-Path $env:ProgramFiles 'WRApperture'),
+    [string]$DesktopDir = [Environment]::GetFolderPath('CommonDesktopDirectory'),
     [switch]$Purge,
     [switch]$Interactive,
     [switch]$DryRun
@@ -79,6 +80,11 @@ try {
     $managerShortcut = Join-Path ([Environment]::GetFolderPath('CommonPrograms')) 'WRApperture (Host).lnk'
     if (Test-Path $managerShortcut) {
         Invoke-Step (T 'installer.host.uninstall.removeShortcut') { Remove-Item -Force $managerShortcut }
+    }
+
+    $desktopShortcut = Join-Path $DesktopDir 'WRApperture (Host).lnk'
+    if (Test-Path $desktopShortcut) {
+        Invoke-Step (T 'installer.host.uninstall.removeDesktopShortcut' $desktopShortcut) { Remove-Item -Force $desktopShortcut }
     }
 
     if (Get-NetFirewallRule -Name $FirewallRule -ErrorAction SilentlyContinue) {

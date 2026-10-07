@@ -82,6 +82,20 @@ try {
         }
     }
 
+    # The installer's desktop shortcut to the client (app shortcuts to .rdp files go with the user data below).
+    if (Test-Path $DesktopDir) {
+        $prefix = $InstallDir.TrimEnd('\') + '\'
+        $shell = New-Object -ComObject WScript.Shell
+        $links = @(Get-ChildItem -Path $DesktopDir -Filter '*.lnk' | Where-Object {
+            $shell.CreateShortcut($_.FullName).TargetPath.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)
+        })
+        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
+        foreach ($link in $links) {
+            $desktopLink = $link.FullName
+            Invoke-Step (T 'installer.client.uninstall.removeDesktopShortcut' $link.Name) { Remove-Item -Force $desktopLink }
+        }
+    }
+
     # "Start with Windows" (set from the client's menu), only when it points at this installation.
     $runCommand = (Get-ItemProperty -Path $RunKey -Name 'WRApperture' -ErrorAction SilentlyContinue).WRApperture
     if ($runCommand -and $runCommand.IndexOf($InstallDir.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase) -ge 0) {
