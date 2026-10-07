@@ -15,6 +15,7 @@ using WRApperture.Client.Core.Shortcuts;
 using WRApperture.Client.Core.Signing;
 using WRApperture.Client.Core.Startup;
 using WRApperture.Client.Core.Storage;
+using WRApperture.Client.Core.Updates;
 using WRApperture.Client.Services;
 using WRApperture.Shared;
 using WRApperture.Shared.Localization;
@@ -45,14 +46,16 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly ISigningSetup _signingSetup;
     private readonly StartupRegistration _startup;
     private readonly Func<PairedHost, IAgentApi> _agents;
+    private readonly ClientUpdates _updates;
     private readonly ILogger<MainViewModel> _logger;
     private ClientState _state;
 
     public MainViewModel(HostStore store, IconStore icons, RemoteAppLauncher launcher, HostSync sync,
         ICredentialStore credentials, IDialogService dialogs, IRdpSigner signer, ISigningSetup signingSetup, StartupRegistration startup,
-        Func<PairedHost, IAgentApi> agents,
+        Func<PairedHost, IAgentApi> agents, ClientUpdates updates,
         ILogger<MainViewModel> logger)
     {
+        _updates = updates;
         _store = store;
         _icons = icons;
         _launcher = launcher;
@@ -115,6 +118,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(AskBeforeReleasingSession));
         ShowCachedApps();
+        EvaluateHostUpdate();
         if (value is not null)
         {
             _state = _state with { SelectedHostId = value.Host.Id };
@@ -148,6 +152,7 @@ public sealed partial class MainViewModel : ObservableObject
             var synced = await _sync.SyncAsync(option.Host);
             ReplaceHost(synced);
             SetStatus(Strings.T("client.status.synced", synced.Apps.Count, DateTime.Now.ToString("t", CultureInfo.CurrentCulture)), warning: false);
+            ShowHostUpdateWarning();
         }
         catch (AgentUnreachableException ex)
         {

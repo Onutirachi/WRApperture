@@ -138,6 +138,39 @@ public sealed class AgentClientTlsTests : IAsyncLifetime
 public class AgentClientHttpTests
 {
     [Fact]
+    public async Task Host_update_posts_nothing_and_reads_the_outcome()
+    {
+        HttpRequestMessage? sent = null;
+        using var client = Create(request =>
+        {
+            sent = request;
+            return new HttpResponseMessage(HttpStatusCode.Accepted)
+            {
+                Content = JsonContent.Create(new UpdateRequestResultDto(UpdateOutcomes.Installing, "0.14.1", "0.15.0")),
+            };
+        });
+
+        var result = await client.RequestHostUpdateAsync();
+
+        Assert.Equal(new UpdateRequestResultDto(UpdateOutcomes.Installing, "0.14.1", "0.15.0"), result);
+        Assert.Equal(HttpMethod.Post, sent!.Method);
+        Assert.Equal(ApiContract.Update, sent.RequestUri!.AbsolutePath);
+        Assert.Null(sent.Content);
+    }
+
+    [Fact]
+    public async Task Host_update_failure_uses_agent_message()
+    {
+        using var client = Create(_ => new HttpResponseMessage(HttpStatusCode.BadGateway)
+        {
+            Content = JsonContent.Create(new ApiErrorDto(ApiContract.Errors.UpdateCheckFailed, "no internet")),
+        });
+
+        var ex = await Assert.ThrowsAsync<AgentException>(() => client.RequestHostUpdateAsync());
+        Assert.Equal("no internet", ex.Message);
+    }
+
+    [Fact]
     public async Task Too_many_attempts_is_mapped()
     {
         using var client = Create(_ => new HttpResponseMessage(HttpStatusCode.TooManyRequests));

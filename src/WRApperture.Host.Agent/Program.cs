@@ -4,9 +4,11 @@ using WRApperture.Host.Agent.Endpoints;
 using WRApperture.Host.Agent.Icons;
 using WRApperture.Host.Agent.Security;
 using WRApperture.Host.Agent.Sessions;
+using WRApperture.Host.Agent.Updates;
 using WRApperture.Host.Core;
 using WRApperture.Host.Core.Agent;
 using WRApperture.Shared;
+using WRApperture.Shared.Updates;
 using Serilog;
 using Serilog.Events;
 
@@ -56,6 +58,11 @@ builder.Services.AddSingleton<AgentIdentity>();
 builder.Services.AddSingleton<AgentCertificateManager>();
 builder.Services.AddSingleton<SessionWatcher>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<SessionWatcher>());
+builder.Services.AddSingleton<IUpdateChecker>(_ => UpdateChecker.CreateDefault());
+builder.Services.AddSingleton<IHostSetupRunner, HostSetupRunner>();
+builder.Services.AddSingleton(new HostUpdaterOptions());
+builder.Services.AddSingleton<HostUpdater>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<HostUpdater>());
 
 // Runs only with the real Kestrel server (never under TestServer), so tests don't touch the cert store.
 builder.WebHost.ConfigureKestrel(kestrel =>
@@ -74,6 +81,7 @@ try
     app.UseMiddleware<TokenAuthMiddleware>();
     app.MapAgentApi();
     app.MapSessionApi();
+    app.MapUpdateApi();
 
     app.Lifetime.ApplicationStarted.Register(() =>
     {
@@ -86,6 +94,8 @@ try
         var identity = app.Services.GetRequiredService<AgentIdentity>();
         Log.Information("Agent listening on https://*:{Port} (paired: {Paired}, fingerprint {Fingerprint})",
             settings.Port, settings.IsPaired, CertificateFingerprint.Format(identity.Fingerprint));
+        Log.Information("Agent version {Version}, automatic updates {AutoUpdate}",
+            ProductVersion.Format(ProductVersion.Current), settings.AutoUpdate ? "on" : "off");
         if (!settings.IsPaired)
         {
             Log.Warning("Agent is not paired: run 'wrahost agent token' as administrator");

@@ -22,7 +22,8 @@ internal static class ApiEndpoints
         app.MapGet(ApiContract.Host, (IHostInfoProvider hostInfo, AgentIdentity identity) =>
         {
             var info = hostInfo.Get();
-            return Results.Ok(new HostInfoDto(info.HostName, info.RdpPort, AgentVersion, identity.Fingerprint, [AgentFeatures.DesktopSession]));
+            return Results.Ok(new HostInfoDto(info.HostName, info.RdpPort, AgentVersion, identity.Fingerprint,
+                [AgentFeatures.DesktopSession, AgentFeatures.SelfUpdate]));
         });
 
         // Only alias and name leave the host: executable paths stay private.

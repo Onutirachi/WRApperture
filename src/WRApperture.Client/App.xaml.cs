@@ -11,10 +11,12 @@ using WRApperture.Client.Core.Model;
 using WRApperture.Client.Core.Signing;
 using WRApperture.Client.Core.Startup;
 using WRApperture.Client.Core.Storage;
+using WRApperture.Client.Core.Updates;
 using WRApperture.Client.Services;
 using WRApperture.Client.ViewModels;
 using WRApperture.Client.Views;
 using WRApperture.Shared.Localization;
+using WRApperture.Shared.Updates;
 using Serilog;
 
 namespace WRApperture.Client;
@@ -67,6 +69,8 @@ public partial class App : Application
             .AddSingleton(TimeProvider.System)
             .AddSingleton<Func<PairedHost, IAgentApi>>(_ => AgentClient.ForHost)
             .AddSingleton<HostSync>()
+            .AddSingleton<IUpdateChecker>(_ => UpdateChecker.CreateDefault())
+            .AddSingleton<ClientUpdates>()
             .AddSingleton<IDialogService, DialogService>()
             .AddSingleton(new StartupRegistration())
             .AddSingleton<MainViewModel>()
@@ -92,6 +96,9 @@ public partial class App : Application
             }
         };
         _instance.ShowRequested += () => Dispatcher.BeginInvoke(ShowMainWindow);
+        vm.NoticeRequested += (text, onClick) => _tray.ShowNotice("WRApperture", text, onClick);
+        vm.ExitRequested += ExitApp;
+        vm.StartUpdateChecks();
 
         if (!startHidden)
         {

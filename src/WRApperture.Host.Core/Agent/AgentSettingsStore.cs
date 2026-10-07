@@ -13,13 +13,16 @@ internal sealed class AgentSettingsStore(
     ILogger<AgentSettingsStore> logger) : IAgentSettingsStore
 {
     private const string Path = RegistryPaths.AgentSettings;
+    private const string AutoUpdateValue = "AutoUpdate";
 
     public AgentSettings Load()
     {
         var port = registry.GetValue(Path, "Port") is int p && IsValidPort(p) ? p : AgentSettings.DefaultPort;
         var paired = ReadCredentials() is not null;
         var thumbprint = registry.GetValue(Path, "CertificateThumbprint") as string;
-        return new AgentSettings(port, paired, string.IsNullOrWhiteSpace(thumbprint) ? null : thumbprint);
+        // Absent (or not a DWORD) means on: nobody watches a host, so it keeps itself up to date by default.
+        var autoUpdate = registry.GetValue(Path, AutoUpdateValue) is not int flag || flag != 0;
+        return new AgentSettings(port, paired, string.IsNullOrWhiteSpace(thumbprint) ? null : thumbprint, autoUpdate);
     }
 
     public string RegenerateToken()
@@ -62,6 +65,13 @@ internal sealed class AgentSettingsStore(
         EnsureAdmin();
         registry.SetValue(Path, "CertificateThumbprint", thumbprint, RegistryValueKind.String);
         logger.LogInformation("Agent certificate set to {Thumbprint}", thumbprint);
+    }
+
+    public void SetAutoUpdate(bool enabled)
+    {
+        EnsureAdmin();
+        registry.SetValue(Path, AutoUpdateValue, enabled ? 1 : 0, RegistryValueKind.DWord);
+        logger.LogInformation("Agent automatic updates turned {State}", enabled ? "on" : "off");
     }
 
     public void Reset()

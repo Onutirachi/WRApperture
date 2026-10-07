@@ -14,6 +14,7 @@ public partial class MainWindow : Window
         SourceInitialized += (_, _) => ShellFileDrop.Enable(this, OnFilesDropped);
         // Alternative to dragging: Ctrl+C on shortcuts/programs in Explorer, Ctrl+V here.
         CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste, OnPaste, (_, e) => e.CanExecute = Clipboard.ContainsFileDropList()));
+        Loaded += (_, _) => Vm.CheckUpdatesCommand.Execute(null);
     }
 
     private void OnPaste(object sender, ExecutedRoutedEventArgs e)

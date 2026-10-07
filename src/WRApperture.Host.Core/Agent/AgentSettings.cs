@@ -1,6 +1,7 @@
 namespace WRApperture.Host.Core.Agent;
 
-public sealed record AgentSettings(int Port, bool IsPaired, string? CertificateThumbprint)
+/// <param name="AutoUpdate">Install new releases unattended (HKLM\SOFTWARE\WRApperture\Agent\AutoUpdate, on when absent).</param>
+public sealed record AgentSettings(int Port, bool IsPaired, string? CertificateThumbprint, bool AutoUpdate = true)
 {
     public const int DefaultPort = 5080;
     public const int MinPort = 1024;
@@ -23,6 +24,9 @@ public interface IAgentSettingsStore
 
     /// <summary>Requires admin.</summary>
     void SetCertificateThumbprint(string thumbprint);
+
+    /// <summary>Turns unattended updates on or off. Requires admin.</summary>
+    void SetAutoUpdate(bool enabled);
 
     /// <summary>Deletes all agent settings (token, port, certificate reference). Idempotent. Requires admin.</summary>
     void Reset();

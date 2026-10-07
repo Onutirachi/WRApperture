@@ -45,6 +45,9 @@ public sealed record PairedHost
     public IReadOnlyList<string> AgentFeatures { get; init; } = [];
 
     public bool Supports(string feature) => AgentFeatures.Contains(feature, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The agent's version on the last sync ("0.15.0"); null before the first sync after 0.15.0.</summary>
+    public string? AgentVersion { get; init; }
     public DateTimeOffset? LastSyncUtc { get; init; }
 }
 
@@ -63,6 +66,12 @@ public sealed record ClientState
 
     /// <summary>The "still running in the tray" notice was shown once.</summary>
     public bool TrayHintShown { get; init; }
+
+    /// <summary>Install new versions of the client by itself (checked every 6 hours). On by default, also for older files.</summary>
+    public bool AutoUpdate { get; init; } = true;
+
+    /// <summary>Last version announced while <see cref="AutoUpdate"/> is off, so each version is announced once.</summary>
+    public string? UpdateNoticeVersion { get; init; }
     public IReadOnlyList<PairedHost> Hosts { get; init; } = [];
 
     public static ClientState Empty { get; } = new();

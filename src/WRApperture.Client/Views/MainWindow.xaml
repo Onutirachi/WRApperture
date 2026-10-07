@@ -48,6 +48,14 @@
                                 <MenuItem Header="{loc:T client.main.startWithWindows}" IsCheckable="True"
                                           IsChecked="{Binding StartWithWindows, Mode=TwoWay}" />
                                 <Separator />
+                                <MenuItem Header="{loc:T client.main.autoUpdate}" IsCheckable="True"
+                                          IsChecked="{Binding AutoUpdate, Mode=TwoWay}"
+                                          ToolTip="{loc:T client.main.autoUpdateTip}" />
+                                <MenuItem Header="{loc:T client.main.checkUpdates}" Command="{Binding CheckForUpdatesCommand}" />
+                                <MenuItem Header="{loc:T client.main.updateHost}" Command="{Binding UpdateHostCommand}"
+                                          Visibility="{Binding IsHostOutdated, Converter={StaticResource BoolToVis}}"
+                                          ToolTip="{loc:T client.main.updateHostTip}" ToolTipService.ShowOnDisabled="True" />
+                                <Separator />
                                 <MenuItem Header="{loc:T client.main.removeHost}" Command="{Binding RemoveHostCommand}" />
                             </ContextMenu>
                         </Button.ContextMenu>
@@ -84,18 +92,23 @@
                     </Style.Triggers>
                 </Style>
             </Border.Style>
-            <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis">
-                <TextBlock.Style>
-                    <Style TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{DynamicResource Muted}" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsWarning}" Value="True">
-                                <Setter Property="Foreground" Value="{DynamicResource Warning}" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
+            <DockPanel>
+                <!-- A newer client that was not installed automatically (automatic updates off) -->
+                <Button DockPanel.Dock="Right" Content="{Binding ClientUpdateLabel}" Style="{StaticResource Secondary}" Padding="10,2" Margin="12,0,0,0"
+                        Command="{Binding InstallClientUpdateCommand}" Visibility="{Binding IsClientUpdateAvailable, Converter={StaticResource BoolToVis}}" />
+                <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </DockPanel>
         </Border>
 
         <Grid>
