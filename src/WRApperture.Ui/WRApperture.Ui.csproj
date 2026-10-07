@@ -5,4 +5,8 @@
     <RootNamespace>WRApperture.Ui</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\WRApperture.Shared\WRApperture.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

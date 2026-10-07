@@ -4,4 +4,9 @@
     <RootNamespace>WRApperture.Shared</RootNamespace>
   </PropertyGroup>
 
+  <!-- Translations: localization/<language>/<area>.json, embedded as loc/<language>/<area>.json (see Localization/Strings.cs). -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\localization\**\*.json" LogicalName="loc/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

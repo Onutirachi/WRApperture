@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Ui;
 
@@ -10,9 +11,9 @@ public static class ThemeMenu
     {
         var items = new (ThemePreference Preference, string Header)[]
         {
-            (ThemePreference.System, "Tema: seguir o Windows"),
-            (ThemePreference.Light, "Tema claro"),
-            (ThemePreference.Dark, "Tema escuro"),
+            (ThemePreference.System, Strings.T("common.theme.system")),
+            (ThemePreference.Light, Strings.T("common.theme.light")),
+            (ThemePreference.Dark, Strings.T("common.theme.dark")),
         }.Select(o =>
         {
             var item = new MenuItem { Header = o.Header, IsCheckable = true, Tag = o.Preference };

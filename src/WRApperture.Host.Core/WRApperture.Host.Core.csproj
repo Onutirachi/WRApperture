@@ -15,4 +15,8 @@
     <PackageReference Include="System.Drawing.Common" Version="8.0.31" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\WRApperture.Shared\WRApperture.Shared.csproj" />
+  </ItemGroup>
+
 </Project>
