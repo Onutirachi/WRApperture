@@ -16,6 +16,16 @@ internal static class Output
 
     public static void WriteJson<T>(T value) => Console.WriteLine(JsonSerializer.Serialize(value, Json));
 
+    /// <summary>Prints "Label:  value" lines with the values aligned, whatever the length of the translated labels.</summary>
+    public static void WriteFields(params (string Label, string Value)[] fields)
+    {
+        var width = fields.Max(f => f.Label.Length) + 3;
+        foreach (var (label, value) in fields)
+        {
+            Console.WriteLine((label + ":").PadRight(width) + value);
+        }
+    }
+
     /// <summary>Prints rows as a left-aligned table.</summary>
     public static void WriteTable(string[] headers, IEnumerable<string[]> rows)
     {

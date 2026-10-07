@@ -1,4 +1,5 @@
 using WRApperture.Host.Core.Errors;
+using WRApperture.Shared.Localization;
 using Serilog;
 
 namespace WRApperture.Host.Cli;
@@ -21,7 +22,7 @@ internal static class ExitCodes
         }
         catch (AppValidationException ex)
         {
-            Output.Error($"Erro de validação: {ex.Message}");
+            Output.Error(Strings.T("cli.errors.validation", ex.Message));
             return ValidationError;
         }
         catch (AdminRequiredException ex)
@@ -37,7 +38,7 @@ internal static class ExitCodes
         catch (Exception ex)
         {
             Log.Error(ex, "Unexpected failure");
-            Output.Error($"Erro inesperado: {ex.Message}");
+            Output.Error(Strings.T("cli.errors.unexpected", ex.Message));
             return Unexpected;
         }
     }

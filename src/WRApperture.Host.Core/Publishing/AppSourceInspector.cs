@@ -2,6 +2,7 @@ using System.Diagnostics;
 using WRApperture.Host.Core.Abstractions;
 using WRApperture.Host.Core.Discovery;
 using WRApperture.Host.Core.Errors;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Core.Publishing;
 
@@ -46,7 +47,7 @@ internal sealed class AppSourceInspector(IShortcutResolver resolver, IFileSystem
         var full = fs.Expand((path ?? string.Empty).Trim().Trim('"'));
         if (!fs.FileExists(full))
         {
-            throw new AppValidationException(Field, $"arquivo não encontrado: {full}");
+            throw new AppValidationException(Field, Strings.T("host.inspect.fileNotFound", full));
         }
 
         return Path.GetExtension(full).ToLowerInvariant() switch
@@ -60,12 +61,12 @@ internal sealed class AppSourceInspector(IShortcutResolver resolver, IFileSystem
     private AppDraft FromShortcut(string lnk)
     {
         var target = resolver.Resolve(lnk)
-                     ?? throw new AppValidationException(Field, $"o atalho \"{Path.GetFileName(lnk)}\" não pôde ser lido.");
+                     ?? throw new AppValidationException(Field, Strings.T("host.inspect.shortcutUnreadable", Path.GetFileName(lnk)));
 
         if (target.TargetPath.StartsWith(fs.Expand(@"%SystemRoot%\Installer\"), StringComparison.OrdinalIgnoreCase))
         {
             throw new AppValidationException(Field,
-                $"o atalho \"{Path.GetFileName(lnk)}\" aponta para um instalador que não pôde ser resolvido. Arraste o executável do programa.");
+                Strings.T("host.inspect.shortcutToInstaller", Path.GetFileName(lnk)));
         }
 
         if (!target.TargetPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
@@ -75,7 +76,7 @@ internal sealed class AppSourceInspector(IShortcutResolver resolver, IFileSystem
 
         if (!fs.FileExists(target.TargetPath))
         {
-            throw new AppValidationException(Field, $"o programa do atalho não existe mais: {target.TargetPath}");
+            throw new AppValidationException(Field, Strings.T("host.inspect.shortcutTargetMissing", target.TargetPath));
         }
 
         var iconOk = !string.IsNullOrEmpty(target.IconPath) && fs.FileExists(target.IconPath);
@@ -94,7 +95,7 @@ internal sealed class AppSourceInspector(IShortcutResolver resolver, IFileSystem
     }
 
     private static AppValidationException NotAProgram(string path) =>
-        new(Field, $"\"{Path.GetFileName(path)}\" não é um programa. Só programas (.exe) e atalhos para programas podem ser publicados.");
+        new(Field, Strings.T("host.inspect.notAProgram", Path.GetFileName(path)));
 
     private static string Limit(string name) =>
         name.Length <= AppValidator.MaxDisplayName ? name : name[..AppValidator.MaxDisplayName];

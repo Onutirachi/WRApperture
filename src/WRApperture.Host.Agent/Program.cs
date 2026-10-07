@@ -98,7 +98,7 @@ try
 catch (Exception ex) when (ex is not HostAbortedException)
 {
     var hint = ex is UnauthorizedAccessException or System.Security.Cryptography.CryptographicException
-        ? " (execute como administrador ou como serviço LocalSystem)"
+        ? " (run as administrator or as the LocalSystem service)"
         : string.Empty;
     Log.Fatal(ex, "Agent failed to start{Hint}", hint);
     return 1;

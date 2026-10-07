@@ -1,0 +1,10 @@
+{
+  "errors.iconSize": "size must be between {0} and {1}.",
+  "errors.appNotFound": "App '{0}' not found.",
+  "errors.unknownSessionMode": "Unknown session mode: {0}",
+  "errors.tooManyAttempts": "Too many invalid attempts. Wait a few minutes.",
+  "errors.unauthorized": "Pairing token missing or invalid.",
+
+  "sessions.disconnected": "disconnected",
+  "sessions.inUse": "in use"
+}

@@ -3,6 +3,7 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.DependencyInjection;
 using WRApperture.Host.Core.Agent;
 using WRApperture.Shared;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Cli;
 
@@ -10,10 +11,10 @@ internal static class AgentCommands
 {
     public static Command Create(IServiceProvider services)
     {
-        var agent = new Command("agent", "Configuração do agente HTTP (pareamento com clientes)");
+        var agent = new Command("agent", Strings.T("cli.commands.agent"));
 
-        var showJson = new Option<bool>("--json") { Description = "Saída em JSON (para scripts)" };
-        var show = new Command("show", "Mostra porta, pareamento e fingerprint do certificado") { showJson };
+        var showJson = new Option<bool>("--json") { Description = Strings.T("cli.options.jsonForScripts") };
+        var show = new Command("show", Strings.T("cli.commands.agentShow")) { showJson };
         show.SetAction(r => ExitCodes.Run(() =>
         {
             var settings = services.GetRequiredService<IAgentSettingsStore>().Load();
@@ -24,14 +25,16 @@ internal static class AgentCommands
                 return;
             }
 
-            Console.WriteLine($"Porta:        {settings.Port}");
-            Console.WriteLine($"Pareado:      {(settings.IsPaired ? "sim" : "não (execute 'wrahost agent token')")}");
-            Console.WriteLine($"Fingerprint:  {(fingerprint is null ? "(certificado criado na primeira execução do agente)" : CertificateFingerprint.Format(fingerprint))}");
+            Output.WriteFields(
+                (Strings.T("cli.output.agent.port"), settings.Port.ToString()),
+                (Strings.T("cli.output.agent.paired"), settings.IsPaired ? Strings.T("cli.output.yes") : Strings.T("cli.output.agent.notPaired")),
+                (Strings.T("cli.output.agent.fingerprint"),
+                    fingerprint is null ? Strings.T("cli.output.agent.noCertificate") : CertificateFingerprint.Format(fingerprint)));
         }));
         agent.Subcommands.Add(show);
 
-        var tokenJson = new Option<bool>("--json") { Description = "Saída em JSON (para scripts)" };
-        var token = new Command("token", "Gera um novo token de pareamento (o anterior deixa de valer)") { tokenJson };
+        var tokenJson = new Option<bool>("--json") { Description = Strings.T("cli.options.jsonForScripts") };
+        var token = new Command("token", Strings.T("cli.commands.agentToken")) { tokenJson };
         token.SetAction(r => ExitCodes.Run(() =>
         {
             var value = services.GetRequiredService<IAgentSettingsStore>().RegenerateToken();
@@ -41,31 +44,34 @@ internal static class AgentCommands
                 return;
             }
 
-            Console.WriteLine("Novo token de pareamento (exibido apenas agora; informe-o no cliente):");
+            Console.WriteLine(Strings.T("cli.output.agent.newToken"));
             Console.WriteLine();
             Console.WriteLine($"    {value}");
             Console.WriteLine();
-            Output.Warn("Clientes que usavam o token anterior precisarão do novo token.");
+            Output.Warn(Strings.T("cli.output.agent.previousTokenInvalid"));
         }));
         agent.Subcommands.Add(token);
 
-        var portArg = new Argument<int>("porta") { Description = $"Porta TCP ({AgentSettings.MinPort}-{AgentSettings.MaxPort})" };
-        var port = new Command("port", "Define a porta do agente") { portArg };
+        var portArg = new Argument<int>(Strings.T("cli.arguments.port"))
+        {
+            Description = Strings.T("cli.arguments.portDescription", AgentSettings.MinPort, AgentSettings.MaxPort),
+        };
+        var port = new Command("port", Strings.T("cli.commands.agentPort")) { portArg };
         port.SetAction(r => ExitCodes.Run(() =>
         {
             services.GetRequiredService<IAgentSettingsStore>().SetPort(r.GetValue(portArg));
-            Console.WriteLine($"Porta definida para {r.GetValue(portArg)}. Execute o instalador do host novamente para atualizar o serviço e o firewall.");
+            Console.WriteLine(Strings.T("cli.output.agent.portSet", r.GetValue(portArg)));
         }));
         agent.Subcommands.Add(port);
 
-        var reset = new Command("reset", "Apaga token, porta e certificado do agente (clientes precisarão parear de novo)");
+        var reset = new Command("reset", Strings.T("cli.commands.agentReset"));
         reset.SetAction(_ => ExitCodes.Run(() =>
         {
             var store = services.GetRequiredService<IAgentSettingsStore>();
             var thumbprint = store.Load().CertificateThumbprint;
             store.Reset();
             var removed = RemoveCertificate(thumbprint);
-            Console.WriteLine($"Configurações do agente apagadas{(removed ? " e certificado removido" : string.Empty)}.");
+            Console.WriteLine(removed ? Strings.T("cli.output.agent.resetWithCertificate") : Strings.T("cli.output.agent.reset"));
         }));
         agent.Subcommands.Add(reset);
 

@@ -1,5 +1,6 @@
 using WRApperture.Host.Core.Agent;
 using WRApperture.Shared;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Agent.Security;
 
@@ -23,7 +24,7 @@ internal sealed class TokenAuthMiddleware(
         {
             logger.LogWarning("Blocked request from {Source}: too many failed attempts", source);
             await Reject(context, StatusCodes.Status429TooManyRequests, ApiContract.Errors.TooManyAttempts,
-                "Muitas tentativas inválidas. Aguarde alguns minutos.");
+                Strings.T("agent.errors.tooManyAttempts"));
             return;
         }
 
@@ -41,7 +42,7 @@ internal sealed class TokenAuthMiddleware(
             }
 
             await Reject(context, StatusCodes.Status401Unauthorized, ApiContract.Errors.Unauthorized,
-                "Token de pareamento ausente ou inválido.");
+                Strings.T("agent.errors.unauthorized"));
             return;
         }
 

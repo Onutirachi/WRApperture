@@ -1,0 +1,37 @@
+{
+  "readiness.edition": "Edição do Windows suporta RemoteApp",
+  "readiness.editionUnknown": "desconhecida",
+  "readiness.editionExpected": "Pro, Enterprise ou Education",
+  "readiness.rdpEnabled": "Área de Trabalho Remota habilitada",
+  "readiness.nla": "Autenticação em nível de rede (NLA) ativa",
+  "readiness.allowListEnforced": "Somente apps publicados podem ser abertos remotamente",
+  "readiness.absent": "(ausente)",
+  "readiness.firewall": "Firewall libera a Área de Trabalho Remota (porta 3389)",
+  "readiness.firewallNoRules": "nenhuma regra de RDP encontrada",
+  "readiness.firewallEnabledRules": "{0}/{1} regras ativas",
+  "readiness.firewallExpected": "todas ativas",
+  "readiness.languageBar": "Barra de idioma oculta nas sessões remotas",
+  "readiness.languageBarNoProfiles": "nenhum perfil carregado",
+  "readiness.languageBarProfiles": "{0}/{1} perfis",
+  "readiness.languageBarExpected": "todos os perfis",
+
+  "errors.adminRequired": "Esta operação requer administrador. Execute o terminal como administrador.",
+  "errors.editionNotSupported": "Edição do Windows não suportada para RemoteApp: {0}. Use Pro, Enterprise ou Education.",
+
+  "validation.port": "use uma porta entre {0} e {1}.",
+  "validation.aliasInvalid": "alias inválido.",
+  "validation.displayNameRequired": "o nome de exibição é obrigatório.",
+  "validation.displayNameTooLong": "máximo de {0} caracteres.",
+  "validation.aliasCharacters": "use apenas letras, números, '-' e '_' (até 64).",
+  "validation.notExecutable": "o arquivo precisa ser um executável (.exe).",
+  "validation.iconIndexNegative": "o índice do ícone não pode ser negativo.",
+  "validation.requiredArgumentsMissing": "informe os argumentos fixos para a política 'required'.",
+  "validation.pathNotAbsolute": "o caminho precisa ser absoluto: '{0}'.",
+  "validation.fileNotFound": "arquivo não encontrado: '{0}'.",
+
+  "inspect.fileNotFound": "arquivo não encontrado: {0}",
+  "inspect.shortcutUnreadable": "o atalho \"{0}\" não pôde ser lido.",
+  "inspect.shortcutToInstaller": "o atalho \"{0}\" aponta para um instalador que não pôde ser resolvido. Arraste o executável do programa.",
+  "inspect.shortcutTargetMissing": "o programa do atalho não existe mais: {0}",
+  "inspect.notAProgram": "\"{0}\" não é um programa. Só programas (.exe) e atalhos para programas podem ser publicados."
+}

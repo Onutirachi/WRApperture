@@ -5,6 +5,7 @@ using WRApperture.Host.Agent.Icons;
 using WRApperture.Host.Core;
 using WRApperture.Host.Core.HostInfo;
 using WRApperture.Shared;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Agent.Endpoints;
 
@@ -36,13 +37,13 @@ internal static class ApiEndpoints
             if (pixels is < ApiContract.MinIconSize or > ApiContract.MaxIconSize)
             {
                 return Results.BadRequest(new ApiErrorDto(ApiContract.Errors.BadRequest,
-                    $"size deve estar entre {ApiContract.MinIconSize} e {ApiContract.MaxIconSize}."));
+                    Strings.T("agent.errors.iconSize", ApiContract.MinIconSize, ApiContract.MaxIconSize)));
             }
 
             var app = publisher.Get(alias);
             if (app is null || !app.ShowInList)
             {
-                return Results.NotFound(new ApiErrorDto(ApiContract.Errors.NotFound, $"App '{alias}' não encontrado."));
+                return Results.NotFound(new ApiErrorDto(ApiContract.Errors.NotFound, Strings.T("agent.errors.appNotFound", alias)));
             }
 
             var icon = icons.Get(app, pixels);
