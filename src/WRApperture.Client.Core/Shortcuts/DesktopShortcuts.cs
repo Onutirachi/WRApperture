@@ -87,6 +87,14 @@ public static class DesktopShortcuts
             System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell);
         }
 
+        // A replaced shortcut keeps its old picture until Explorer is told it changed.
+        SHChangeNotify(ShcneUpdateItem, ShcnfPathW, path, IntPtr.Zero);
         return path;
     }
+
+    private const int ShcneUpdateItem = 0x00002000;
+    private const uint ShcnfPathW = 0x0005;
+
+    [System.Runtime.InteropServices.DllImport("shell32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern void SHChangeNotify(int eventId, uint flags, string item1, IntPtr item2);
 }

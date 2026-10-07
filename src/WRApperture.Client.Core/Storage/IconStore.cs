@@ -6,8 +6,23 @@ public sealed class IconStore(ClientPaths paths)
     public string PngPath(Guid hostId, string alias) =>
         Path.Combine(paths.HostIcons(hostId), ClientPaths.SafeFileName(alias) + ".png");
 
-    public string IcoPath(Guid hostId, string alias) =>
-        Path.Combine(paths.HostIcons(hostId), ClientPaths.SafeFileName(alias) + ".ico");
+    /// <summary>
+    /// Writes a shortcut icon named after its content ("&lt;alias&gt;-&lt;hash&gt;.ico"). Windows caches shortcut
+    /// icons by file path, so a changed icon (e.g. the WRApperture badge added) needs a new path to show up
+    /// when the shortcut is recreated. Older versions stay: other shortcuts may still point at them.
+    /// </summary>
+    public string WriteIco(Guid hostId, string alias, byte[] ico)
+    {
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(ico))[..12].ToLowerInvariant();
+        var path = Path.Combine(paths.HostIcons(hostId), $"{ClientPaths.SafeFileName(alias)}-{hash}.ico");
+        Directory.CreateDirectory(paths.HostIcons(hostId));
+        if (!File.Exists(path))
+        {
+            File.WriteAllBytes(path, ico);
+        }
+
+        return path;
+    }
 
     public bool Exists(Guid hostId, string alias) => File.Exists(PngPath(hostId, alias));
 

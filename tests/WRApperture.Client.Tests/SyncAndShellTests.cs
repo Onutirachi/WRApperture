@@ -90,6 +90,22 @@ public class HostSyncTests : IDisposable
     }
 
     [Fact]
+    public void Shortcut_icons_get_a_new_path_when_their_content_changes()
+    {
+        var host = Guid.NewGuid();
+
+        var first = _icons.WriteIco(host, "calc", [1, 2, 3]);
+        var same = _icons.WriteIco(host, "calc", [1, 2, 3]);
+        var changed = _icons.WriteIco(host, "calc", [1, 2, 3, 4]);
+
+        Assert.Equal(first, same);
+        Assert.NotEqual(first, changed); // Windows caches icons by path: a recreated shortcut must see a new one
+        Assert.True(File.Exists(first)); // older shortcuts may still use it
+        Assert.Equal([1, 2, 3, 4], File.ReadAllBytes(changed));
+        Assert.StartsWith("calc-", Path.GetFileName(changed));
+    }
+
+    [Fact]
     public async Task Auth_errors_propagate()
     {
         _agent.ThrowOnApps = new InvalidTokenException();
