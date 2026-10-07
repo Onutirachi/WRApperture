@@ -174,6 +174,6 @@ public class RdpSigningTests : IDisposable
     {
         public int Count { get; private set; }
 
-        public void Start(string fileName, string arguments) => Count++;
+        public System.Diagnostics.Process? Start(string fileName, string arguments) { Count++; return null; }
     }
 }

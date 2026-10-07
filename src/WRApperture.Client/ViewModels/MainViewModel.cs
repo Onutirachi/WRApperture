@@ -200,7 +200,7 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task OpenAppAsync(AppTileViewModel? tile)
     {
-        if (tile is null || SelectedHost is not { } option)
+        if (tile is null || SelectedHost is not { } option || IsProgressVisible)
         {
             return;
         }
@@ -221,20 +221,40 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (!await EnsureHostFreeAsync(option))
         {
+            ProgressMessage = null;
+            ProgressDetail = null;
             return;
         }
 
         try
         {
-            _launcher.Launch(option.Host, tile.App);
-            SetStatus($"Abrindo {tile.DisplayName}…", warning: false);
+            using var process = _launcher.Launch(option.Host, tile.App);
+            ProgressMessage = $"Abrindo {tile.DisplayName}…";
+            ProgressDetail = "Conectando ao PC remoto.";
+            await RemoteAppLauncher.WaitForRdpWindowAsync(process, TimeSpan.FromSeconds(15));
+            SetStatus($"{tile.DisplayName} aberto.", warning: false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
             _logger.LogError(ex, "Failed to launch {Alias}", tile.App.Alias);
             _dialogs.Error($"Não foi possível abrir {tile.DisplayName}: {ex.Message}");
         }
+        finally
+        {
+            ProgressMessage = null;
+            ProgressDetail = null;
+        }
     }
+
+    /// <summary>Non-null while a blocking step runs (releasing the host, opening an app): shows the overlay.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsProgressVisible))]
+    private string? _progressMessage;
+
+    [ObservableProperty]
+    private string? _progressDetail;
+
+    public bool IsProgressVisible => ProgressMessage is not null;
 
     /// <summary>
     /// A user cannot have a desktop session and a RemoteApp session on Windows client editions.
@@ -270,7 +290,10 @@ public sealed partial class MainViewModel : ObservableObject
             }
 
             IsBusy = true;
-            SetStatus($"Liberando {host.DisplayName} (sessão em uso)…", warning: false);
+            ProgressMessage = status.Sessions.Any(s => s.Action == SessionActions.Logoff)
+                ? "Desconectando sua sessão no PC remoto…"
+                : "Liberando o PC remoto…";
+            ProgressDetail = "Isso pode levar alguns segundos. O app abre em seguida.";
             var result = await agent.ReleaseSessionAsync(host.RdpUserName);
             _logger.LogInformation("Released {Count} host sessions on {Address}", result.Released, host.Address);
             if (result.Busy)

@@ -100,10 +100,11 @@ public class RemoteAppLauncherTests : IDisposable
         public string FileName { get; private set; } = string.Empty;
         public string Arguments { get; private set; } = string.Empty;
 
-        public void Start(string fileName, string arguments)
+        public System.Diagnostics.Process? Start(string fileName, string arguments)
         {
             FileName = fileName;
             Arguments = arguments;
+            return null;
         }
     }
 }

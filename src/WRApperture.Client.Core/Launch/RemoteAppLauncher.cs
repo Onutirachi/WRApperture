@@ -10,13 +10,14 @@ namespace WRApperture.Client.Core.Launch;
 
 public interface IProcessStarter
 {
-    void Start(string fileName, string arguments);
+    /// <summary>Starts the process; the caller owns (and disposes) the returned handle.</summary>
+    Process? Start(string fileName, string arguments);
 }
 
 public sealed class ProcessStarter : IProcessStarter
 {
-    public void Start(string fileName, string arguments) =>
-        Process.Start(new ProcessStartInfo(fileName, arguments) { UseShellExecute = false })?.Dispose();
+    public Process? Start(string fileName, string arguments) =>
+        Process.Start(new ProcessStartInfo(fileName, arguments) { UseShellExecute = false });
 }
 
 /// <summary>Writes the per-app .rdp file and hands it to the Windows Remote Desktop client.</summary>
@@ -57,10 +58,35 @@ public sealed class RemoteAppLauncher(
         return Directory.EnumerateFiles(root, "*.rdp", SearchOption.AllDirectories).Count(signer.TrySign);
     }
 
-    public void Launch(PairedHost host, CachedApp app)
+    /// <summary>Returns the mstsc process (caller disposes) so the UI can wait for its window.</summary>
+    public Process? Launch(PairedHost host, CachedApp app)
     {
         var file = WriteRdpFile(host, app);
         _logger.LogInformation("Launching RemoteApp {Alias} on {Address}", app.Alias, host.Address);
-        starter.Start(MstscPath, $"\"{file}\"");
+        return starter.Start(MstscPath, $"\"{file}\"");
+    }
+
+    /// <summary>
+    /// Completes when mstsc shows a window (its connection progress or the app) or exits (an existing
+    /// RemoteApp session took over the request), or after <paramref name="timeout"/>.
+    /// </summary>
+    public static async Task WaitForRdpWindowAsync(Process? process, TimeSpan timeout, CancellationToken ct = default)
+    {
+        if (process is null)
+        {
+            return;
+        }
+
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline && !ct.IsCancellationRequested)
+        {
+            process.Refresh();
+            if (process.HasExited || process.MainWindowHandle != IntPtr.Zero)
+            {
+                return;
+            }
+
+            await Task.Delay(250, ct);
+        }
     }
 }
