@@ -37,9 +37,9 @@
                                 <MenuItem Header="Remover credenciais salvas" Command="{Binding DeleteCredentialsCommand}" />
                                 <Separator />
                                 <MenuItem Header="Abrir apps sem alerta de segurança…" Command="{Binding ConfigureSigningCommand}" />
-                                <MenuItem Header="Encerrar automaticamente a sessão local do PC remoto" IsCheckable="True"
-                                          IsChecked="{Binding AutoReleaseSession, Mode=TwoWay}"
-                                          ToolTip="Ao abrir um app com alguém logado no PC remoto, encerra a sessão sem perguntar (programas abertos lá serão fechados)" />
+                                <MenuItem Header="Perguntar antes de encerrar a sessão do PC remoto" IsCheckable="True"
+                                          IsChecked="{Binding AskBeforeReleasingSession, Mode=TwoWay}"
+                                          ToolTip="Desmarcado (padrão): ao abrir um app com você logado no PC remoto, a sessão é encerrada sem perguntar e os programas abertos lá são fechados" />
                                 <Separator />
                                 <MenuItem Header="Remover host" Command="{Binding RemoveHostCommand}" />
                             </ContextMenu>

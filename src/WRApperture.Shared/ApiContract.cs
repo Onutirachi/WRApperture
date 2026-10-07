@@ -34,11 +34,20 @@ public sealed record HostInfoDto(string HostName, int RdpPort, string AgentVersi
 
 public sealed record ApiErrorDto(string Error, string Message);
 
-/// <summary>A host session that prevents opening RemoteApps (a desktop session of the connecting user).</summary>
-public sealed record BusySessionDto(string User, string State, bool IsConsole);
+/// <summary>
+/// A host session in the way of a RemoteApp connection. Action: "logoff" (same user's desktop;
+/// open programs are closed) or "disconnect" (another user's active session; programs stay open).
+/// </summary>
+public sealed record BusySessionDto(string User, string State, bool IsConsole, string Action);
 
 public sealed record SessionStatusDto(bool Busy, IReadOnlyList<BusySessionDto> Sessions);
 
 public sealed record SessionReleaseRequestDto(string? User);
 
 public sealed record SessionReleaseResultDto(int Released, bool Busy);
+
+public static class SessionActions
+{
+    public const string Logoff = "logoff";
+    public const string Disconnect = "disconnect";
+}

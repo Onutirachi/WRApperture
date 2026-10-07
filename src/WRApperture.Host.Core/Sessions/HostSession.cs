@@ -35,8 +35,11 @@ public interface ISessionProvider
     /// <summary>User sessions only (sessions without a user are omitted).</summary>
     IReadOnlyList<HostSession> List();
 
-    /// <summary>Logs off and waits for completion.</summary>
+    /// <summary>Forced logoff; waits for completion.</summary>
     void Logoff(int sessionId);
+
+    /// <summary>Disconnects (session and its programs stay alive); waits for completion.</summary>
+    void Disconnect(int sessionId);
 
     /// <summary>Starts explorer.exe as the session's user, giving the session a desktop.</summary>
     void StartDesktopShell(int sessionId);

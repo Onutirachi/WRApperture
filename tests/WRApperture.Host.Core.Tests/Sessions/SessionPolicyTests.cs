@@ -7,55 +7,80 @@ public class SessionPolicyTests
     private static HostSession S(int id, string user, SessionKind kind, SessionConnectState state = SessionConnectState.Active, bool console = false) =>
         new(id, user, "PC", state, console, kind);
 
-    [Fact]
-    public void Same_user_desktop_sessions_block_in_any_state()
+    private static void AssertPlan(int[] logoff, int[] disconnect, ReleasePlan plan)
     {
-        var sessions = new[]
-        {
+        Assert.Equal(logoff, plan.Logoff.Select(s => s.Id));
+        Assert.Equal(disconnect, plan.Disconnect.Select(s => s.Id));
+    }
+
+    [Fact]
+    public void Same_user_desktop_sessions_are_logged_off_in_any_state()
+    {
+        var plan = SessionPolicy.Plan(
+        [
             S(1, "joao", SessionKind.Desktop, console: true),
             S(2, "joao", SessionKind.Desktop, SessionConnectState.Disconnected),
             S(3, "maria", SessionKind.Desktop, SessionConnectState.Disconnected),
-        };
+        ], @"PC\joao");
 
-        Assert.Equal([1, 2], SessionPolicy.Blocking(sessions, @"PC\joao").Select(s => s.Id));
+        AssertPlan([1, 2], [], plan);
     }
 
     [Fact]
-    public void RemoteApp_sessions_never_block()
+    public void Same_user_remote_desktop_session_is_logged_off_too()
     {
-        var sessions = new[] { S(1, "joao", SessionKind.RemoteApp, SessionConnectState.Disconnected) };
+        // The user's scenario: logged on to the host through a regular (full) Remote Desktop session.
+        var plan = SessionPolicy.Plan([S(7, "joao", SessionKind.Desktop)], "joao");
 
-        Assert.Empty(SessionPolicy.Blocking(sessions, "joao"));
+        AssertPlan([7], [], plan);
     }
 
     [Fact]
-    public void Other_users_are_never_selected_when_rdp_user_is_known()
+    public void Other_users_active_sessions_are_only_disconnected()
     {
-        var sessions = new[] { S(1, "maria", SessionKind.Desktop, console: true) };
+        var plan = SessionPolicy.Plan(
+        [
+            S(1, "maria", SessionKind.Desktop, console: true),
+            S(2, "pedro", SessionKind.Desktop, SessionConnectState.Disconnected),
+        ], "joao@outlook.com");
 
-        // "joao" has no session; Windows itself asks maria to release the host.
-        Assert.Empty(SessionPolicy.Blocking(sessions, "joao@outlook.com"));
+        AssertPlan([], [1], plan);
     }
 
     [Fact]
-    public void Unknown_rdp_user_means_the_console_user()
+    public void RemoteApp_sessions_of_the_user_are_never_touched()
     {
-        var sessions = new[]
-        {
-            S(1, "joao", SessionKind.Desktop, console: true),
+        var plan = SessionPolicy.Plan([S(1, "joao", SessionKind.RemoteApp)], "joao");
+
+        Assert.True(plan.IsEmpty);
+    }
+
+    [Fact]
+    public void Unknown_user_means_whoever_has_an_active_desktop_local_or_remote()
+    {
+        var plan = SessionPolicy.Plan(
+        [
+            S(7, "joao", SessionKind.Desktop),                                 // full Remote Desktop session
             S(2, "joao", SessionKind.Desktop, SessionConnectState.Disconnected),
             S(3, "maria", SessionKind.Desktop, SessionConnectState.Disconnected),
-        };
+        ], null);
 
-        Assert.Equal([1, 2], SessionPolicy.Blocking(sessions, null).Select(s => s.Id));
+        AssertPlan([7, 2], [], plan);
     }
 
     [Fact]
-    public void Unknown_user_and_nobody_at_the_console_blocks_nothing()
+    public void Opening_a_second_app_never_disconnects_our_own_remoteapp_session()
     {
-        var sessions = new[] { S(2, "joao", SessionKind.Desktop, SessionConnectState.Disconnected) };
+        // Unknown user, an app already open: the active RemoteApp session is (probably) ours.
+        Assert.True(SessionPolicy.Plan([S(5, "joao", SessionKind.RemoteApp)], null).IsEmpty);
+        Assert.True(SessionPolicy.Plan([S(5, "joao", SessionKind.RemoteApp)], "joao").IsEmpty);
+    }
 
-        Assert.Empty(SessionPolicy.Blocking(sessions, null));
+    [Fact]
+    public void Free_host_has_an_empty_plan()
+    {
+        Assert.True(SessionPolicy.Plan([S(2, "joao", SessionKind.Desktop, SessionConnectState.Disconnected)], null).IsEmpty);
+        Assert.True(SessionPolicy.Plan([], "joao").IsEmpty);
     }
 
     [Fact]

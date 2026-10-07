@@ -38,6 +38,7 @@ public class SessionTests : IDisposable
         var busy = Assert.Single(status.Sessions);
         Assert.Equal(@"PC\joao", busy.User);
         Assert.True(busy.IsConsole);
+        Assert.Equal(SessionActions.Logoff, busy.Action);
     }
 
     [Fact]
@@ -70,25 +71,29 @@ public class SessionTests : IDisposable
     }
 
     [Fact]
-    public async Task Release_with_unknown_user_targets_the_console_user_only()
+    public async Task Release_with_unknown_user_logs_off_the_active_desktop_user_even_over_remote_desktop()
     {
-        _factory.Sessions.All.AddRange([S(1, "joao", SessionKind.Desktop, console: true), S(4, "maria", SessionKind.Desktop, SessionConnectState.Disconnected)]);
+        _factory.Sessions.All.AddRange([S(7, "joao", SessionKind.Desktop), S(4, "maria", SessionKind.Desktop, SessionConnectState.Disconnected)]);
 
-        await _factory.CreateAuthorizedClient().PostAsJsonAsync(ApiContract.SessionRelease, new SessionReleaseRequestDto(null));
+        var result = await (await _factory.CreateAuthorizedClient()
+            .PostAsJsonAsync(ApiContract.SessionRelease, new SessionReleaseRequestDto(null))).Content.ReadFromJsonAsync<SessionReleaseResultDto>();
 
-        Assert.Equal([1], _factory.Sessions.LoggedOff);
+        Assert.Equal([7], _factory.Sessions.LoggedOff);
+        Assert.False(result!.Busy);
     }
 
     [Fact]
-    public async Task Release_never_touches_another_users_session()
+    public async Task Release_only_disconnects_another_users_active_session()
     {
         _factory.Sessions.All.Add(S(1, "maria", SessionKind.Desktop, console: true));
 
         var result = await (await _factory.CreateAuthorizedClient()
             .PostAsJsonAsync(ApiContract.SessionRelease, new SessionReleaseRequestDto("joao"))).Content.ReadFromJsonAsync<SessionReleaseResultDto>();
 
-        Assert.Equal(0, result!.Released);
+        Assert.Equal(1, result!.Released);
+        Assert.False(result.Busy);
         Assert.Empty(_factory.Sessions.LoggedOff);
+        Assert.Equal([1], _factory.Sessions.Disconnected);
     }
 
     [Fact]

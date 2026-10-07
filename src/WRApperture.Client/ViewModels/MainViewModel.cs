@@ -105,7 +105,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     partial void OnSelectedHostChanged(HostOption? value)
     {
-        OnPropertyChanged(nameof(AutoReleaseSession));
+        OnPropertyChanged(nameof(AskBeforeReleasingSession));
         ShowCachedApps();
         if (value is not null)
         {
@@ -253,7 +253,7 @@ public sealed partial class MainViewModel : ObservableObject
                 return true;
             }
 
-            if (!host.AutoReleaseSession)
+            if (host.AskBeforeReleasingSession)
             {
                 var decision = _dialogs.AskReleaseSession(host.DisplayName, status.Sessions);
                 if (decision is null)
@@ -264,13 +264,13 @@ public sealed partial class MainViewModel : ObservableObject
 
                 if (decision.Always)
                 {
-                    ReplaceHost(host with { AutoReleaseSession = true });
-                    OnPropertyChanged(nameof(AutoReleaseSession));
+                    ReplaceHost(host with { AskBeforeReleasingSession = false });
+                    OnPropertyChanged(nameof(AskBeforeReleasingSession));
                 }
             }
 
             IsBusy = true;
-            SetStatus($"Encerrando a sessão local de {host.DisplayName}…", warning: false);
+            SetStatus($"Liberando {host.DisplayName} (sessão em uso)…", warning: false);
             var result = await agent.ReleaseSessionAsync(host.RdpUserName);
             _logger.LogInformation("Released {Count} host sessions on {Address}", result.Released, host.Address);
             if (result.Busy)
@@ -281,6 +281,8 @@ public sealed partial class MainViewModel : ObservableObject
 
             // Give Windows a moment to finish tearing down the session before the RDP connection.
             await Task.Delay(TimeSpan.FromSeconds(2));
+            var who = string.Join(", ", status.Sessions.Select(s => s.User).Distinct());
+            SetStatus($"PC remoto liberado ({who}) para abrir o app.", warning: false);
             return true;
         }
         catch (AgentException ex)
@@ -295,15 +297,15 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Menu toggle: log off the host's local session without asking.</summary>
-    public bool AutoReleaseSession
+    /// <summary>Menu toggle: ask before logging off the host's session (default: don't ask).</summary>
+    public bool AskBeforeReleasingSession
     {
-        get => SelectedHost?.Host.AutoReleaseSession ?? false;
+        get => SelectedHost?.Host.AskBeforeReleasingSession ?? false;
         set
         {
-            if (SelectedHost is { } option && option.Host.AutoReleaseSession != value)
+            if (SelectedHost is { } option && option.Host.AskBeforeReleasingSession != value)
             {
-                ReplaceHost(option.Host with { AutoReleaseSession = value });
+                ReplaceHost(option.Host with { AskBeforeReleasingSession = value });
                 OnPropertyChanged();
             }
         }

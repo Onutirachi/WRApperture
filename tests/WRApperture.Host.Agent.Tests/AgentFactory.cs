@@ -101,6 +101,14 @@ internal sealed class FakeSessions : WRApperture.Host.Core.Sessions.ISessionProv
     public List<WRApperture.Host.Core.Sessions.HostSession> All { get; } = [];
     public List<int> LoggedOff { get; } = [];
     public List<int> ShellStarted { get; } = [];
+    public List<int> Disconnected { get; } = [];
+
+    public void Disconnect(int sessionId)
+    {
+        Disconnected.Add(sessionId);
+        var i = All.FindIndex(s => s.Id == sessionId);
+        All[i] = All[i] with { State = WRApperture.Host.Core.Sessions.SessionConnectState.Disconnected };
+    }
 
     public IReadOnlyList<WRApperture.Host.Core.Sessions.HostSession> List() => All.ToList();
 

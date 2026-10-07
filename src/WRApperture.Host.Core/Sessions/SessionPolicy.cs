@@ -38,29 +38,51 @@ public static class RdpUserMatcher
     }
 }
 
+/// <summary>What must happen to the host's sessions before a RemoteApp connection.</summary>
+public sealed record ReleasePlan(IReadOnlyList<HostSession> Logoff, IReadOnlyList<HostSession> Disconnect)
+{
+    public bool IsEmpty => Logoff.Count == 0 && Disconnect.Count == 0;
+}
+
 /// <summary>
-/// Decides which sessions prevent a RemoteApp connection. On Windows client editions a user cannot
-/// have a desktop session and a RemoteApp session at once, and a disconnected desktop session would
-/// simply be reconnected, so the blocking desktop sessions must be logged off.
-/// Never selects RemoteApp sessions or sessions of other users.
+/// Windows client editions allow one active session, and a user cannot have a desktop session and a
+/// RemoteApp session at once. Without preparation Windows asks on both ends ("another user is signed
+/// in / will be disconnected"). The plan:
+/// <list type="bullet">
+/// <item>Desktop sessions of the connecting user → log off (a desktop session would be reconnected and RemoteApp fails).</item>
+/// <item>Active sessions of other users → disconnect only: no prompt, and their work is preserved.</item>
+/// <item>RemoteApp sessions are never touched (they are simply reconnected).</item>
+/// </list>
+/// When the client does not know its RDP user (credentials not saved), the users with an active
+/// desktop session are assumed to be the connecting person.
 /// </summary>
 public static class SessionPolicy
 {
-    public static IReadOnlyList<HostSession> Blocking(IEnumerable<HostSession> sessions, string? rdpUser)
+    public static ReleasePlan Plan(IEnumerable<HostSession> sessions, string? rdpUser)
     {
-        var desktops = sessions.Where(s => s.Kind == SessionKind.Desktop && !string.IsNullOrEmpty(s.User)).ToList();
+        var all = sessions.Where(s => !string.IsNullOrEmpty(s.User)).ToList();
+        Func<HostSession, bool> isSameUser;
 
         if (!string.IsNullOrWhiteSpace(rdpUser))
         {
-            // A known user that matches nobody is someone else: never touch their sessions.
-            return desktops.Where(s => RdpUserMatcher.Matches(rdpUser, s)).ToList();
+            isSameUser = s => RdpUserMatcher.Matches(rdpUser, s);
+        }
+        else
+        {
+            var activeDesktopUsers = all
+                .Where(s => s.Kind == SessionKind.Desktop && s.State == SessionConnectState.Active)
+                .Select(s => s.User)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            isSameUser = s => activeDesktopUsers.Contains(s.User);
         }
 
-        // Unknown RDP user (credentials not saved in the client): assume it is whoever uses the host locally.
-        var consoleUser = desktops.FirstOrDefault(s => s.IsConsole && s.State == SessionConnectState.Active)?.User;
-        return consoleUser is null
-            ? []
-            : desktops.Where(s => string.Equals(s.User, consoleUser, StringComparison.OrdinalIgnoreCase)).ToList();
+        var userKnown = !string.IsNullOrWhiteSpace(rdpUser);
+        var logoff = all.Where(s => s.Kind == SessionKind.Desktop && isSameUser(s)).ToList();
+        var disconnect = all.Where(s => s.State == SessionConnectState.Active && !isSameUser(s) &&
+                                        // With an unknown user an active RemoteApp session may be our own
+                                        // (opening a second app): disconnecting it would close the open apps.
+                                        (userKnown || s.Kind != SessionKind.RemoteApp)).ToList();
+        return new ReleasePlan(logoff, disconnect);
     }
 
     /// <summary>The host's screen is showing a RemoteApp session (a local logon attached to it): it needs a desktop shell.</summary>

@@ -21,8 +21,11 @@ public sealed record PairedHost
     public int RdpPort { get; init; } = DefaultRdpPort;
     public string? RdpUserName { get; init; }
 
-    /// <summary>Log off the host's local desktop session without asking before opening an app.</summary>
-    public bool AutoReleaseSession { get; init; }
+    /// <summary>
+    /// Ask before logging off the host's desktop session when opening an app. Off by default: the
+    /// session is released automatically (v0.3.0's "autoReleaseSession" field is intentionally ignored).
+    /// </summary>
+    public bool AskBeforeReleasingSession { get; init; }
     public IReadOnlyList<CachedApp> Apps { get; init; } = [];
     public DateTimeOffset? LastSyncUtc { get; init; }
 }

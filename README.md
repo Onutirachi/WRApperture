@@ -87,7 +87,7 @@ dotnet run --project src/WRApperture.Client
 Na primeira conexão, o Windows pode avisar sobre o certificado RDP do host. Marque "Não perguntar novamente para conexões com este computador".
 
 **Alternar entre usar o PC remoto localmente e pelo cliente.** No Windows Pro, um usuário não pode ter ao mesmo tempo a sessão local e os apps remotos.
-- **Abrir um app com alguém logado no PC remoto:** o cliente avisa e, com a sua confirmação, encerra (logoff) a sessão local antes de abrir. **Os programas abertos lá são fechados.** Você pode marcar "sempre encerrar automaticamente", que também fica disponível no menu **⋯**. Sessões de **outros** usuários nunca são encerradas.
+- **Abrir um app com você logado no PC remoto** (na tela ou por Área de Trabalho Remota comum): o cliente encerra a sua sessão lá automaticamente, sem perguntar em nenhuma das pontas, e abre o app. **Os programas abertos nessa sessão são fechados sem salvar.** Para ser perguntado antes, use **⋯ → Perguntar antes de encerrar a sessão do PC remoto**. Sessões ativas de **outros** usuários são apenas desconectadas (os programas deles continuam abertos), nunca encerradas. Assim, o Windows não pede confirmação em nenhuma das pontas.
 - **Logar no PC remoto com apps abertos no cliente:** o Windows desconecta o cliente, e o agente inicia a área de trabalho nessa sessão. Você continua com os mesmos programas abertos no PC, sem perder trabalho.
 - Para diagnóstico, rode `wrahost sessions` no host. Ele lista as sessões e o tipo de cada uma.
 

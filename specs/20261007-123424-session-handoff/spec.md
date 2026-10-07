@@ -15,6 +15,18 @@ No Windows Pro, um usuário não pode ter ao mesmo tempo uma sessão de área de
 - **Uso local → app remoto**: o RemoteApp não consegue iniciar enquanto existe a sessão de área de trabalho do mesmo usuário. Aparecem erros, e o Windows pede logoff.
 - **App remoto → uso local**: ao logar localmente, o Windows desconecta o cliente e leva a sessão RemoteApp para a tela do host. Como essa sessão não tem área de trabalho (barra de tarefas, Explorer), o uso local fica quebrado.
 
+## Revisão 2026-10-07 (feedback do teste real, v0.3.1)
+
+O usuário testou com o host em uso por uma sessão de **Área de Trabalho Remota comum** (sem acesso físico). Funcionou, mas pediu confirmação **nas duas pontas**: o diálogo do cliente, e o Windows no host perguntando sobre programas abertos durante o logoff. O usuário quer que o host seja deslogado sem nenhuma confirmação.
+
+- **FR-004 (revisado)**: por padrão, o cliente encerra a sessão **sem perguntar** e informa na barra de status. O aviso é opcional ("Perguntar antes de encerrar", no menu).
+- **FR-002 (revisado)**: o logoff é **forçado** (`shutdown /l /f` executado na sessão do usuário). Programas abertos no host são fechados sem confirmação. `WTSLogoffSession` fica como reserva.
+- **Diagnóstico corrigido**: a confirmação no host era o aviso do próprio Windows, "outro usuário está conectado e será desconectado", e não um aviso de programas abertos. Ela aparece quando a conexão encontra uma sessão **ativa** não liberada. Com usuário RDP desconhecido, a v0.3.0 só considerava a sessão da tela física, então ignorava a sessão de Área de Trabalho Remota comum.
+- **FR-003 (revisado)**:
+  - Sessão de área de trabalho do mesmo usuário (local **ou remota**): logoff forçado.
+  - Sessão **ativa de outro usuário**: apenas **desconectar**, sem perder trabalho, e assim o Windows não pergunta nas duas pontas. Sessões de outros usuários nunca são deslogadas.
+  - Usuário desconhecido: considera-se o usuário das sessões de área de trabalho ativas. A sessão RemoteApp ativa nunca é desconectada, porque pode ser a do próprio cliente ao abrir o segundo app.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Abrir um app com o host em uso local (Priority: P1)

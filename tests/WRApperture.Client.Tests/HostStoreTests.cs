@@ -63,6 +63,20 @@ public class HostStoreTests : IDisposable
     }
 
     [Fact]
+    public void State_from_v030_loads_with_release_without_asking()
+    {
+        Directory.CreateDirectory(_dir.Path);
+        File.WriteAllText(_dir.Paths.StateFile, """
+            {"version":1,"hosts":[{"id":"11111111-2222-3333-4444-555555555555","displayName":"PC","address":"10.0.0.2",
+             "agentPort":5080,"protectedToken":"x","pinnedFingerprint":"AB","autoReleaseSession":false}]}
+            """);
+
+        var host = Assert.Single(_store.Load().Hosts);
+
+        Assert.False(host.AskBeforeReleasingSession);
+    }
+
+    [Fact]
     public void Protected_token_is_bound_to_entropy()
     {
         var protectedToken = HostStore.ProtectToken("abc");

@@ -201,7 +201,7 @@ public class AgentClientHttpTests
             seen = request;
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = JsonContent.Create(new SessionStatusDto(true, [new BusySessionDto(@"PC\joao", "em uso", true)])),
+                Content = JsonContent.Create(new SessionStatusDto(true, [new BusySessionDto(@"PC\joao", "em uso", true, SessionActions.Logoff)])),
             };
         });
 

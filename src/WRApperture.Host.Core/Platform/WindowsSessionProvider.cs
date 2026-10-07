@@ -52,15 +52,65 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
         return result;
     }
 
+    private static readonly TimeSpan ForcedLogoffWait = TimeSpan.FromSeconds(25);
+
+    /// <summary>
+    /// WTSLogoffSession is a "polite" logoff: apps with unsaved work can hold it and Windows asks the
+    /// user in that session to confirm. Running "shutdown /l /f" inside the session forces it
+    /// (EWX_FORCE), so nobody has to confirm. WTSLogoffSession remains the fallback.
+    /// </summary>
     public void Logoff(int sessionId)
     {
+        var user = Query(sessionId, Native.WtsUserName);
+        try
+        {
+            var shutdown = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "shutdown.exe");
+            StartInSession(sessionId, shutdown, "/l /f");
+            var deadline = DateTime.UtcNow + ForcedLogoffWait;
+            while (DateTime.UtcNow < deadline)
+            {
+                if (!string.Equals(Query(sessionId, Native.WtsUserName), user, StringComparison.OrdinalIgnoreCase) ||
+                    string.IsNullOrEmpty(Query(sessionId, Native.WtsUserName)))
+                {
+                    logger.LogInformation("Session {Session} of {User} logged off (forced)", sessionId, user);
+                    return;
+                }
+
+                Thread.Sleep(500);
+            }
+
+            logger.LogWarning("Forced logoff of session {Session} did not finish in time; falling back to WTSLogoffSession", sessionId);
+        }
+        catch (Win32Exception ex)
+        {
+            logger.LogWarning(ex, "Forced logoff of session {Session} could not start; falling back to WTSLogoffSession", sessionId);
+        }
+
         if (!Native.WTSLogoffSession(CurrentServer, sessionId, bWait: true))
         {
             throw new Win32Exception(Marshal.GetLastPInvokeError(), $"WTSLogoffSession({sessionId}) failed");
         }
     }
 
+    public void Disconnect(int sessionId)
+    {
+        if (!Native.WTSDisconnectSession(CurrentServer, sessionId, bWait: true))
+        {
+            throw new Win32Exception(Marshal.GetLastPInvokeError(), $"WTSDisconnectSession({sessionId}) failed");
+        }
+
+        logger.LogInformation("Session {Session} disconnected", sessionId);
+    }
+
     public void StartDesktopShell(int sessionId)
+    {
+        var explorer = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+        var pid = StartInSession(sessionId, explorer, null);
+        logger.LogInformation("Started desktop shell in session {Session} (pid {Pid})", sessionId, pid);
+    }
+
+    /// <summary>Starts a process as the session's user on its interactive desktop (requires LocalSystem).</summary>
+    private static int StartInSession(int sessionId, string executable, string? arguments)
     {
         if (!Native.WTSQueryUserToken(sessionId, out var userToken))
         {
@@ -76,16 +126,17 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
             }
 
             var startup = new Native.StartupInfo { cb = Marshal.SizeOf<Native.StartupInfo>(), lpDesktop = @"winsta0\default" };
-            var explorer = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
-            if (!Native.CreateProcessAsUserW(userToken, explorer, null, IntPtr.Zero, IntPtr.Zero, false,
-                    Native.CreateUnicodeEnvironment, environment, null, ref startup, out var process))
+            // lpCommandLine must be writable and, when given, start with the quoted executable.
+            var commandLine = arguments is null ? null : $"\"{executable}\" {arguments}";
+            if (!Native.CreateProcessAsUserW(userToken, executable, commandLine, IntPtr.Zero, IntPtr.Zero, false,
+                    Native.CreateUnicodeEnvironment | Native.CreateNoWindow, environment, null, ref startup, out var process))
             {
-                throw new Win32Exception(Marshal.GetLastPInvokeError(), "CreateProcessAsUser(explorer.exe) failed");
+                throw new Win32Exception(Marshal.GetLastPInvokeError(), $"CreateProcessAsUser({Path.GetFileName(executable)}) failed");
             }
 
             Native.CloseHandle(process.hThread);
             Native.CloseHandle(process.hProcess);
-            logger.LogInformation("Started desktop shell in session {Session} (pid {Pid})", sessionId, process.dwProcessId);
+            return process.dwProcessId;
         }
         finally
         {
@@ -144,6 +195,7 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
         public const int WtsUserName = 5;
         public const int WtsDomainName = 7;
         public const uint CreateUnicodeEnvironment = 0x00000400;
+        public const uint CreateNoWindow = 0x08000000;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct WtsSessionInfo
@@ -188,6 +240,9 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
 
         [DllImport("wtsapi32.dll", SetLastError = true)]
         public static extern bool WTSLogoffSession(IntPtr server, int sessionId, bool bWait);
+
+        [DllImport("wtsapi32.dll", SetLastError = true)]
+        public static extern bool WTSDisconnectSession(IntPtr server, int sessionId, bool bWait);
 
         [DllImport("wtsapi32.dll", SetLastError = true)]
         public static extern bool WTSQueryUserToken(int sessionId, out IntPtr token);
