@@ -25,6 +25,10 @@ Ao abrir o FortiClient pelo cliente, a janela de login aparece como no PC local.
   - Nada da pasta do Windows entra. Por exemplo, o Bloco de Notas não puxa o ícone de segurança do Windows.
 - Também entram os **programas de bandeja da pasta do app**: arquivos `.exe` com "Tray" como palavra do nome, como `FortiTray.exe` e `lghub_system_tray.exe`, mas não `Strayer.exe`.
   - Alguns fabricantes iniciam esses programas por um serviço, não pela inicialização do Windows. No FortiClient, quem inicia o `FortiTray.exe` é o `scheduler.exe` ("FortiClient Service Scheduler"). Por isso a primeira versão da regra não o encontrava.
+- **Programas sem argumentos são abertos pelo Explorer da sessão** (`explorer.exe "programa"`), como um clique duplo.
+  - Testes no Mongeral: o `FortiTray` aberto pelo agente ou pelo PowerShell mostra o login, mas a VPN não sobe ("SSL VPN connection is down"). Aberto pelo Explorer, o túnel sobe.
+  - O agente encerra esse Explorer assim que o programa aparece, ou após 15 segundos, porque uma sessão com Explorer conta como área de trabalho e a próxima abertura de app a encerraria.
+  - Programas com argumentos (o Explorer não os repassa) continuam abertos direto.
 - Cada programa é iniciado uma vez por sessão. Se ele fechar, não é reaberto até a próxima sessão.
 - Sessões de área de trabalho completa ficam de fora: lá o próprio Explorer inicia esses programas.
 

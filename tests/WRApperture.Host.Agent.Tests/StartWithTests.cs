@@ -75,7 +75,41 @@ public class StartWithTests : IDisposable
 
         Launcher.Tick();
 
-        Assert.Equal([Helper], _factory.Sessions.Started.Select(s => s.Program));
+        var started = Assert.Single(_factory.Sessions.Started);
+        Assert.Equal((StartWithLauncher.ExplorerPath, $"\"{Helper}\""), (started.Program, started.Arguments));
+    }
+
+    [Fact]
+    public void Programs_without_arguments_open_through_explorer_which_is_ended_once_they_run()
+    {
+        _factory.Startup.Programs[0] = new StartupProgram("FortiClient", Tray, null);
+        Session(3, SessionKind.RemoteApp);
+        Running(3, Forti);
+
+        Launcher.Tick();
+        var started = Assert.Single(_factory.Sessions.Started);
+        Assert.Equal((3, StartWithLauncher.ExplorerPath, $"\"{Tray}\""), (started.Session, started.Program, started.Arguments));
+
+        Launcher.Tick(); // FortiTray not running yet: Explorer stays
+        Assert.Empty(_factory.Processes.Stopped);
+
+        Running(3, Tray);
+        Launcher.Tick();
+        Assert.Equal([4242], _factory.Processes.Stopped); // the Explorer the agent started, nothing else
+    }
+
+    [Fact]
+    public void The_explorer_is_ended_after_the_grace_time_even_if_the_program_never_shows_up()
+    {
+        _factory.Startup.Programs[0] = new StartupProgram("FortiClient", Tray, null);
+        Session(3, SessionKind.RemoteApp);
+        Running(3, Forti);
+        Launcher.Tick();
+
+        _factory.Time.Now += StartWithLauncher.ExplorerGrace;
+        Launcher.Tick();
+
+        Assert.Equal([4242], _factory.Processes.Stopped);
     }
 
     [Fact]

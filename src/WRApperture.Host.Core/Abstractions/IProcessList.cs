@@ -8,4 +8,7 @@ public interface IProcessList
 {
     /// <summary>The processes of the given sessions, with their program paths (requires LocalSystem for other users).</summary>
     IReadOnlyList<RunningProcess> InSessions(IReadOnlySet<int> sessionIds);
+
+    /// <summary>Ends the process if it is still running and is <paramref name="processName"/> (e.g. "explorer"). False otherwise.</summary>
+    bool Stop(int processId, string processName);
 }

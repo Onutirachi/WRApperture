@@ -11,6 +11,12 @@ namespace WRApperture.Host.Agent.Sessions;
 /// Remote app sessions have no Explorer, so Windows does not start the sign-in programs there. Some apps depend on
 /// them (FortiClient's sign-in window comes from FortiTray). When a published app runs in a remote app session,
 /// this starts the programs that go with it (<see cref="IStartWithResolver"/>) in that session, once per session.
+/// <para>
+/// Programs without arguments are opened through Explorer ("explorer.exe program"), like a double click: some only
+/// work when Explorer starts them (FortiTray shows the sign-in but cannot bring the VPN up otherwise). That Explorer
+/// is ended as soon as the program appears (or after <see cref="ExplorerGrace"/>): a session with Explorer counts as
+/// a desktop session, which the next app opening would log off.
+/// </para>
 /// </summary>
 internal sealed class StartWithLauncher(
     ISessionProvider sessions,
@@ -23,6 +29,11 @@ internal sealed class StartWithLauncher(
 {
     public static readonly TimeSpan Interval = TimeSpan.FromSeconds(3);
     public static readonly TimeSpan CacheFor = TimeSpan.FromSeconds(30);
+    public static readonly TimeSpan ExplorerGrace = TimeSpan.FromSeconds(15);
+    internal static readonly string ExplorerPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+
+    /// <summary>Explorers started to open a program, ended once it runs.</summary>
+    private readonly List<(int Session, int ExplorerId, string Program, DateTimeOffset StartedAt)> _launchers = [];
 
     private readonly HashSet<(int Session, string Program)> _started = [];
     private readonly Dictionary<(string Alias, string? Sid), IReadOnlyList<StartWithProgram>> _programs = [];
@@ -61,7 +72,9 @@ internal sealed class StartWithLauncher(
     /// <summary>One pass over the remote app sessions (also called by tests).</summary>
     internal void Tick()
     {
-        var remote = sessions.List().Where(s => s is { Kind: SessionKind.RemoteApp, State: SessionConnectState.Active }).ToList();
+        var all = sessions.List();
+        EndLaunchers(all);
+        var remote = all.Where(s => s is { Kind: SessionKind.RemoteApp, State: SessionConnectState.Active }).ToList();
         _started.RemoveWhere(started => remote.All(s => s.Id != started.Session)); // sessions that ended
         if (remote.Count == 0)
         {
@@ -101,13 +114,51 @@ internal sealed class StartWithLauncher(
     {
         try
         {
-            sessions.StartProcess(session.Id, program.ExecutablePath, program.Arguments);
+            if (program.Arguments is null)
+            {
+                var explorer = sessions.StartProcess(session.Id, ExplorerPath, $"\"{program.ExecutablePath}\"");
+                _launchers.Add((session.Id, explorer, program.ExecutablePath, time.GetUtcNow()));
+            }
+            else
+            {
+                sessions.StartProcess(session.Id, program.ExecutablePath, program.Arguments);
+            }
+
             logger.LogInformation("Started {Program} with {App} in session {Session} of {User} ({How})",
                 program.ExecutablePath, app.Alias, session.Id, session.User, program.Automatic ? "startup program of its folder" : "chosen");
         }
         catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException)
         {
             logger.LogWarning(ex, "Could not start {Program} with {App} in session {Session}", program.ExecutablePath, app.Alias, session.Id);
+        }
+    }
+
+    /// <summary>Ends the Explorers that opened a program once it runs (or the grace time is over).</summary>
+    private void EndLaunchers(IReadOnlyList<HostSession> all)
+    {
+        if (_launchers.Count == 0)
+        {
+            return;
+        }
+
+        var now = time.GetUtcNow();
+        var running = processes.InSessions(_launchers.Select(l => l.Session).ToHashSet());
+        foreach (var launcher in _launchers.ToList())
+        {
+            var started = running.Any(p => p.SessionId == launcher.Session &&
+                                           string.Equals(p.Path, launcher.Program, StringComparison.OrdinalIgnoreCase));
+            var sessionGone = all.All(s => s.Id != launcher.Session);
+            if (!started && !sessionGone && now - launcher.StartedAt < ExplorerGrace)
+            {
+                continue;
+            }
+
+            _launchers.Remove(launcher);
+            if (!sessionGone && processes.Stop(launcher.ExplorerId, "explorer"))
+            {
+                logger.LogInformation("Ended the Explorer ({Pid}) that opened {Program} in session {Session}",
+                    launcher.ExplorerId, launcher.Program, launcher.Session);
+            }
         }
     }
 

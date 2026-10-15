@@ -37,6 +37,25 @@ internal sealed class WindowsProcessList : IProcessList
         return result;
     }
 
+    public bool Stop(int processId, string processName)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(processId);
+            if (process.HasExited || !string.Equals(process.ProcessName, processName, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            process.Kill();
+            return true;
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or Win32Exception)
+        {
+            return false; // already gone, or not ours to end
+        }
+    }
+
     private static string? PathOf(int processId)
     {
         var handle = Native.OpenProcess(QueryLimitedInformation, false, processId);

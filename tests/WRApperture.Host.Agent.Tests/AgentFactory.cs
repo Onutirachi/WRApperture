@@ -300,6 +300,14 @@ internal sealed class FakeProcesses : IProcessList
     public List<RunningProcess> All { get; } = [];
 
     public IReadOnlyList<RunningProcess> InSessions(IReadOnlySet<int> sessionIds) => All.Where(p => sessionIds.Contains(p.SessionId)).ToList();
+
+    public List<int> Stopped { get; } = [];
+
+    public bool Stop(int processId, string processName)
+    {
+        Stopped.Add(processId);
+        return true;
+    }
 }
 
 internal sealed class FakeStartupPrograms : WRApperture.Host.Core.StartWith.IStartupPrograms
