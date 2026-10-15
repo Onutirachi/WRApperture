@@ -78,9 +78,10 @@ public sealed class AgentClientTlsTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Pairing_with_wrong_token_fails()
+    public async Task Pairing_with_wrong_token_fails_as_refused_by_the_host()
     {
-        await Assert.ThrowsAsync<InvalidTokenException>(() => AgentClient.PairAsync("127.0.0.1", Port, "wrong"));
+        var ex = await Assert.ThrowsAsync<InvalidTokenException>(() => AgentClient.PairAsync("127.0.0.1", Port, "wrong"));
+        Assert.True(ex.RefusedByHost);
     }
 
     [Fact]
@@ -115,6 +116,7 @@ public sealed class AgentClientTlsTests : IAsyncLifetime
 
         var ex = Assert.Throws<InvalidTokenException>(() => AgentClient.ForHost(host));
         Assert.Contains("cannot be read", ex.Message);
+        Assert.False(ex.RefusedByHost); // a local problem: the host must not be forgotten for it
     }
 
     [Fact]

@@ -209,10 +209,14 @@ public sealed partial class MainViewModel : ObservableObject
             var when = option.Host.LastSyncUtc?.ToLocalTime().ToString("g", CultureInfo.CurrentCulture) ?? Strings.T("client.status.never");
             SetStatus(Strings.T("client.status.offline", when), warning: true);
         }
+        catch (InvalidTokenException ex) when (ex.RefusedByHost)
+        {
+            _logger.LogWarning(ex, "{Address} refused this computer's token", option.Host.Address);
+            ForgetRemovedHost(option, interactive);
+        }
         catch (InvalidTokenException ex)
         {
-            SetStatus(Strings.T("client.status.removedFromHost", option.Host.DisplayName), warning: true);
-            _logger.LogWarning(ex, "{Address} refused this computer's token", option.Host.Address);
+            SetStatus(ex.Message, warning: true);
             if (interactive)
             {
                 OfferPairingAgain(option.Host);
@@ -251,12 +255,30 @@ public sealed partial class MainViewModel : ObservableObject
     private IReadOnlyCollection<string> KnownFingerprints() => _state.Hosts.Select(h => h.PinnedFingerprint).ToList();
 
     /// <summary>
-    /// The host no longer accepts this computer (removed from its devices, or its token regenerated). Pairing again
-    /// goes through approval when the agent supports it, else through a token.
+    /// The host refused this computer (removed from its devices, or its token regenerated): it leaves the list, like
+    /// "Remove host". Interactive: says so and offers to add it again; automatic: status bar and a notice only.
     /// </summary>
+    private void ForgetRemovedHost(HostOption option, bool interactive)
+    {
+        var name = option.Host.DisplayName;
+        Forget(option);
+        SetStatus(Strings.T("client.status.removedFromHost", name), warning: true);
+        if (!interactive)
+        {
+            NoticeRequested?.Invoke(Strings.T("client.status.removedFromHost", name), null);
+            return;
+        }
+
+        if (_dialogs.Confirm(Strings.T("client.dialogs.removedTitle"), Strings.T("client.dialogs.removedMessage", name)))
+        {
+            AddHost();
+        }
+    }
+
+    /// <summary>The saved token cannot be used here (e.g. it cannot be decrypted): offers to pair again.</summary>
     private void OfferPairingAgain(PairedHost host)
     {
-        if (!_dialogs.Confirm(Strings.T("client.dialogs.removedTitle"), Strings.T("client.dialogs.removedMessage", host.DisplayName)))
+        if (!_dialogs.Confirm(Strings.T("client.dialogs.invalidTokenTitle"), Strings.T("client.dialogs.pairAgain", host.DisplayName)))
         {
             return;
         }
@@ -417,10 +439,18 @@ public sealed partial class MainViewModel : ObservableObject
         {
             // The host removed this computer: respect it instead of opening anyway.
             _logger.LogWarning(ex, "{Address} refused this computer's token; not opening", host.Address);
-            SetStatus(Strings.T("client.status.removedFromHost", host.DisplayName), warning: true);
             ProgressMessage = null;
             IsBusy = false;
-            OfferPairingAgain(host);
+            if (ex.RefusedByHost && Hosts.FirstOrDefault(h => h.Host.Id == host.Id) is { } removed)
+            {
+                ForgetRemovedHost(removed, interactive: true);
+            }
+            else
+            {
+                SetStatus(ex.Message, warning: true);
+                OfferPairingAgain(host);
+            }
+
             return false;
         }
         catch (AgentException ex)
@@ -667,6 +697,12 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
+        Forget(option);
+    }
+
+    /// <summary>Removes a host from this computer: its icons, saved password and entry.</summary>
+    private void Forget(HostOption option)
+    {
         _icons.DeleteHostFiles(option.Host.Id);
         _credentials.Delete(option.Host.Address);
         _state = _state with { Hosts = _state.Hosts.Where(h => h.Id != option.Host.Id).ToList() };

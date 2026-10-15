@@ -267,7 +267,7 @@ public sealed class AgentClient : IAgentApi
         {
             throw response.StatusCode switch
             {
-                HttpStatusCode.Unauthorized => new InvalidTokenException(),
+                HttpStatusCode.Unauthorized => new InvalidTokenException { RefusedByHost = true },
                 HttpStatusCode.TooManyRequests => new TooManyAttemptsException(),
                 _ => new AgentException(await ReadErrorAsync(response, ct)),
             };

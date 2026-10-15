@@ -7,7 +7,14 @@ public class AgentException(string message, Exception? inner = null) : Exception
 
 /// <param name="message">Null: the generic "invalid or revoked token" message.</param>
 public sealed class InvalidTokenException(string? message = null, Exception? inner = null)
-    : AgentException(message ?? Strings.T("client.errors.invalidToken"), inner);
+    : AgentException(message ?? Strings.T("client.errors.invalidToken"), inner)
+{
+    /// <summary>
+    /// The host itself refused the token (HTTP 401): this computer was removed from its devices, or its token was
+    /// regenerated. False when the problem is local, e.g. a saved token this Windows user cannot decrypt.
+    /// </summary>
+    public bool RefusedByHost { get; init; }
+}
 
 public sealed class TooManyAttemptsException()
     : AgentException(Strings.T("client.errors.tooManyAttempts"));
