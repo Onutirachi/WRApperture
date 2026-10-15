@@ -78,6 +78,27 @@ public class PairingTests : IDisposable
     }
 
     [Fact]
+    public async Task Pairing_again_from_the_same_computer_replaces_its_device_and_old_token()
+    {
+        async Task<string> PairAsync(string user)
+        {
+            var response = await _factory.CreateClientFrom("192.168.0.23")
+                .PostAsJsonAsync(ApiContract.PairingRequests, new PairingRequestDto("NOTEBOOK-JOAO", user, PairingCode.NewNonce()));
+            var ticket = (await response.Content.ReadFromJsonAsync<PairingTicketDto>())!;
+            await Approver(ticket.Id).PostAsJsonAsync(ApiContract.PairingApproval(ticket.Id), new PairingDecisionDto(true));
+            return (await StatusAsync(ticket.Id))!.Token!;
+        }
+
+        var first = await PairAsync("joao");
+        var second = await PairAsync("JOAO");
+        await PairAsync("maria"); // another user of that computer is another device
+
+        Assert.Equal(["joao", "maria"], _factory.Settings.Clients.Select(c => c.Client.User!.ToLowerInvariant()).Order());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _factory.CreateAuthorizedClient(first).GetAsync(ApiContract.Apps)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await _factory.CreateAuthorizedClient(second).GetAsync(ApiContract.Apps)).StatusCode);
+    }
+
+    [Fact]
     public async Task Denied_request_creates_no_client()
     {
         var (_, ticket) = await RequestAsync();

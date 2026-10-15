@@ -211,14 +211,11 @@ public sealed partial class MainViewModel : ObservableObject
         }
         catch (InvalidTokenException ex)
         {
-            SetStatus(ex.Message, warning: true);
-            if (interactive && _dialogs.Confirm(Strings.T("client.dialogs.invalidTokenTitle"), Strings.T("client.dialogs.askNewToken", ex.Message)))
+            SetStatus(Strings.T("client.status.removedFromHost", option.Host.DisplayName), warning: true);
+            _logger.LogWarning(ex, "{Address} refused this computer's token", option.Host.Address);
+            if (interactive)
             {
-                var result = _dialogs.AddHost(option.Host.Address, option.Host.AgentPort);
-                if (result is not null)
-                {
-                    SavePaired(result, option.Host);
-                }
+                OfferPairingAgain(option.Host);
             }
         }
         catch (CertificateChangedException ex)
@@ -250,6 +247,24 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     private bool CanRefresh() => SelectedHost is not null && !IsBusy;
+
+    /// <summary>
+    /// The host no longer accepts this computer (removed from its devices, or its token regenerated). Pairing again
+    /// goes through approval when the agent supports it, else through a token.
+    /// </summary>
+    private void OfferPairingAgain(PairedHost host)
+    {
+        if (!_dialogs.Confirm(Strings.T("client.dialogs.removedTitle"), Strings.T("client.dialogs.removedMessage", host.DisplayName)))
+        {
+            return;
+        }
+
+        var result = host.Supports(AgentFeatures.Pairing) ? _dialogs.AddHost() : _dialogs.AddHost(host.Address, host.AgentPort);
+        if (result is not null)
+        {
+            SavePaired(result, host);
+        }
+    }
 
     /// <summary>What the host reported as keeping remote access from working, with where to fix it.</summary>
     private void ShowHostIssues(PairedHost host)
@@ -394,9 +409,19 @@ public sealed partial class MainViewModel : ObservableObject
             SetStatus(desktop ? Strings.T("client.status.releasedForDesktop", who) : Strings.T("client.status.releasedForApp", who), warning: false);
             return true;
         }
+        catch (InvalidTokenException ex)
+        {
+            // The host removed this computer: respect it instead of opening anyway.
+            _logger.LogWarning(ex, "{Address} refused this computer's token; not opening", host.Address);
+            SetStatus(Strings.T("client.status.removedFromHost", host.DisplayName), warning: true);
+            ProgressMessage = null;
+            IsBusy = false;
+            OfferPairingAgain(host);
+            return false;
+        }
         catch (AgentException ex)
         {
-            // Offline agent, old agent or auth problems: keep the previous behavior and just launch.
+            // Offline or old agent: keep the previous behavior and just launch.
             _logger.LogWarning(ex, "Host session check skipped for {Address}", host.Address);
             return true;
         }

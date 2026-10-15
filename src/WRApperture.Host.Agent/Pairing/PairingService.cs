@@ -147,6 +147,15 @@ internal sealed class PairingService(
 
             if (approve)
             {
+                // Pairing again from the same computer and user replaces its device (and revokes its old token).
+                foreach (var previous in settings.ListClients().Where(c =>
+                             string.Equals(c.Name, request.Name, StringComparison.OrdinalIgnoreCase) &&
+                             string.Equals(c.User ?? string.Empty, request.User ?? string.Empty, StringComparison.OrdinalIgnoreCase)))
+                {
+                    settings.RemoveClient(previous.Id);
+                    logger.LogInformation("Client {Client} ({Name}) replaced by a new pairing", previous.Id, previous.Name);
+                }
+
                 var (client, token) = settings.AddClient(request.Name, request.User);
                 request.Token = token;
                 request.State = PairingStates.Approved;
