@@ -165,7 +165,7 @@ public sealed partial class ManagerViewModel : ObservableObject
 
             var input = new EditorInput(Strings.T("manager.editor.publishTitle"), null, draft.DisplayName, draft.ExecutablePath,
                 draft.Arguments is null ? CommandLinePolicy.None : CommandLinePolicy.Required, draft.Arguments,
-                draft.IconPath, draft.IconIndex, ShowInList: true);
+                draft.IconPath, draft.IconIndex);
             if (_dialogs.EditApp(input, TrySave))
             {
                 published++;
@@ -183,7 +183,7 @@ public sealed partial class ManagerViewModel : ObservableObject
     {
         var app = SelectedApp!.App;
         var input = new EditorInput(Strings.T("manager.editor.editTitle"), app.Alias, app.DisplayName, app.RawPath ?? app.ExecutablePath,
-            app.CommandLinePolicy, app.RequiredArguments, app.IconPath, app.IconIndex, app.ShowInList, app.StartWithPrograms, app.AutoStartWith);
+            app.CommandLinePolicy, app.RequiredArguments, app.IconPath, app.IconIndex, app.StartWithPrograms, app.AutoStartWith);
         if (_dialogs.EditApp(input, TrySave))
         {
             Refresh();

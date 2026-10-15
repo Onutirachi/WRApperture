@@ -19,7 +19,6 @@ public sealed record EditorInput(
     string? Arguments,
     string IconPath,
     int IconIndex,
-    bool ShowInList,
     IReadOnlyList<string>? StartWith = null,
     bool AutoStartWith = true);
 

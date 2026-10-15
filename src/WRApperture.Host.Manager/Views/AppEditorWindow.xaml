@@ -30,8 +30,6 @@
         </DockPanel>
         <RadioButton x:Name="AnyArgs" Content="{loc:T manager.editor.anyArguments}" GroupName="Args" Margin="0,2" />
 
-        <CheckBox x:Name="ShowBox" Content="{loc:T manager.editor.showInClients}" Margin="0,12,0,0" />
-
         <!-- Programs started with the app in remote sessions -->
         <TextBlock Text="{loc:T manager.editor.startWith}" FontWeight="SemiBold" Margin="0,16,0,2" />
         <TextBlock Text="{loc:T manager.editor.startWithHint}" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,6" />

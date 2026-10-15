@@ -36,7 +36,6 @@ public partial class AppEditorWindow : Window
         NameBox.Text = input.DisplayName;
         PathBox.Text = input.ExecutablePath;
         ArgsBox.Text = input.Arguments ?? string.Empty;
-        ShowBox.IsChecked = input.ShowInList;
         (input.Policy switch
         {
             CommandLinePolicy.Required => FixedArgs,
@@ -117,7 +116,7 @@ public partial class AppEditorWindow : Window
             pathChanged && _iconPath == _input.IconPath ? 0 : _iconIndex,
             policy,
             policy == CommandLinePolicy.Required ? ArgsBox.Text.Trim() : null,
-            ShowBox.IsChecked == true,
+            ShowInList: true, // hidden apps (wrahost publish --hidden) become visible when edited here
             StartWithList.Items.Cast<string>().ToList(),
             AutoStartBox.IsChecked == true);
 

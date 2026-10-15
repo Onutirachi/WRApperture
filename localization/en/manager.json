@@ -173,7 +173,6 @@
   "editor.fixedArguments": "Always use:",
   "editor.argumentsField": "Arguments",
   "editor.anyArguments": "Accept arguments sent by the client",
-  "editor.showInClients": "Show on clients",
   "editor.startWith": "Start together",
   "editor.startWithHint": "For apps whose windows depend on another program of theirs, like a VPN whose sign-in window comes from its tray icon. Windows does not start sign-in programs in remote app sessions; the agent starts these.",
   "editor.autoStartWith": "Start this app's sign-in programs (from its folder)",

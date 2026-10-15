@@ -173,7 +173,6 @@
   "editor.fixedArguments": "Sempre usar:",
   "editor.argumentsField": "Argumentos",
   "editor.anyArguments": "Aceitar argumentos enviados pelo cliente",
-  "editor.showInClients": "Mostrar nos clientes",
   "editor.startWith": "Iniciar junto",
   "editor.startWithHint": "Para apps cujas janelas dependem de outro programa deles, como uma VPN cuja janela de login vem do ícone da bandeja. O Windows não inicia os programas de inicialização nas sessões de apps remotos; o agente inicia estes.",
   "editor.autoStartWith": "Iniciar os programas de inicialização deste app (da pasta dele)",
