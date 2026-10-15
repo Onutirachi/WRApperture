@@ -29,29 +29,20 @@
                     <ComboBox Width="240" ItemsSource="{Binding Hosts}" SelectedItem="{Binding SelectedHost}"
                               DisplayMemberPath="Label" IsEnabled="{Binding HasHost}" AutomationProperties.Name="{loc:T client.main.selectedHost}" />
                     <Button Content="{loc:T client.main.addHost}" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding AddHostCommand}" />
-                    <Button Content="{loc:T client.main.refresh}" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding RefreshCommand}" ToolTip="{loc:T client.main.refreshTip}" />
                     <Button x:Name="MoreButton" Content="⋯" Style="{StaticResource Secondary}" Margin="8,0,0,0" Padding="10,6" IsEnabled="{Binding HasHost}"
                             ToolTip="{loc:T client.main.moreOptions}" Click="OnMoreClick" AutomationProperties.Name="{loc:T client.main.moreOptions}">
                         <Button.ContextMenu>
+                            <!-- Everything about the selected host -->
                             <ContextMenu>
+                                <MenuItem Header="{Binding HostVersionText}" IsEnabled="False" />
+                                <Separator />
                                 <MenuItem Header="{loc:T client.main.saveCredentials}" Command="{Binding SaveCredentialsCommand}" />
                                 <MenuItem Header="{loc:T client.main.deleteCredentials}" Command="{Binding DeleteCredentialsCommand}" />
-                                <Separator />
-                                <MenuItem Header="{loc:T client.main.configureSigning}" Command="{Binding ConfigureSigningCommand}" />
                                 <MenuItem Header="{loc:T client.main.askBeforeRelease}" IsCheckable="True"
                                           IsChecked="{Binding AskBeforeReleasingSession, Mode=TwoWay}"
                                           ToolTip="{loc:T client.main.askBeforeReleaseTip}" />
                                 <Separator />
-                                <MenuItem Header="{loc:T client.main.closeToTray}" IsCheckable="True"
-                                          IsChecked="{Binding CloseToTray, Mode=TwoWay}"
-                                          ToolTip="{loc:T client.main.closeToTrayTip}" />
-                                <MenuItem Header="{loc:T client.main.startWithWindows}" IsCheckable="True"
-                                          IsChecked="{Binding StartWithWindows, Mode=TwoWay}" />
-                                <Separator />
-                                <MenuItem Header="{loc:T client.main.autoUpdate}" IsCheckable="True"
-                                          IsChecked="{Binding AutoUpdate, Mode=TwoWay}"
-                                          ToolTip="{loc:T client.main.autoUpdateTip}" />
-                                <MenuItem Header="{loc:T client.main.checkUpdates}" Command="{Binding CheckForUpdatesCommand}" />
+                                <MenuItem Header="{loc:T client.main.syncNow}" Command="{Binding RefreshCommand}" InputGestureText="F5" />
                                 <MenuItem Header="{loc:T client.main.updateHost}" Command="{Binding UpdateHostCommand}"
                                           Visibility="{Binding IsHostOutdated, Converter={StaticResource BoolToVis}}"
                                           ToolTip="{loc:T client.main.updateHostTip}" ToolTipService.ShowOnDisabled="True" />
@@ -62,7 +53,8 @@
                     </Button>
                 </StackPanel>
 
-                <Grid Grid.Column="2" Width="220">
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Grid Width="220">
                     <TextBox x:Name="Search" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:T client.main.searchApps}" />
                     <TextBlock Text="{loc:T client.main.searchPlaceholder}" Foreground="{DynamicResource Muted}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
                         <TextBlock.Style>
@@ -77,6 +69,33 @@
                         </TextBlock.Style>
                     </TextBlock>
                 </Grid>
+
+                <!-- This computer's WRApperture settings -->
+                <Button x:Name="SettingsButton" Content="⚙" Style="{StaticResource Secondary}" Margin="8,0,0,0" Padding="10,6"
+                        ToolTip="{loc:T client.main.settings}" Click="OnMoreClick" AutomationProperties.Name="{loc:T client.main.settings}">
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="{loc:T client.main.configureSigning}" Command="{Binding ConfigureSigningCommand}" />
+                            <Separator />
+                            <MenuItem Header="{loc:T client.main.closeToTray}" IsCheckable="True"
+                                      IsChecked="{Binding CloseToTray, Mode=TwoWay}"
+                                      ToolTip="{loc:T client.main.closeToTrayTip}" />
+                            <MenuItem Header="{loc:T client.main.startWithWindows}" IsCheckable="True"
+                                      IsChecked="{Binding StartWithWindows, Mode=TwoWay}" />
+                            <Separator />
+                            <MenuItem x:Name="ThemeItem" Header="{loc:T client.main.theme}" />
+                            <MenuItem x:Name="LanguageItem" Header="{loc:T common.language.menu}" />
+                            <Separator />
+                            <MenuItem Header="{loc:T client.main.autoUpdate}" IsCheckable="True"
+                                      IsChecked="{Binding AutoUpdate, Mode=TwoWay}"
+                                      ToolTip="{loc:T client.main.autoUpdateTip}" />
+                            <MenuItem Header="{loc:T client.main.checkUpdates}" Command="{Binding CheckForUpdatesCommand}" />
+                            <Separator />
+                            <MenuItem Header="{Binding ClientVersionText}" IsEnabled="False" />
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+                </StackPanel>
             </Grid>
         </Border>
 

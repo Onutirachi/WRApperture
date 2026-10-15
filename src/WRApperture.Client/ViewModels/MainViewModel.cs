@@ -19,6 +19,7 @@ using WRApperture.Client.Core.Updates;
 using WRApperture.Client.Services;
 using WRApperture.Shared;
 using WRApperture.Shared.Localization;
+using WRApperture.Shared.Updates;
 
 namespace WRApperture.Client.ViewModels;
 
@@ -117,6 +118,7 @@ public sealed partial class MainViewModel : ObservableObject
     partial void OnSelectedHostChanged(HostOption? value)
     {
         OnPropertyChanged(nameof(AskBeforeReleasingSession));
+        OnPropertyChanged(nameof(HostVersionText));
         ShowCachedApps();
         EvaluateHostUpdate();
         if (value is not null)
@@ -144,8 +146,47 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>The list refreshes by itself this often (and when the window is activated after <see cref="StaleAfter"/>).</summary>
+    public static readonly TimeSpan AutoSyncInterval = TimeSpan.FromMinutes(5);
+
+    public static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(1);
+
+    /// <summary>"Sync now" and F5: like the automatic sync, but asks what to do about a revoked token or a changed certificate.</summary>
     [RelayCommand(CanExecute = nameof(CanRefresh))]
-    private async Task RefreshAsync()
+    private Task RefreshAsync() => SyncAsync(interactive: true);
+
+    /// <summary>Background syncs (runs until the app exits). They never open dialogs: problems only show in the status bar.</summary>
+    public async void StartAutoSync()
+    {
+        while (true)
+        {
+            await Task.Delay(AutoSyncInterval);
+            if (CanRefresh())
+            {
+                await SyncAsync(interactive: false);
+            }
+        }
+    }
+
+    /// <summary>Coming back to the window shows fresh data.</summary>
+    public void OnWindowActivated()
+    {
+        if (SelectedHost is { Host.LastSyncUtc: var last } && CanRefresh() &&
+            (last is null || DateTimeOffset.UtcNow - last.Value > StaleAfter))
+        {
+            _ = SyncAsync(interactive: false);
+        }
+    }
+
+    /// <summary>"PC-SALA · version 0.17.0" for the host menu.</summary>
+    public string HostVersionText => SelectedHost is not { } option ? string.Empty
+        : option.Host.AgentVersion is { } version ? Strings.T("client.main.hostVersion", option.Label, version)
+        : Strings.T("client.main.hostVersionUnknown", option.Label);
+
+    /// <summary>"WRApperture 0.17.0" for the settings menu.</summary>
+    public string ClientVersionText => Strings.T("client.main.clientVersion", ProductVersion.Format(_updates.Current));
+
+    private async Task SyncAsync(bool interactive)
     {
         if (SelectedHost is not { } option)
         {
@@ -171,7 +212,7 @@ public sealed partial class MainViewModel : ObservableObject
         catch (InvalidTokenException ex)
         {
             SetStatus(ex.Message, warning: true);
-            if (_dialogs.Confirm(Strings.T("client.dialogs.invalidTokenTitle"), Strings.T("client.dialogs.askNewToken", ex.Message)))
+            if (interactive && _dialogs.Confirm(Strings.T("client.dialogs.invalidTokenTitle"), Strings.T("client.dialogs.askNewToken", ex.Message)))
             {
                 var result = _dialogs.AddHost(option.Host.Address, option.Host.AgentPort);
                 if (result is not null)
@@ -185,12 +226,12 @@ public sealed partial class MainViewModel : ObservableObject
             SetStatus(Strings.T("client.status.hostChanged"), warning: true);
             var message = Strings.T("client.dialogs.hostChangedMessage", ex.Message,
                 CertificateFingerprint.Format(option.Host.PinnedFingerprint), CertificateFingerprint.Format(ex.ObservedFingerprint));
-            if (_dialogs.Confirm(Strings.T("client.dialogs.hostChangedTitle"), message))
+            if (interactive && _dialogs.Confirm(Strings.T("client.dialogs.hostChangedTitle"), message))
             {
                 ReplaceHost(option.Host with { PinnedFingerprint = ex.ObservedFingerprint });
                 _logger.LogWarning("User accepted new fingerprint for {Address}", option.Host.Address);
                 IsBusy = false;
-                await RefreshAsync();
+                await SyncAsync(interactive);
             }
         }
         catch (AgentException ex)
@@ -676,6 +717,7 @@ public sealed partial class MainViewModel : ObservableObject
         if (ReferenceEquals(option, SelectedHost))
         {
             ShowCachedApps();
+            OnPropertyChanged(nameof(HostVersionText));
         }
     }
 

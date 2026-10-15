@@ -39,6 +39,10 @@ public static class ThemeMenu
         {
             context.Opened += (_, _) => Refresh();
         }
+        else if (menu is MenuItem submenu)
+        {
+            submenu.SubmenuOpened += (_, _) => Refresh();
+        }
 
         Refresh();
     }

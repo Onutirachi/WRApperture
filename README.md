@@ -105,19 +105,20 @@ dotnet run --project src/WRApperture.Client
    - Logo depois, o cliente pede o usuário e a senha do Windows daquele PC, já sugerindo o usuário certo (o e-mail, no caso de conta Microsoft).
    - Por VPN ou outra rede, use **Adicionar manualmente** com o endereço, a porta `5080` e o token (**Token manual…** no app do host). Nesse caso, confira o fingerprint exibido no app do host.
 3. Dê duplo clique em um app (ou selecione e tecle Enter): só a janela dele abre. Vários apps compartilham a mesma sessão.
-4. Opcional: no menu **⋯**, use **Salvar credenciais do host…** para abrir sem digitar a senha. Com o botão direito em um app, use **Criar atalho na área de trabalho**, **Adicionar ao Menu Iniciar** (o app aparece na busca do Windows e pode ser fixado) ou **Renomear…** (F2). O novo nome vale só neste computador; o PC remoto não muda.
+4. O menu **⋯** reúne o que é do host selecionado: a versão dele, **Salvar credenciais do host…**, **Sincronizar agora** (F5), **Atualizar o PC remoto** e **Remover host**. A lista de apps se atualiza sozinha a cada 5 minutos e ao voltar para a janela. As configurações deste computador ficam no botão **⚙**: bandeja, iniciar com o Windows, tema, idioma, atualizações e a versão do cliente.
+   Opcional: no menu **⋯**, use **Salvar credenciais do host…** para abrir sem digitar a senha. Com o botão direito em um app, use **Criar atalho na área de trabalho**, **Adicionar ao Menu Iniciar** (o app aparece na busca do Windows e pode ser fixado) ou **Renomear…** (F2). O novo nome vale só neste computador; o PC remoto não muda.
 5. O primeiro bloco da grade, **Área de trabalho**, abre o PC remoto inteiro em tela cheia, com as mesmas credenciais e sem o alerta de segurança.
    - Se você já estiver logado lá, a sessão é reaproveitada com os programas abertos.
    - Apps remotos abertos são fechados antes, porque o Windows não mistura os dois modos.
    - Outro usuário logado é desconectado e os programas dele continuam abertos.
    - Essa preparação exige o host 0.6.0 ou mais recente. Com um host mais antigo, o Windows pergunta como numa conexão remota comum.
-6. O visual segue o modo claro/escuro do Windows. Para fixar um tema, use o menu **⋯** (cliente) ou o botão **◐** (app do host).
-7. O idioma segue o idioma de exibição do Windows (hoje português e inglês; os demais usam inglês). Para escolher outro, use **Idioma (Language)…** no menu **⋯** do cliente ou no botão **◐** do app do host. Para acrescentar um idioma, veja [localization/README.md](localization/README.md).
-8. O cliente fica na bandeja do Windows (perto do relógio). O botão direito no ícone abre qualquer app direto (com vários hosts, um submenu por host), e fechar a janela mantém o cliente ali. Use **Sair** para encerrar. No menu **⋯**, escolha se fechar mantém o cliente na bandeja e se ele deve **Iniciar com o Windows**.
+6. O visual segue o modo claro/escuro do Windows. Para fixar um tema, use o botão **⚙** (cliente) ou o botão **◐** (app do host).
+7. O idioma segue o idioma de exibição do Windows (hoje português e inglês; os demais usam inglês). Para escolher outro, use **Idioma (Language)…** no botão **⚙** do cliente ou no botão **◐** do app do host. Para acrescentar um idioma, veja [localization/README.md](localization/README.md).
+8. O cliente fica na bandeja do Windows (perto do relógio). O botão direito no ícone abre qualquer app direto (com vários hosts, um submenu por host), e fechar a janela mantém o cliente ali. Use **Sair** para encerrar. No botão **⚙**, escolha se fechar mantém o cliente na bandeja e se ele deve **Iniciar com o Windows**.
 9. Os atalhos criados pelo cliente se chamam "<app> - <host>" (o mesmo app em dois hosts gera dois atalhos distintos) e levam um selo azul do WRApperture no canto, para diferenciá-los dos apps instalados no próprio computador. Os desenhos dos ícones ficam em `assets/icons/*.svg`; depois de mudar algum, rode `scripts/build-icons.ps1`.
 
 **Abrir sem alerta de segurança.** Desde a atualização de abril de 2026, o Windows mostra um alerta a cada abertura de um arquivo `.rdp` não assinado.
-- Ao abrir um app pela primeira vez, o cliente oferece **"Abrir apps sem alerta"**. Também está no menu **⋯**.
+- Ao abrir um app pela primeira vez, o cliente oferece **"Abrir apps sem alerta"**. Também está no botão **⚙**.
 - Ele pede administrador **uma única vez** e configura este PC para assinar as conexões que o próprio WRApperture cria:
   - um certificado de máquina, com a chave liberada só para o seu usuário;
   - uma cópia no Raiz, restrita a "Autenticação de Área de Trabalho Remota", para não servir para assinar programas;

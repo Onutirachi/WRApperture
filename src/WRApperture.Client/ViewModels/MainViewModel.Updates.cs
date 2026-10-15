@@ -17,11 +17,15 @@ namespace WRApperture.Client.ViewModels;
 /// </summary>
 public sealed partial class MainViewModel
 {
-    private static readonly TimeSpan FirstCheckDelay = TimeSpan.FromMinutes(1);
+    /// <summary>Soon after start, so a host left behind by an update is noticed right away.</summary>
+    private static readonly TimeSpan FirstCheckDelay = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan BusyRetryDelay = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan NoticeDelay = TimeSpan.FromSeconds(3);
 
     private bool _installingClient;
+
+    /// <summary>Hosts already asked to update by themselves in this run (never twice).</summary>
+    private readonly HashSet<Guid> _autoUpdatedHosts = [];
 
     /// <summary>A notification-area notice; the action (if any) runs when it is clicked.</summary>
     public event Action<string, Action?>? NoticeRequested;
@@ -91,6 +95,11 @@ public sealed partial class MainViewModel
         if (manual)
         {
             SetStatus(Strings.T("client.updates.checking"), warning: false);
+            if (CanRefresh())
+            {
+                // The host's current version, not the one of the last sync.
+                await SyncAsync(interactive: false);
+            }
         }
 
         ReleaseInfo? latest;
@@ -221,19 +230,36 @@ public sealed partial class MainViewModel
         EvaluateHostUpdate();
     }
 
-    /// <summary>Compares the selected host's agent (as of its last sync) with the latest release.</summary>
-    private void EvaluateHostUpdate()
+    /// <summary>Requests the update only when the host's own setting allows unattended updates.</summary>
+    private async Task AutoUpdateHostAsync(Core.Model.PairedHost host)
     {
-        var state = SelectedHost is { } option ? _updates.HostState(option.Host) : HostUpdateState.Current;
-        IsHostOutdated = state != HostUpdateState.Current;
-        CanUpdateHost = state == HostUpdateState.CanUpdate;
+        try
+        {
+            using var agent = _agents(host);
+            var status = await agent.GetHostUpdateStatusAsync();
+            if (!status.AutoUpdate)
+            {
+                _logger.LogInformation("{Address} is outdated but its automatic updates are off; not updating it", host.Address);
+                ShowManualHostUpdateWarning();
+                return;
+            }
+        }
+        catch (AgentException ex)
+        {
+            _logger.LogWarning(ex, "Could not read the update status of {Address}", host.Address);
+            ShowManualHostUpdateWarning();
+            return;
+        }
+
+        if (SelectedHost?.Host.Id == host.Id && CanUpdateHost)
+        {
+            await UpdateHostAsync();
+        }
     }
 
-    /// <summary>After a sync or a check: warns in the status bar when the selected host is outdated.</summary>
-    private void ShowHostUpdateWarning()
+    private void ShowManualHostUpdateWarning()
     {
-        EvaluateHostUpdate();
-        if (!IsHostOutdated || SelectedHost is not { } option || _updates.Latest is not { } latest)
+        if (SelectedHost is not { } option || _updates.Latest is not { } latest || !IsHostOutdated)
         {
             return;
         }
@@ -242,5 +268,34 @@ public sealed partial class MainViewModel
         SetStatus(CanUpdateHost
             ? Strings.T("client.updates.hostOutdated", name, version, newest)
             : Strings.T("client.updates.hostOutdatedManual", name, version, newest), warning: true);
+    }
+
+    /// <summary>Compares the selected host's agent (as of its last sync) with the latest release.</summary>
+    private void EvaluateHostUpdate()
+    {
+        var state = SelectedHost is { } option ? _updates.HostState(option.Host) : HostUpdateState.Current;
+        IsHostOutdated = state != HostUpdateState.Current;
+        CanUpdateHost = state == HostUpdateState.CanUpdate;
+    }
+
+    /// <summary>
+    /// After a sync or a check: when the selected host is outdated, asks it to update by itself if both ends have
+    /// automatic updates on, otherwise warns in the status bar.
+    /// </summary>
+    private void ShowHostUpdateWarning()
+    {
+        EvaluateHostUpdate();
+        if (!IsHostOutdated || SelectedHost is not { } option || _updates.Latest is not { } latest)
+        {
+            return;
+        }
+
+        if (CanUpdateHost && AutoUpdate && _autoUpdatedHosts.Add(option.Host.Id))
+        {
+            _ = AutoUpdateHostAsync(option.Host);
+            return;
+        }
+
+        ShowManualHostUpdateWarning();
     }
 }

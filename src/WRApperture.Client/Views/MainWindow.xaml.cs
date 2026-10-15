@@ -13,14 +13,17 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Theme and language choices go right before the last group ("Remove host").
-        var menu = MoreButton.ContextMenu!;
-        var lastSeparator = menu.Items.IndexOf(menu.Items.OfType<Separator>().Last());
-        var language = new MenuItem { Header = WRApperture.Shared.Localization.Strings.T("common.language.menu") };
-        language.Click += (_, _) => LanguageWindow.Choose(this, ((App)Application.Current).Restart);
-        menu.Items.Insert(lastSeparator, language);
-        ThemeMenu.AddTo(menu, lastSeparator);
-        menu.Items.Insert(lastSeparator, new Separator());
+        ThemeMenu.AddTo(ThemeItem);
+        LanguageItem.Click += (_, _) => LanguageWindow.Choose(this, ((App)Application.Current).Restart);
+        Activated += (_, _) => Vm.OnWindowActivated();
+        PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key == Key.F5 && Vm.RefreshCommand.CanExecute(null))
+            {
+                e.Handled = true;
+                Vm.RefreshCommand.Execute(null);
+            }
+        };
     }
 
     private MainViewModel Vm => (MainViewModel)DataContext;

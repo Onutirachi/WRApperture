@@ -145,6 +145,8 @@ public class HostSyncTests : IDisposable
 
         public Task<HostInfoDto> GetHostInfoAsync(CancellationToken ct = default) => Task.FromResult(Info);
 
+        public Task<UpdateStatusDto> GetHostUpdateStatusAsync(CancellationToken ct = default) => throw new NotSupportedException();
+
         public Task<IReadOnlyList<AppSummaryDto>> GetAppsAsync(CancellationToken ct = default) =>
             ThrowOnApps is not null
                 ? Task.FromException<IReadOnlyList<AppSummaryDto>>(ThrowOnApps)

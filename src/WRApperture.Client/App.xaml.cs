@@ -101,6 +101,7 @@ public partial class App : Application
         vm.NoticeRequested += (text, onClick) => _tray.ShowNotice("WRApperture", text, onClick);
         vm.ExitRequested += ExitApp;
         vm.StartUpdateChecks();
+        vm.StartAutoSync();
 
         if (!startHidden)
         {

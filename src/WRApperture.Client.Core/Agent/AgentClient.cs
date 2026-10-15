@@ -36,6 +36,9 @@ public interface IAgentApi : IDisposable
     /// Only for agents that announce <see cref="AgentFeatures.SelfUpdate"/>.
     /// </summary>
     Task<UpdateRequestResultDto> RequestHostUpdateAsync(CancellationToken ct = default);
+
+    /// <summary>The host's version and whether it updates itself. Only for agents that announce <see cref="AgentFeatures.SelfUpdate"/>.</summary>
+    Task<UpdateStatusDto> GetHostUpdateStatusAsync(CancellationToken ct = default);
 }
 
 /// <summary>Talks to a host agent over HTTPS with certificate pinning.</summary>
@@ -237,6 +240,13 @@ public sealed class AgentClient : IAgentApi
         // The agent asks GitHub before answering (up to 30 s); the download itself happens after the answer.
         using var response = await SendAsync(new HttpRequestMessage(HttpMethod.Post, ApiContract.Update), ct, timeout: TimeSpan.FromSeconds(40));
         return await response.Content.ReadFromJsonAsync<UpdateRequestResultDto>(ct)
+               ?? throw new AgentException(Strings.T("client.errors.invalidResponse"));
+    }
+
+    public async Task<UpdateStatusDto> GetHostUpdateStatusAsync(CancellationToken ct = default)
+    {
+        using var response = await SendAsync(new HttpRequestMessage(HttpMethod.Get, ApiContract.Update), ct);
+        return await response.Content.ReadFromJsonAsync<UpdateStatusDto>(ct)
                ?? throw new AgentException(Strings.T("client.errors.invalidResponse"));
     }
 
