@@ -1,0 +1,37 @@
+<Window x:Class="WRApperture.Host.Manager.Views.PairingApprovalWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:WRApperture.Ui;assembly=WRApperture.Ui"
+        Title="{loc:T manager.approval.title}" Width="480" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen" Topmost="True" ShowInTaskbar="True"
+        Style="{StaticResource BaseWindow}">
+    <StackPanel Margin="22">
+        <TextBlock Text="{loc:T manager.approval.heading}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
+
+        <!-- Loading / no longer pending -->
+        <TextBlock x:Name="MessageText" Margin="0,14,0,0" TextWrapping="Wrap" Text="{loc:T manager.approval.loading}" />
+
+        <StackPanel x:Name="DetailsPanel" Visibility="Collapsed">
+            <TextBlock x:Name="ClientText" FontSize="20" FontWeight="SemiBold" Margin="0,14,0,0" TextWrapping="Wrap" />
+            <TextBlock x:Name="OriginText" Foreground="{DynamicResource Muted}" Margin="0,2,0,0" TextWrapping="Wrap" />
+
+            <TextBlock Text="{loc:T manager.approval.codeLabel}" Margin="0,16,0,4" />
+            <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="12,8"
+                    HorizontalAlignment="Left">
+                <TextBlock x:Name="CodeText" FontFamily="Consolas" FontSize="28" FontWeight="SemiBold" />
+            </Border>
+            <TextBlock Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap" Text="{loc:T manager.approval.codeHint}" />
+
+            <Border Background="{DynamicResource WarningBackground}" CornerRadius="4" Padding="10" Margin="0,14,0,0">
+                <TextBlock Foreground="{DynamicResource Warning}" TextWrapping="Wrap" Text="{loc:T manager.approval.effect}" />
+            </Border>
+
+            <TextBlock x:Name="ExpiresText" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,10,0,0" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+            <Button x:Name="DenyButton" Content="{loc:T manager.approval.deny}" Style="{StaticResource Secondary}" IsCancel="True" Click="OnDeny" />
+            <Button x:Name="AllowButton" Content="{loc:T manager.approval.allow}" Style="{StaticResource Primary}" Margin="8,0,0,0" IsEnabled="False" Click="OnAllow" />
+        </StackPanel>
+    </StackPanel>
+</Window>

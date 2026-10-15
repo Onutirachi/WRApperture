@@ -48,6 +48,15 @@ public sealed record PairedHost
 
     /// <summary>The agent's version on the last sync ("0.15.0"); null before the first sync after 0.15.0.</summary>
     public string? AgentVersion { get; init; }
+
+    /// <summary>What kept remote access from working on the last sync (<c>HostIssues</c> codes).</summary>
+    public IReadOnlyList<string> Issues { get; init; } = [];
+
+    /// <summary>The user name the host suggests for signing in ("PC\user" or a Microsoft account e-mail).</summary>
+    public string? SuggestedUser { get; init; }
+
+    /// <summary>The suggested user is a Microsoft account: the password, not the PIN, signs in.</summary>
+    public bool MicrosoftAccount { get; init; }
     public DateTimeOffset? LastSyncUtc { get; init; }
 }
 

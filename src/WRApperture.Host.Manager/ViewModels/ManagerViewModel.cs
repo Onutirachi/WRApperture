@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using WRApperture.Host.Core;
+using WRApperture.Host.Core.Abstractions;
 using WRApperture.Host.Core.Agent;
 using WRApperture.Host.Core.Errors;
 using WRApperture.Host.Core.Models;
@@ -29,7 +30,8 @@ public sealed class AppItemViewModel(PublishedApp app, ImageSource? icon)
     } + (App.ShowInList ? string.Empty : "  ·  " + Strings.T("manager.app.hidden"));
 }
 
-public sealed record ReadinessItem(string Description, bool IsOk, string Detail);
+/// <summary>A client paired by approval (it has its own token).</summary>
+public sealed record DeviceItem(Guid Id, string Name, string Details);
 
 public sealed partial class ManagerViewModel : ObservableObject
 {
@@ -38,6 +40,7 @@ public sealed partial class ManagerViewModel : ObservableObject
     private readonly IAppDiscovery _discovery;
     private readonly IIconProvider _icons;
     private readonly IHostPreparation _preparation;
+    private readonly ILocalAccounts _accounts;
     private readonly IAgentSettingsStore _agentSettings;
     private readonly IAgentService _agent;
     private readonly IManagerDialogs _dialogs;
@@ -45,7 +48,7 @@ public sealed partial class ManagerViewModel : ObservableObject
     private readonly ILogger<ManagerViewModel> _logger;
 
     public ManagerViewModel(IAppPublisher publisher, IAppSourceInspector inspector, IAppDiscovery discovery, IIconProvider icons,
-        IHostPreparation preparation, IAgentSettingsStore agentSettings, IAgentService agent, IManagerDialogs dialogs,
+        IHostPreparation preparation, ILocalAccounts accounts, IAgentSettingsStore agentSettings, IAgentService agent, IManagerDialogs dialogs,
         IUpdateChecker updates, ILogger<ManagerViewModel> logger, bool isAdmin)
     {
         _updates = updates;
@@ -54,6 +57,7 @@ public sealed partial class ManagerViewModel : ObservableObject
         _discovery = discovery;
         _icons = icons;
         _preparation = preparation;
+        _accounts = accounts;
         _agentSettings = agentSettings;
         _agent = agent;
         _dialogs = dialogs;
@@ -66,13 +70,13 @@ public sealed partial class ManagerViewModel : ObservableObject
     public bool IsReadOnly => !IsAdmin;
 
     public ObservableCollection<AppItemViewModel> Apps { get; } = [];
-    public ObservableCollection<ReadinessItem> Readiness { get; } = [];
+    public ObservableCollection<DeviceItem> Devices { get; } = [];
+    public bool HasDevices => Devices.Count > 0;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(EditCommand), nameof(RemoveCommand))]
     private AppItemViewModel? _selectedApp;
 
-    [ObservableProperty] private bool _hasPendingReadiness;
     [ObservableProperty] private string _agentState = string.Empty;
     [ObservableProperty] private bool _agentInstalled;
     [ObservableProperty] private string _port = string.Empty;
@@ -95,27 +99,27 @@ public sealed partial class ManagerViewModel : ObservableObject
 
         OnPropertyChanged(nameof(HasNoApps));
 
-        Readiness.Clear();
-        foreach (var check in _preparation.Check())
-        {
-            Readiness.Add(new ReadinessItem(check.Description, check.State == ReadinessState.Ok,
-                check.State switch
-                {
-                    // Raw values ("0", "1") mean nothing to users; only the edition is worth showing when OK.
-                    ReadinessState.Ok => check.Id == ReadinessCheckId.Edition ? check.CurrentValue : string.Empty,
-                    ReadinessState.NotSupported => Strings.T("manager.readiness.notSupported", check.CurrentValue),
-                    _ => Strings.T("manager.readiness.pending", check.CurrentValue),
-                }));
-        }
-
-        HasPendingReadiness = Readiness.Any(r => !r.IsOk);
+        RefreshReadiness();
 
         var status = _agent.GetStatus();
         AgentState = status.Text;
         AgentInstalled = status.Installed;
         var settings = _agentSettings.Load();
         Port = settings.Port.ToString();
-        Paired = settings.IsPaired ? Strings.T("manager.connection.pairedYes") : Strings.T("manager.connection.pairedNo");
+        var clients = _agentSettings.ListClients();
+        Devices.Clear();
+        foreach (var client in clients)
+        {
+            var date = client.CreatedUtc.ToLocalTime().ToString("d", System.Globalization.CultureInfo.CurrentCulture);
+            Devices.Add(new DeviceItem(client.Id, client.Name, string.IsNullOrEmpty(client.User)
+                ? Strings.T("manager.devices.details", date)
+                : Strings.T("manager.devices.detailsUser", client.User, date)));
+        }
+
+        OnPropertyChanged(nameof(HasDevices));
+        Paired = clients.Count > 0 ? Strings.T("manager.connection.pairedDevices", clients.Count)
+            : settings.IsPaired ? Strings.T("manager.connection.pairedYes")
+            : Strings.T("manager.connection.pairedNo");
         Fingerprint = _agent.Fingerprint(settings.CertificateThumbprint) ?? Strings.T("manager.connection.fingerprintPending");
         var ips = _agent.Ipv4Addresses();
         Addresses = ips.Count == 0 ? Strings.T("manager.connection.noNetwork") : string.Join(", ", ips);
@@ -220,9 +224,6 @@ public sealed partial class ManagerViewModel : ObservableObject
     }
 
     [RelayCommand(CanExecute = nameof(IsAdmin))]
-    private void Prepare() => Run(() => _preparation.Prepare(), Strings.T("manager.status.prepared"));
-
-    [RelayCommand(CanExecute = nameof(IsAdmin))]
     private void NewToken()
     {
         if (_agentSettings.Load().IsPaired &&
@@ -237,6 +238,18 @@ public sealed partial class ManagerViewModel : ObservableObject
         {
             _dialogs.ShowToken(new TokenInfo(token, Port, Addresses, Fingerprint));
         }
+    }
+
+    [RelayCommand(CanExecute = nameof(IsAdmin))]
+    private void RemoveDevice(DeviceItem? device)
+    {
+        if (device is null ||
+            !_dialogs.Confirm(Strings.T("manager.devices.removeTitle"), Strings.T("manager.devices.removeConfirm", device.Name)))
+        {
+            return;
+        }
+
+        Run(() => _agentSettings.RemoveClient(device.Id), Strings.T("manager.status.deviceRemoved", device.Name));
     }
 
     [RelayCommand(CanExecute = nameof(IsAdmin))]

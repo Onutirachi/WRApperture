@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using WRApperture.Client.Core;
 using WRApperture.Client.Core.Agent;
 using WRApperture.Client.Core.Credentials;
+using WRApperture.Client.Core.Discovery;
 using WRApperture.Client.Core.Launch;
 using WRApperture.Client.Core.Model;
 using WRApperture.Client.Core.Signing;
@@ -71,6 +72,7 @@ public partial class App : Application
             .AddSingleton<HostSync>()
             .AddSingleton<IUpdateChecker>(_ => UpdateChecker.CreateDefault())
             .AddSingleton<ClientUpdates>()
+            .AddSingleton<IHostDiscovery>(sp => new HostDiscovery(logger: sp.GetRequiredService<ILogger<HostDiscovery>>()))
             .AddSingleton<IDialogService, DialogService>()
             .AddSingleton(new StartupRegistration())
             .AddSingleton<MainViewModel>()

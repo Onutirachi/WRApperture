@@ -10,6 +10,9 @@ namespace WRApperture.Client.Core.Agent;
 
 public sealed record PairingResult(HostInfoDto Host, string ObservedFingerprint);
 
+/// <summary>A pairing request waiting for the host's answer. <see cref="Code"/> must match the host's screen.</summary>
+public sealed record PendingPairing(string Address, int AgentPort, string Id, string Code, string ObservedFingerprint, TimeSpan ExpiresIn);
+
 public sealed record IconResult(bool NotModified, byte[]? Png, string? ETag);
 
 /// <summary>Read operations of the agent API (seam for tests).</summary>
@@ -81,6 +84,76 @@ public sealed class AgentClient : IAgentApi
     {
         var validator = CertificatePinValidator.ForPairing();
         using var client = new AgentClient(CreateHttp(address, agentPort, token, validator), validator, address, agentPort);
+        return await client.CompletePairingAsync(ct);
+    }
+
+    /// <summary>How often <see cref="WaitForApprovalAsync"/> asks for the answer.</summary>
+    public static readonly TimeSpan ApprovalPollInterval = TimeSpan.FromSeconds(1.5);
+
+    /// <summary>
+    /// Pairing by approval (agents announcing <see cref="AgentFeatures.Pairing"/>): asks the host, whose screen then
+    /// shows who asks and the verification code. The code is derived from the certificate this connection saw.
+    /// </summary>
+    public static async Task<PendingPairing> RequestPairingAsync(string address, int agentPort, string clientName, string? clientUser,
+        CancellationToken ct = default)
+    {
+        var validator = CertificatePinValidator.ForPairing();
+        using var client = new AgentClient(CreateHttp(address, agentPort, null, validator), validator, address, agentPort);
+        var nonce = PairingCode.NewNonce();
+        using var response = await client.SendRawAsync(new HttpRequestMessage(HttpMethod.Post, ApiContract.PairingRequests)
+        {
+            Content = JsonContent.Create(new PairingRequestDto(clientName, clientUser, nonce)),
+        }, ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            // The agent's message says what to do (sign in at the host, wait, use a token...).
+            throw new PairingRefusedException(await ReadErrorAsync(response, ct));
+        }
+
+        var ticket = await response.Content.ReadFromJsonAsync<PairingTicketDto>(ct)
+                     ?? throw new AgentException(Strings.T("client.errors.invalidResponse"));
+        var observed = validator.Observed ?? throw new AgentException(Strings.T("client.errors.invalidResponse"));
+        return new PendingPairing(address, agentPort, ticket.Id, PairingCode.Compute(observed, nonce), observed,
+            TimeSpan.FromSeconds(ticket.ExpiresInSeconds));
+    }
+
+    /// <summary>Waits for the host's answer; returns the new token, or throws <see cref="PairingRefusedException"/>.</summary>
+    public static async Task<string> WaitForApprovalAsync(PendingPairing pairing, CancellationToken ct = default)
+    {
+        // Same certificate as the request: the code the user compared belongs to it.
+        var validator = CertificatePinValidator.Pinned(pairing.ObservedFingerprint);
+        using var client = new AgentClient(CreateHttp(pairing.Address, pairing.AgentPort, null, validator), validator,
+            pairing.Address, pairing.AgentPort);
+        while (true)
+        {
+            using var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, ApiContract.PairingRequest(pairing.Id)), ct,
+                allowNotFound: true);
+            var status = response.StatusCode == HttpStatusCode.NotFound
+                ? new PairingStatusDto(PairingStates.Expired)
+                : await response.Content.ReadFromJsonAsync<PairingStatusDto>(ct) ?? throw new AgentException(Strings.T("client.errors.invalidResponse"));
+
+            switch (status.State)
+            {
+                case PairingStates.Approved when status.Token is { Length: > 0 } token:
+                    return token;
+                case PairingStates.Denied:
+                    throw new PairingRefusedException(Strings.T("client.addHost.denied"));
+                case PairingStates.Pending:
+                    await Task.Delay(ApprovalPollInterval, ct);
+                    break;
+                default: // expired, or approved but the token already went out
+                    throw new PairingRefusedException(Strings.T("client.addHost.expired"));
+            }
+        }
+    }
+
+    /// <summary>After approval: reads the host info with the new token, over the same pinned certificate.</summary>
+    public static async Task<PairingResult> CompleteApprovedPairingAsync(PendingPairing pairing, string token, CancellationToken ct = default)
+    {
+        var validator = CertificatePinValidator.Pinned(pairing.ObservedFingerprint);
+        using var client = new AgentClient(CreateHttp(pairing.Address, pairing.AgentPort, token, validator), validator,
+            pairing.Address, pairing.AgentPort);
         return await client.CompletePairingAsync(ct);
     }
 
@@ -172,12 +245,33 @@ public sealed class AgentClient : IAgentApi
     private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct,
         bool allowNotModified = false, bool allowNotFound = false, TimeSpan? timeout = null)
     {
-        HttpResponseMessage response;
+        var response = await SendRawAsync(request, ct, timeout);
+        if (response.IsSuccessStatusCode ||
+            (allowNotModified && response.StatusCode == HttpStatusCode.NotModified) ||
+            (allowNotFound && response.StatusCode == HttpStatusCode.NotFound))
+        {
+            return response;
+        }
+
+        using (response)
+        {
+            throw response.StatusCode switch
+            {
+                HttpStatusCode.Unauthorized => new InvalidTokenException(),
+                HttpStatusCode.TooManyRequests => new TooManyAttemptsException(),
+                _ => new AgentException(await ReadErrorAsync(response, ct)),
+            };
+        }
+    }
+
+    /// <summary>Sends with a deadline; only transport failures throw (any HTTP status comes back).</summary>
+    private async Task<HttpResponseMessage> SendRawAsync(HttpRequestMessage request, CancellationToken ct, TimeSpan? timeout = null)
+    {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
         deadline.CancelAfter(timeout ?? RequestTimeout);
         try
         {
-            response = await _http.SendAsync(request, deadline.Token);
+            return await _http.SendAsync(request, deadline.Token);
         }
         catch (HttpRequestException ex)
         {
@@ -195,23 +289,6 @@ public sealed class AgentClient : IAgentApi
         finally
         {
             request.Dispose();
-        }
-
-        if (response.IsSuccessStatusCode ||
-            (allowNotModified && response.StatusCode == HttpStatusCode.NotModified) ||
-            (allowNotFound && response.StatusCode == HttpStatusCode.NotFound))
-        {
-            return response;
-        }
-
-        using (response)
-        {
-            throw response.StatusCode switch
-            {
-                HttpStatusCode.Unauthorized => new InvalidTokenException(),
-                HttpStatusCode.TooManyRequests => new TooManyAttemptsException(),
-                _ => new AgentException(await ReadErrorAsync(response, ct)),
-            };
         }
     }
 
@@ -232,7 +309,7 @@ public sealed class AgentClient : IAgentApi
         return Strings.T("client.errors.httpError", (int)response.StatusCode);
     }
 
-    private static HttpClient CreateHttp(string address, int port, string token, CertificatePinValidator validator)
+    private static HttpClient CreateHttp(string address, int port, string? token, CertificatePinValidator validator)
     {
         var handler = new SocketsHttpHandler
         {
@@ -247,7 +324,11 @@ public sealed class AgentClient : IAgentApi
             BaseAddress = new UriBuilder(Uri.UriSchemeHttps, address.Trim(), port).Uri,
             Timeout = Timeout.InfiniteTimeSpan, // per-request deadlines in SendAsync (release can take 45 s)
         };
-        http.DefaultRequestHeaders.Add(ApiContract.TokenHeader, token);
+        if (token is not null)
+        {
+            http.DefaultRequestHeaders.Add(ApiContract.TokenHeader, token);
+        }
+
         return http;
     }
 }

@@ -4,5 +4,10 @@
   "errors.unknownSessionMode": "Unknown session mode: {0}",
   "errors.tooManyAttempts": "Too many invalid attempts. Wait a few minutes.",
   "errors.unauthorized": "Pairing token missing or invalid.",
-  "errors.updateCheckFailed": "The remote PC could not reach GitHub to look for updates. Check its internet connection and try again later."
+  "errors.updateCheckFailed": "The remote PC could not reach GitHub to look for updates. Check its internet connection and try again later.",
+  "pairing.invalidRequest": "Invalid pairing request.",
+  "pairing.noApprover": "Nobody is using the remote PC to allow the connection. Sign in to it, or pair with a token from its WRApperture (Host) app.",
+  "pairing.noWindow": "The remote PC could not show the confirmation window. Pair with a token from its WRApperture (Host) app.",
+  "pairing.limited": "Too many pairing requests right now. Wait a few minutes and try again.",
+  "pairing.notFound": "Pairing request not found or already answered."
 }

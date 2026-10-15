@@ -6,11 +6,25 @@ namespace WRApperture.Client.Views;
 
 public partial class CredentialsWindow : Window
 {
-    public CredentialsWindow(string hostName, string? userName)
+    public CredentialsWindow(string hostName, string? userName, CredentialsContext? context = null)
     {
         InitializeComponent();
-        Heading.Text = Strings.T("client.credentials.heading", hostName);
         UserBox.Text = userName ?? string.Empty;
+        Heading.Text = context?.FirstTime == true
+            ? Strings.T("client.credentials.firstHeading", hostName)
+            : Strings.T("client.credentials.heading", hostName);
+        if (context?.FirstTime == true)
+        {
+            IntroText.Visibility = Visibility.Visible;
+            CancelButton.Content = Strings.T("client.credentials.later");
+        }
+
+        if (context?.MicrosoftAccount == true)
+        {
+            MicrosoftHint.Visibility = Visibility.Visible;
+            UserHint.Visibility = Visibility.Collapsed;
+        }
+
         Loaded += (_, _) => (string.IsNullOrEmpty(userName) ? (UIElement)UserBox : PasswordBox).Focus();
     }
 

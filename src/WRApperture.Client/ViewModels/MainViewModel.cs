@@ -131,9 +131,16 @@ public sealed partial class MainViewModel : ObservableObject
     private void AddHost()
     {
         var result = _dialogs.AddHost();
-        if (result is not null)
+        if (result is null)
         {
-            SavePaired(result, existing: null);
+            return;
+        }
+
+        var host = SavePaired(result, existing: null);
+        if (!_credentials.Exists(host.Address))
+        {
+            // Sign-in details now, rather than when the first app opens.
+            AskAndSaveCredentials(host, firstTime: true);
         }
     }
 
@@ -153,6 +160,7 @@ public sealed partial class MainViewModel : ObservableObject
             ReplaceHost(synced);
             SetStatus(Strings.T("client.status.synced", synced.Apps.Count, DateTime.Now.ToString("t", CultureInfo.CurrentCulture)), warning: false);
             ShowHostUpdateWarning();
+            ShowHostIssues(synced);
         }
         catch (AgentUnreachableException ex)
         {
@@ -201,6 +209,27 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     private bool CanRefresh() => SelectedHost is not null && !IsBusy;
+
+    /// <summary>What the host reported as keeping remote access from working, with where to fix it.</summary>
+    private void ShowHostIssues(PairedHost host)
+    {
+        var issues = host.Issues.Select(IssueText).OfType<string>().ToList();
+        if (issues.Count > 0)
+        {
+            SetStatus(Strings.T("client.status.hostNotReady", host.DisplayName, string.Join("; ", issues)), warning: true);
+        }
+    }
+
+    private static string? IssueText(string code) => code switch
+    {
+        HostIssues.RdpDisabled => Strings.T("client.issues.rdpDisabled"),
+        HostIssues.FirewallBlocked => Strings.T("client.issues.firewallBlocked"),
+        HostIssues.PublicNetwork => Strings.T("client.issues.publicNetwork"),
+        HostIssues.AccountWithoutPassword => Strings.T("client.issues.accountWithoutPassword"),
+        HostIssues.AccountNotAllowed => Strings.T("client.issues.accountNotAllowed"),
+        HostIssues.WindowsHelloOnly => Strings.T("client.issues.windowsHelloOnly"),
+        _ => null, // codes from newer agents
+    };
 
     [RelayCommand]
     private async Task OpenAppAsync(AppTileViewModel? tile)
@@ -526,10 +555,13 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand(CanExecute = nameof(HasHost))]
-    private void SaveCredentials()
+    private void SaveCredentials() => AskAndSaveCredentials(SelectedHost!.Host, firstTime: false);
+
+    /// <summary>Asks for the host's Windows sign-in, pre-filled with what the host suggests, and saves it for mstsc.</summary>
+    private void AskAndSaveCredentials(PairedHost host, bool firstTime)
     {
-        var host = SelectedHost!.Host;
-        var input = _dialogs.AskCredentials(host.DisplayName, host.RdpUserName);
+        var input = _dialogs.AskCredentials(host.DisplayName, host.RdpUserName ?? host.SuggestedUser,
+            new CredentialsContext(host.MicrosoftAccount, firstTime));
         if (input is null)
         {
             return;
@@ -578,11 +610,19 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    private void SavePaired(AddHostResult result, PairedHost? existing)
+    private PairedHost SavePaired(AddHostResult result, PairedHost? existing)
     {
-        // Same address as an existing host => update it (keeps Id, cache, credentials).
+        // Same address, or the same agent found under another address => update it (keeps Id and cache).
         existing ??= _state.Hosts.FirstOrDefault(h =>
-            string.Equals(h.Address, result.Address, StringComparison.OrdinalIgnoreCase) && h.AgentPort == result.AgentPort);
+            string.Equals(h.Address, result.Address, StringComparison.OrdinalIgnoreCase) && h.AgentPort == result.AgentPort)
+            ?? _state.Hosts.FirstOrDefault(h =>
+                string.Equals(h.PinnedFingerprint, result.Pairing.ObservedFingerprint, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null && !string.Equals(existing.Address, result.Address, StringComparison.OrdinalIgnoreCase))
+        {
+            // Saved credentials belong to the old address (and cannot be read back to move them).
+            _credentials.Delete(existing.Address);
+            existing = existing with { RdpUserName = null };
+        }
 
         var host = (existing ?? new PairedHost
         {
@@ -594,9 +634,14 @@ public sealed partial class MainViewModel : ObservableObject
             PinnedFingerprint = string.Empty,
         }) with
         {
+            Address = result.Address,
+            AgentPort = result.AgentPort,
             ProtectedToken = HostStore.ProtectToken(result.Token),
             PinnedFingerprint = result.Pairing.ObservedFingerprint,
             RdpPort = result.Pairing.Host.RdpPort,
+            Issues = result.Pairing.Host.Issues ?? [],
+            SuggestedUser = result.Pairing.Host.SuggestedUser,
+            MicrosoftAccount = result.Pairing.Host.MicrosoftAccount,
         };
 
         _logger.LogInformation("Paired host {Address}:{Port}", host.Address, host.AgentPort);
@@ -613,6 +658,8 @@ public sealed partial class MainViewModel : ObservableObject
             ReplaceHost(host);
             _ = RefreshAsync();
         }
+
+        return host;
     }
 
     private void ReplaceHost(PairedHost host)

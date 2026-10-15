@@ -174,6 +174,74 @@ public class AgentSettingsStoreTests
 
         Assert.Equal("ABCDEF", _store.Load().CertificateThumbprint);
     }
+
+    [Fact]
+    public void Each_client_gets_its_own_token_next_to_the_pairing_token()
+    {
+        var pairing = _store.RegenerateToken();
+        var (joao, joaoToken) = _store.AddClient("NOTEBOOK-JOAO", "joao");
+        var (_, mariaToken) = _store.AddClient("PC-MARIA", null);
+
+        Assert.True(_store.VerifyToken(pairing));
+        Assert.True(_store.VerifyToken(joaoToken));
+        Assert.True(_store.VerifyToken(mariaToken));
+        Assert.NotEqual(joaoToken, mariaToken);
+
+        var clients = _store.ListClients();
+        Assert.Equal(["NOTEBOOK-JOAO", "PC-MARIA"], clients.Select(c => c.Name));
+        Assert.Equal("joao", clients[0].User);
+        Assert.Null(clients[1].User);
+        Assert.Equal(joao.Id, clients[0].Id);
+    }
+
+    [Fact]
+    public void A_client_token_alone_pairs_the_host_and_only_its_hash_is_stored()
+    {
+        var (client, token) = _store.AddClient("NOTEBOOK-JOAO", "joao");
+
+        Assert.True(_store.Load().IsPaired);
+        var key = $@"{RegistryPaths.AgentSettings}\Clients\{client.Id:D}";
+        Assert.All(_registry.GetValueNames(key), name => Assert.NotEqual(token, _registry.GetValue(key, name) as string));
+    }
+
+    [Fact]
+    public void Removing_a_client_revokes_only_its_token()
+    {
+        var (joao, joaoToken) = _store.AddClient("NOTEBOOK-JOAO", "joao");
+        var (_, mariaToken) = _store.AddClient("PC-MARIA", null);
+
+        Assert.True(_store.RemoveClient(joao.Id));
+        Assert.False(_store.RemoveClient(joao.Id));
+
+        Assert.False(_store.VerifyToken(joaoToken));
+        Assert.True(_store.VerifyToken(mariaToken));
+        Assert.Single(_store.ListClients());
+    }
+
+    [Fact]
+    public void Regenerating_the_pairing_token_keeps_clients_and_reset_removes_them()
+    {
+        var (_, token) = _store.AddClient("NOTEBOOK-JOAO", "joao");
+
+        _store.RegenerateToken();
+        Assert.True(_store.VerifyToken(token));
+
+        _store.Reset();
+        Assert.False(_store.VerifyToken(token));
+        Assert.Empty(_store.ListClients());
+        Assert.False(_store.Load().IsPaired);
+    }
+
+    [Fact]
+    public void Adding_and_removing_clients_requires_admin()
+    {
+        var (client, _) = _store.AddClient("NOTEBOOK-JOAO", "joao");
+        _privileges.IsAdmin = false;
+
+        Assert.Throws<AdminRequiredException>(() => _store.AddClient("PC", null));
+        Assert.Throws<AdminRequiredException>(() => _store.RemoveClient(client.Id));
+        Assert.Single(_store.ListClients());
+    }
 }
 
 public class HostInfoProviderTests

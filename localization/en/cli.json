@@ -6,6 +6,7 @@
   "commands.check": "Checks whether the host is ready for RemoteApp",
   "commands.prepare": "Enables RDP, NLA, the allow list and the firewall (idempotent)",
   "commands.revert": "Undoes the changes made by 'prepare'",
+  "commands.fix": "Fixes one readiness item, e.g. NetworkProfile or RemoteDesktopUsers (see 'check --json')",
   "commands.discover": "Lists the installed apps (Start menu) that can be published",
   "commands.inspect": "Shows what would be published from a shortcut or program (read-only)",
   "commands.icon": "Exports the icon of a published app as PNG",
@@ -38,6 +39,8 @@
   "arguments.fileDescription": "Shortcut (.lnk) or program (.exe)",
   "arguments.publishedAlias": "Published app alias",
   "arguments.alias": "App alias",
+  "arguments.item": "item",
+  "arguments.itemDescription": "Readiness item (Id in 'check --json')",
 
   "output.yes": "yes",
   "output.no": "no",
@@ -58,8 +61,9 @@
   "output.readiness.expected": "EXPECTED",
   "output.readiness.pendingState": "PENDING",
   "output.readiness.notSupportedState": "NOT SUPPORTED",
+  "output.readiness.adviceState": "NOTE",
   "output.readiness.ready": "Host ready for RemoteApp.",
-  "output.readiness.pending": "{0} item(s) pending. Run 'wrahost prepare' as administrator.",
+  "output.readiness.pending": "{0} item(s) pending. Run 'wrahost prepare' (or 'wrahost fix <item>' for the network, account and sign-in items) as administrator.",
   "output.readiness.singleSessionReminder": "Reminder: Windows Pro allows only one session at a time. Opening a RemoteApp disconnects whoever is using this PC.",
   "output.discover.name": "NAME",
   "output.discover.executable": "EXECUTABLE",
@@ -95,5 +99,6 @@
 
   "errors.validation": "Validation error: {0}",
   "errors.unexpected": "Unexpected error: {0}",
+  "errors.unknownItem": "unknown item '{0}'. Use one of: {1}.",
   "errors.notPublished": "app '{0}' is not published."
 }

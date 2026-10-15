@@ -43,6 +43,7 @@ function Exit-Script([int]$Code) {
 $ErrorActionPreference = 'Stop'
 $ServiceName = 'WRAppertureAgent'
 $FirewallRule = 'WRAppertureAgent-TCP'
+$DiscoveryRule = 'WRAppertureAgent-Discovery-UDP'
 
 function Invoke-Step([string]$Description, [scriptblock]$Action) {
     if ($DryRun) { Write-Host (T 'installer.dryRun.step' $Description) -ForegroundColor DarkYellow; return }
@@ -90,6 +91,10 @@ try {
 
     if (Get-NetFirewallRule -Name $FirewallRule -ErrorAction SilentlyContinue) {
         Invoke-Step (T 'installer.host.uninstall.removeFirewall') { Remove-NetFirewallRule -Name $FirewallRule }
+    }
+
+    if (Get-NetFirewallRule -Name $DiscoveryRule -ErrorAction SilentlyContinue) {
+        Invoke-Step (T 'installer.host.uninstall.removeFirewall') { Remove-NetFirewallRule -Name $DiscoveryRule }
     }
 
     $wrahost = Join-Path $InstallDir 'wrahost.exe'

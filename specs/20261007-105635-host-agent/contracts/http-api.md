@@ -28,6 +28,24 @@ Base: `https://<host>:<port>` (padrão 5080). JSON em camelCase. As constantes f
 [ { "alias": "bloco-de-notas", "displayName": "Bloco de Notas", "iconUrl": "/api/apps/bloco-de-notas/icon" } ]
 ```
 
+## Prontidão e pareamento por aprovação (`20261015-114136-easy-setup`)
+
+Esses recursos são anunciados em `features` como `readiness` e `pairing`.
+
+- `GET /api/host` passa a trazer também:
+  - `issues`: códigos de `HostIssues`, como `public-network` e `account-without-password`. O cliente traduz os códigos e ignora os desconhecidos.
+  - `suggestedUser`: `PC\usuario` ou o e-mail da conta Microsoft.
+  - `microsoftAccount`: se o usuário sugerido é uma conta Microsoft.
+- `POST /pair/requests`, sem token: `{ clientName, clientUser, nonce }`.
+  - Sucesso: `202 { id, expiresInSeconds }`.
+  - `409 no_approver`: ninguém logado no host.
+  - `429 pairing_limited`: um pedido pendente por IP, 5 por IP a cada 10 min, 3 pendentes no total.
+  - `400 bad_request`: pedido inválido.
+- `GET /pair/requests/{id}`: `{ state, token? }`, com `state` em `pending`, `approved`, `denied` ou `expired`. O token vem só na primeira resposta `approved`. `404` quando o pedido não existe.
+- `GET|POST /pair/approval/{id}`: só por loopback, com o header `X-WRApperture-Approval: <segredo>`. Usado pela janela que o agente abre na sessão do console (`WRApperture.Host.exe --pairing <id> <segredo>`).
+- Código de verificação: 6 dígitos de `SHA-256("WRApperture-pairing|<fingerprint>|<nonce>")` (veja `PairingCode`).
+- Descoberta: datagrama UDP de 512 bytes para a porta 5081 (`WRAPPERTURE-DISCOVER/1` seguido de espaços). A resposta, em JSON, é `{ hostName, agentPort, fingerprint, version, features }` e nunca passa de 512 bytes.
+
 ## CLI (extensão do `wrahost`)
 ```
 wrahost agent show                 # porta, pareado (sim/não), fingerprint

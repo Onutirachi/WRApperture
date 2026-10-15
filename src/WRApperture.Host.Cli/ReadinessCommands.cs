@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using WRApperture.Host.Core;
+using WRApperture.Host.Core.Errors;
 using WRApperture.Host.Core.Models;
 using WRApperture.Shared.Localization;
 
@@ -24,11 +25,34 @@ internal static class ReadinessCommands
         }));
         yield return prepare;
 
+        var item = new Argument<string>(Strings.T("cli.arguments.item")) { Description = Strings.T("cli.arguments.itemDescription") };
+        var fix = new Command("fix", Strings.T("cli.commands.fix")) { item };
+        fix.SetAction(r => ExitCodes.Run(() =>
+        {
+            var id = ParseItem(r.GetValue(item)!);
+            try
+            {
+                Print(services.GetRequiredService<IHostPreparation>().Fix(id), json: false);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new AppValidationException("item", ex.Message);
+            }
+        }));
+        yield return fix;
+
         var revert = new Command("revert", Strings.T("cli.commands.revert"));
         revert.SetAction(_ => ExitCodes.Run(() =>
             Print(services.GetRequiredService<IHostPreparation>().Revert(), json: false)));
         yield return revert;
     }
+
+    /// <summary>"NetworkProfile", "networkprofile" or "network-profile".</summary>
+    private static ReadinessCheckId ParseItem(string value) =>
+        Enum.TryParse<ReadinessCheckId>(value.Replace("-", string.Empty), ignoreCase: true, out var id) && Enum.IsDefined(id)
+            ? id
+            : throw new AppValidationException("item", Strings.T("cli.errors.unknownItem", value,
+                string.Join(", ", Enum.GetNames<ReadinessCheckId>())));
 
     private static void Print(IReadOnlyList<ReadinessCheck> checks, bool json)
     {
@@ -49,6 +73,7 @@ internal static class ReadinessCommands
                 {
                     ReadinessState.Ok => "OK",
                     ReadinessState.Pending => Strings.T("cli.output.readiness.pendingState"),
+                    ReadinessState.Advice => Strings.T("cli.output.readiness.adviceState"),
                     _ => Strings.T("cli.output.readiness.notSupportedState"),
                 },
                 c.Description, c.CurrentValue, c.ExpectedValue,

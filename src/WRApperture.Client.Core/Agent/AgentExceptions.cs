@@ -23,3 +23,7 @@ public sealed class CertificateChangedException(string observedFingerprint)
 
 public sealed class PairingMismatchException()
     : AgentException(Strings.T("client.errors.pairingMismatch"));
+
+/// <summary>The host did not pair: denied, expired, nobody there to allow it, too many requests...</summary>
+public sealed class PairingRefusedException(string message)
+    : AgentException(message);

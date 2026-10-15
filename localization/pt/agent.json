@@ -4,5 +4,10 @@
   "errors.unknownSessionMode": "Modo de sessão desconhecido: {0}",
   "errors.tooManyAttempts": "Muitas tentativas inválidas. Aguarde alguns minutos.",
   "errors.unauthorized": "Token de pareamento ausente ou inválido.",
-  "errors.updateCheckFailed": "O PC remoto não conseguiu acessar o GitHub para procurar atualizações. Verifique a internet dele e tente mais tarde."
+  "errors.updateCheckFailed": "O PC remoto não conseguiu acessar o GitHub para procurar atualizações. Verifique a internet dele e tente mais tarde.",
+  "pairing.invalidRequest": "Pedido de pareamento inválido.",
+  "pairing.noApprover": "Ninguém está usando o PC remoto para permitir a conexão. Entre nele, ou pareie com um token do app WRApperture (Host) dele.",
+  "pairing.noWindow": "O PC remoto não conseguiu mostrar a janela de confirmação. Pareie com um token do app WRApperture (Host) dele.",
+  "pairing.limited": "Muitos pedidos de pareamento agora. Aguarde alguns minutos e tente de novo.",
+  "pairing.notFound": "Pedido de pareamento não encontrado ou já respondido."
 }

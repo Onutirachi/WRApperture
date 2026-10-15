@@ -1,5 +1,6 @@
 using System.Windows;
 using WRApperture.Client.Core.Agent;
+using WRApperture.Client.Core.Discovery;
 using WRApperture.Client.Views;
 using WRApperture.Shared;
 
@@ -9,12 +10,16 @@ public sealed record AddHostResult(string Address, int AgentPort, string Token, 
 
 public sealed record CredentialsInput(string UserName, string Password);
 
+/// <param name="MicrosoftAccount">The host signs in with a Microsoft account: e-mail and account password, not the PIN.</param>
+/// <param name="FirstTime">Right after adding the host: explains why it is asked, and Cancel reads "Not now".</param>
+public sealed record CredentialsContext(bool MicrosoftAccount, bool FirstTime);
+
 public sealed record ReleaseDecision(bool Always);
 
 public interface IDialogService
 {
     AddHostResult? AddHost(string? address = null, int? agentPort = null);
-    CredentialsInput? AskCredentials(string hostName, string? userName);
+    CredentialsInput? AskCredentials(string hostName, string? userName, CredentialsContext? context = null);
 
     /// <summary>Null when the user cancels.</summary>
     ReleaseDecision? AskReleaseSession(string hostName, IReadOnlyList<BusySessionDto> sessions);
@@ -27,19 +32,19 @@ public interface IDialogService
     void Info(string message);
 }
 
-internal sealed class DialogService : IDialogService
+internal sealed class DialogService(IHostDiscovery discovery) : IDialogService
 {
     private const string Title = "WRApperture";
 
     public AddHostResult? AddHost(string? address = null, int? agentPort = null)
     {
-        var window = Owned(new AddHostWindow(address, agentPort ?? ApiContract.DefaultPort));
+        var window = Owned(new AddHostWindow(discovery, address, agentPort ?? ApiContract.DefaultPort));
         return window.ShowDialog() == true ? window.Result : null;
     }
 
-    public CredentialsInput? AskCredentials(string hostName, string? userName)
+    public CredentialsInput? AskCredentials(string hostName, string? userName, CredentialsContext? context = null)
     {
-        var window = Owned(new CredentialsWindow(hostName, userName));
+        var window = Owned(new CredentialsWindow(hostName, userName, context));
         return window.ShowDialog() == true ? window.Result : null;
     }
 

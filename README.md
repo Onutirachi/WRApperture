@@ -26,8 +26,17 @@ Baixe os instaladores da página de [Releases](https://github.com/Onutirachi/WRA
 2. O instalador:
    - prepara o PC para RemoteApp;
    - registra o agente como serviço automático, com reinício em caso de falha;
-   - libera a porta 5080 no firewall (redes de domínio e privadas).
-3. Ao concluir, abra o **WRApperture (Host)** e use **Gerar novo token…** para parear os clientes. A mesma janela mostra o endereço, a porta e o fingerprint.
+   - libera no firewall a porta 5080 (TCP) e a 5081 (UDP, para os clientes acharem o PC), nas redes de domínio e privadas.
+3. Ao concluir, abra o **WRApperture (Host)**. Em **Este PC**, ele mostra o que ainda impede o acesso remoto e oferece um botão para cada item:
+   - Área de Trabalho Remota desligada, inclusive por política ou por serviço desativado;
+   - firewall bloqueando a Área de Trabalho Remota;
+   - rede marcada como **Pública**;
+   - conta do Windows sem senha (**Definir senha…**);
+   - usuário padrão fora do grupo de Área de Trabalho Remota;
+   - conta Microsoft com "só Windows Hello";
+   - PC que entra em suspensão.
+
+   Antes de mudar qualquer coisa, **Resolver** explica o que muda, por quê e o efeito colateral. Tudo pode ser desfeito com `wrahost revert`, menos a senha.
 4. Arraste para a janela os atalhos (da área de trabalho ou do Menu Iniciar) ou programas `.exe` que quer usar remotamente. Nome, caminho, argumentos e ícone são preenchidos automaticamente. O botão **Do Menu Iniciar…** publica vários apps instalados de uma vez.
 
 O Windows Home não suporta RemoteApp; o instalador avisa e não instala.
@@ -65,6 +74,7 @@ $wrahost = "src\WRApperture.Host.Cli\bin\Debug\net8.0-windows10.0.17763.0\wrahos
 
 & $wrahost check                      # diagnóstico do host
 & $wrahost prepare                    # liga RDP, NLA, allow-list e firewall (reversível com 'revert')
+& $wrahost fix NetworkProfile         # resolve um item de 'check --json' que o prepare não muda (rede, grupo, Windows Hello)
 & $wrahost discover                   # apps instalados
 & $wrahost publish --path "%SystemRoot%\System32\notepad.exe" --name "Bloco de Notas"
 & $wrahost list
@@ -80,7 +90,7 @@ netsh advfirewall firewall add rule name="WRApperture Agent" dir=in action=allow
 dotnet run --project src/WRApperture.Host.Agent
 ```
 
-Na primeira execução, o agente cria um certificado autoassinado em `LocalMachine\My`. A API está descrita em [contracts/http-api.md](specs/20261007-105635-host-agent/contracts/http-api.md). A instalação como serviço do Windows fica para a feature de empacotamento.
+Na primeira execução, o agente cria um certificado autoassinado em `LocalMachine\My`. Para o pareamento por aprovação, o agente abre `WRApperture.Host.exe --pairing` na tela de quem usa o PC. Rodando a partir do código, aponte para ele com `$env:Pairing__ApproverPath = "<repo>\src\WRApperture.Host.Manager\bin\Debug\net8.0-windows10.0.17763.0\WRApperture.Host.exe"`. A API está descrita em [contracts/http-api.md](specs/20261007-105635-host-agent/contracts/http-api.md). A instalação como serviço do Windows fica para a feature de empacotamento.
 
 ## Cliente (no outro computador)
 
@@ -88,8 +98,11 @@ Na primeira execução, o agente cria um certificado autoassinado em `LocalMachi
 dotnet run --project src/WRApperture.Client
 ```
 
-1. Clique em **Adicionar host** e informe o IP ou nome do PC remoto, a porta `5080` e o token.
-2. Confira se o fingerprint exibido é igual ao de `wrahost agent show` no host e confirme.
+1. Clique em **Adicionar host**. Os PCs da rede com o WRApperture (Host) aparecem pelo nome. Escolha um.
+2. No PC remoto, quem estiver usando vê uma janela com o nome deste computador e um código. Confira se é o mesmo código mostrado no cliente e clique em **Permitir**.
+   - Cada computador recebe um token próprio, que pode ser revogado em **Dispositivos pareados** no app do host.
+   - Logo depois, o cliente pede o usuário e a senha do Windows daquele PC, já sugerindo o usuário certo (o e-mail, no caso de conta Microsoft).
+   - Por VPN ou outra rede, use **Adicionar manualmente** com o endereço, a porta `5080` e o token (**Token manual…** no app do host). Nesse caso, confira o fingerprint exibido no app do host.
 3. Dê duplo clique em um app (ou selecione e tecle Enter): só a janela dele abre. Vários apps compartilham a mesma sessão.
 4. Opcional: no menu **⋯**, use **Salvar credenciais do host…** para abrir sem digitar a senha. Com o botão direito em um app, use **Criar atalho na área de trabalho**, **Adicionar ao Menu Iniciar** (o app aparece na busca do Windows e pode ser fixado) ou **Renomear…** (F2). O novo nome vale só neste computador; o PC remoto não muda.
 5. O primeiro bloco da grade, **Área de trabalho**, abre o PC remoto inteiro em tela cheia, com as mesmas credenciais e sem o alerta de segurança.

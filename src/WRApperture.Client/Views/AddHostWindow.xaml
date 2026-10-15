@@ -2,12 +2,66 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:WRApperture.Ui;assembly=WRApperture.Ui"
-        Title="{loc:T client.addHost.title}" Width="460" SizeToContent="Height" ResizeMode="NoResize"
+        xmlns:discovery="clr-namespace:WRApperture.Client.Core.Discovery;assembly=WRApperture.Client.Core"
+        Title="{loc:T client.addHost.title}" Width="480" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         Style="{StaticResource BaseWindow}">
     <StackPanel Margin="20">
-        <!-- Step 1: connection data -->
-        <StackPanel x:Name="Step1">
+        <!-- Hosts found on the network -->
+        <StackPanel x:Name="FindStep">
+            <TextBlock Text="{loc:T client.addHost.findHeading}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <TextBlock Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,0,0,10" Text="{loc:T client.addHost.findIntro}" />
+
+            <Border BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="4" MinHeight="140">
+                <Grid>
+                    <ListBox x:Name="FoundList" BorderThickness="0" Background="Transparent" MaxHeight="220"
+                             SelectionChanged="OnFoundSelectionChanged" MouseDoubleClick="OnFoundDoubleClick"
+                             AutomationProperties.Name="{loc:T client.addHost.findHeading}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type discovery:DiscoveredHost}">
+                                <StackPanel Margin="4,4">
+                                    <TextBlock Text="{Binding HostName}" FontWeight="SemiBold" />
+                                    <TextBlock Foreground="{DynamicResource Muted}" FontSize="12">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding Address}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SupportsPairing}" Value="False">
+                                                        <Setter Property="Text" Value="{loc:T client.addHost.oldVersion}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <TextBlock x:Name="FindStatus" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" TextAlignment="Center"
+                               VerticalAlignment="Center" HorizontalAlignment="Center" Margin="16" IsHitTestVisible="False" />
+                </Grid>
+            </Border>
+
+            <WrapPanel Margin="0,8,0,0">
+                <Button x:Name="SearchButton" Content="{loc:T client.addHost.searchAgain}" Style="{StaticResource Secondary}" Margin="0,0,8,0" Click="OnSearchClick" />
+                <Button Content="{loc:T client.addHost.manual}" Style="{StaticResource Secondary}" Click="OnManualClick" />
+            </WrapPanel>
+        </StackPanel>
+
+        <!-- Waiting for the host's answer -->
+        <StackPanel x:Name="WaitStep" Visibility="Collapsed">
+            <TextBlock x:Name="WaitHeading" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,12" />
+            <TextBlock Text="{loc:T client.addHost.codeLabel}" Margin="0,0,0,4" />
+            <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="12,8"
+                    HorizontalAlignment="Left">
+                <TextBlock x:Name="CodeText" FontFamily="Consolas" FontSize="28" FontWeight="SemiBold" />
+            </Border>
+            <TextBlock x:Name="WaitHint" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,10,0,0" />
+            <ProgressBar IsIndeterminate="True" Height="4" Margin="0,14,0,0" />
+        </StackPanel>
+
+        <!-- Manual: connection data -->
+        <StackPanel x:Name="Step1" Visibility="Collapsed">
             <TextBlock Text="{loc:T client.addHost.heading}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
 
             <TextBlock Text="{loc:T client.addHost.addressLabel}" Margin="0,0,0,4" />
@@ -22,7 +76,7 @@
                        Text="{loc:T client.addHost.tokenHint}" />
         </StackPanel>
 
-        <!-- Step 2: confirm identity -->
+        <!-- Manual: confirm identity -->
         <StackPanel x:Name="Step2" Visibility="Collapsed">
             <TextBlock Text="{loc:T client.addHost.confirmHeading}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
             <TextBlock x:Name="HostNameText" FontWeight="SemiBold" />

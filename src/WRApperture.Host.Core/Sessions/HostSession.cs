@@ -43,4 +43,7 @@ public interface ISessionProvider
 
     /// <summary>Starts explorer.exe as the session's user, giving the session a desktop.</summary>
     void StartDesktopShell(int sessionId);
+
+    /// <summary>Starts a program as the session's user, on its screen. Returns the process id.</summary>
+    int StartProcess(int sessionId, string executable, string? arguments);
 }

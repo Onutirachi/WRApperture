@@ -109,8 +109,15 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
         logger.LogInformation("Started desktop shell in session {Session} (pid {Pid})", sessionId, pid);
     }
 
+    public int StartProcess(int sessionId, string executable, string? arguments)
+    {
+        var pid = StartInSession(sessionId, executable, arguments, showWindow: true);
+        logger.LogInformation("Started {Program} in session {Session} (pid {Pid})", Path.GetFileName(executable), sessionId, pid);
+        return pid;
+    }
+
     /// <summary>Starts a process as the session's user on its interactive desktop (requires LocalSystem).</summary>
-    private static int StartInSession(int sessionId, string executable, string? arguments)
+    private static int StartInSession(int sessionId, string executable, string? arguments, bool showWindow = false)
     {
         if (!Native.WTSQueryUserToken(sessionId, out var userToken))
         {
@@ -129,7 +136,8 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
             // lpCommandLine must be writable and, when given, start with the quoted executable.
             var commandLine = arguments is null ? null : $"\"{executable}\" {arguments}";
             if (!Native.CreateProcessAsUserW(userToken, executable, commandLine, IntPtr.Zero, IntPtr.Zero, false,
-                    Native.CreateUnicodeEnvironment | Native.CreateNoWindow, environment, null, ref startup, out var process))
+                    Native.CreateUnicodeEnvironment | (showWindow ? 0 : Native.CreateNoWindow), environment,
+                    showWindow ? Path.GetDirectoryName(executable) : null, ref startup, out var process))
             {
                 throw new Win32Exception(Marshal.GetLastPInvokeError(), $"CreateProcessAsUser({Path.GetFileName(executable)}) failed");
             }

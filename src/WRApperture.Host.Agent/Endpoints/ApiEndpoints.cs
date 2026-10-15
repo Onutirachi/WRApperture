@@ -1,7 +1,7 @@
-using System.Reflection;
 using Microsoft.Net.Http.Headers;
 using WRApperture.Host.Agent.Certificates;
 using WRApperture.Host.Agent.Icons;
+using WRApperture.Host.Agent.Readiness;
 using WRApperture.Host.Core;
 using WRApperture.Host.Core.HostInfo;
 using WRApperture.Shared;
@@ -11,19 +11,16 @@ namespace WRApperture.Host.Agent.Endpoints;
 
 internal static class ApiEndpoints
 {
-    private static readonly string AgentVersion =
-        typeof(ApiEndpoints).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0]
-        ?? "0.0.0";
-
     public static void MapAgentApi(this WebApplication app)
     {
         app.MapGet(ApiContract.Health, () => Results.Text("ok"));
 
-        app.MapGet(ApiContract.Host, (IHostInfoProvider hostInfo, AgentIdentity identity) =>
+        app.MapGet(ApiContract.Host, (IHostInfoProvider hostInfo, AgentIdentity identity, HostReadiness readiness) =>
         {
             var info = hostInfo.Get();
-            return Results.Ok(new HostInfoDto(info.HostName, info.RdpPort, AgentVersion, identity.Fingerprint,
-                [AgentFeatures.DesktopSession, AgentFeatures.SelfUpdate]));
+            var summary = readiness.Get();
+            return Results.Ok(new HostInfoDto(info.HostName, info.RdpPort, AgentInfo.Version, identity.Fingerprint,
+                AgentInfo.Features, summary.Issues, summary.SuggestedUser, summary.MicrosoftAccount));
         });
 
         // Only alias and name leave the host: executable paths stay private.

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Win32;
+using WRApperture.Host.Core.Abstractions;
 using WRApperture.Host.Core.Errors;
 using WRApperture.Host.Core.Models;
 using WRApperture.Host.Core.Publishing;
@@ -17,6 +18,10 @@ public class HostPreparationTests
 
     private readonly FakePrivilegeChecker _privileges = new();
     private readonly FakeUserRegistryAccess _users = new() { Loaded = { Alice } };
+    private readonly FakeNetworkProfiles _networks = new();
+    private readonly FakeLocalAccounts _accounts = new();
+    private readonly FakeServiceControl _services = new();
+    private readonly FakePowerSettings _power = new();
     private readonly LanguageBarSettings _langBar;
     private readonly HostPreparation _preparation;
 
@@ -26,7 +31,8 @@ public class HostPreparationTests
         _registry.Seed(RegistryPaths.CurrentVersion, "EditionID", "Professional");
         _registry.Seed(RegistryPaths.TerminalServer, "fDenyTSConnections", 1, RegistryValueKind.DWord);
         _registry.Seed(RegistryPaths.RdpTcp, "UserAuthentication", 1, RegistryValueKind.DWord);
-        _preparation = new HostPreparation(_registry, _firewall, _privileges, _users, NullLogger<HostPreparation>.Instance);
+        _preparation = new HostPreparation(_registry, _firewall, _privileges, _users, _networks, _accounts, _services, _power,
+            NullLogger<HostPreparation>.Instance);
         _langBar = new LanguageBarSettings(_users);
     }
 
@@ -96,7 +102,8 @@ public class HostPreparationTests
     {
         var checks = _preparation.Check();
 
-        Assert.Equal(Enum.GetValues<ReadinessCheckId>().Length, checks.Count);
+        // Every item but the Microsoft account one, which only exists for Microsoft accounts.
+        Assert.Equal(Enum.GetValues<ReadinessCheckId>().Except([ReadinessCheckId.MicrosoftAccount]).Order(), checks.Select(c => c.Id).Order());
         Assert.Equal(ReadinessState.Ok, StateOf(checks, ReadinessCheckId.Edition));
         Assert.Equal(ReadinessState.Pending, StateOf(checks, ReadinessCheckId.RdpEnabled));
         Assert.Equal(ReadinessState.Ok, StateOf(checks, ReadinessCheckId.Nla));
@@ -249,5 +256,190 @@ public class HostPreparationTests
 
         Assert.Equal(0, _registry.WriteCount);
         Assert.Equal(ReadinessState.Pending, StateOf(checks, ReadinessCheckId.RdpEnabled));
+    }
+
+    [Fact]
+    public void Public_network_is_pending_and_fix_makes_it_private_until_revert()
+    {
+        _networks.Networks[0] = _networks.Networks[0] with { Category = NetworkCategory.Public };
+        var check = _preparation.Check().Single(c => c.Id == ReadinessCheckId.NetworkProfile);
+        Assert.Equal(ReadinessState.Pending, check.State);
+        Assert.Equal("Public: Casa", check.CurrentValue);
+        Assert.Equal(ReadinessFix.Automatic, check.Fix);
+
+        Assert.Equal(ReadinessState.Ok, StateOf(_preparation.Fix(ReadinessCheckId.NetworkProfile), ReadinessCheckId.NetworkProfile));
+        Assert.Equal(NetworkCategory.Private, _networks.Networks[0].Category);
+
+        _preparation.Revert();
+        Assert.Equal(NetworkCategory.Public, _networks.Networks[0].Category);
+    }
+
+    [Fact]
+    public void Prepare_never_changes_network_groups_nor_sign_in()
+    {
+        _networks.Networks[0] = _networks.Networks[0] with { Category = NetworkCategory.Public };
+        _accounts.Console = _accounts.Console! with { IsAdministrator = false };
+        _registry.Seed(RegistryPaths.PasswordLess, "DevicePasswordLessBuildVersion", 2, RegistryValueKind.DWord);
+
+        _preparation.Prepare();
+
+        Assert.Equal(NetworkCategory.Public, _networks.Networks[0].Category);
+        Assert.Empty(_accounts.RemoteDesktopUsers);
+        Assert.Equal(2, _registry.GetValue(RegistryPaths.PasswordLess, "DevicePasswordLessBuildVersion"));
+    }
+
+    [Fact]
+    public void Blank_password_is_pending_and_set_account_password_solves_it()
+    {
+        _accounts.Password = PasswordStatus.Blank;
+        var check = _preparation.Check().Single(c => c.Id == ReadinessCheckId.AccountPassword);
+        Assert.Equal(ReadinessState.Pending, check.State);
+        Assert.Equal(ReadinessFix.SetPassword, check.Fix);
+        Assert.Contains("carlos", check.Description);
+
+        var checks = _preparation.SetAccountPassword("s3nha!");
+
+        Assert.Equal("s3nha!", _accounts.NewPassword);
+        Assert.Equal(ReadinessState.Ok, StateOf(checks, ReadinessCheckId.AccountPassword));
+    }
+
+    [Fact]
+    public void Set_account_password_requires_admin_and_a_password()
+    {
+        Assert.Throws<AppValidationException>(() => _preparation.SetAccountPassword(""));
+
+        _privileges.IsAdmin = false;
+        Assert.Throws<AdminRequiredException>(() => _preparation.SetAccountPassword("x"));
+        Assert.Null(_accounts.NewPassword);
+    }
+
+    [Fact]
+    public void Microsoft_account_gets_advice_with_its_email_and_no_password_check()
+    {
+        _accounts.Console = _accounts.Console! with { MicrosoftAccount = "carlos@outlook.com" };
+
+        var checks = _preparation.Check();
+
+        Assert.DoesNotContain(checks, c => c.Id == ReadinessCheckId.AccountPassword);
+        var check = checks.Single(c => c.Id == ReadinessCheckId.MicrosoftAccount);
+        Assert.Equal(ReadinessState.Advice, check.State);
+        Assert.Equal("carlos@outlook.com", check.CurrentValue);
+        Assert.Throws<InvalidOperationException>(() => _preparation.SetAccountPassword("x"));
+    }
+
+    [Fact]
+    public void Windows_hello_only_blocks_microsoft_accounts_until_fixed_and_revert_restores_it()
+    {
+        _accounts.Console = _accounts.Console! with { MicrosoftAccount = "carlos@outlook.com" };
+        _registry.Seed(RegistryPaths.PasswordLess, "DevicePasswordLessBuildVersion", 2, RegistryValueKind.DWord);
+        Assert.Equal(ReadinessState.Pending, StateOf(_preparation.Check(), ReadinessCheckId.MicrosoftAccount));
+
+        _preparation.Fix(ReadinessCheckId.MicrosoftAccount);
+        Assert.Equal(0, _registry.GetValue(RegistryPaths.PasswordLess, "DevicePasswordLessBuildVersion"));
+        Assert.Equal(ReadinessState.Advice, StateOf(_preparation.Check(), ReadinessCheckId.MicrosoftAccount));
+
+        _preparation.Revert();
+        Assert.Equal(2, _registry.GetValue(RegistryPaths.PasswordLess, "DevicePasswordLessBuildVersion"));
+    }
+
+    [Fact]
+    public void Standard_user_is_added_to_remote_desktop_users_and_removed_on_revert()
+    {
+        _accounts.Console = _accounts.Console! with { IsAdministrator = false };
+        Assert.Equal(ReadinessState.Pending, StateOf(_preparation.Check(), ReadinessCheckId.RemoteDesktopUsers));
+
+        _preparation.Fix(ReadinessCheckId.RemoteDesktopUsers);
+        Assert.Contains(FakeLocalAccounts.Sid, _accounts.RemoteDesktopUsers);
+
+        _preparation.Revert();
+        Assert.Empty(_accounts.RemoteDesktopUsers);
+    }
+
+    [Fact]
+    public void Administrator_already_signs_in_remotely_and_fix_changes_nothing()
+    {
+        _preparation.Fix(ReadinessCheckId.RemoteDesktopUsers);
+
+        Assert.Empty(_accounts.RemoteDesktopUsers);
+        Assert.False(_registry.KeyExists(RegistryPaths.PreparationSnapshot));
+    }
+
+    [Fact]
+    public void Nobody_signed_in_means_no_account_checks()
+    {
+        _accounts.Console = null;
+
+        var ids = _preparation.Check().Select(c => c.Id).ToList();
+
+        Assert.DoesNotContain(ReadinessCheckId.AccountPassword, ids);
+        Assert.DoesNotContain(ReadinessCheckId.RemoteDesktopUsers, ids);
+    }
+
+    [Fact]
+    public void Policy_blocking_remote_desktop_is_fixed_by_prepare_and_restored_by_revert()
+    {
+        _registry.Seed(RegistryPaths.TerminalServicesPolicy, "fDenyTSConnections", 1, RegistryValueKind.DWord);
+        Assert.Equal(ReadinessState.Pending, StateOf(_preparation.Check(), ReadinessCheckId.RdpPolicy));
+
+        _preparation.Prepare();
+        Assert.Equal(0, _registry.GetValue(RegistryPaths.TerminalServicesPolicy, "fDenyTSConnections"));
+
+        _preparation.Revert();
+        Assert.Equal(1, _registry.GetValue(RegistryPaths.TerminalServicesPolicy, "fDenyTSConnections"));
+    }
+
+    [Fact]
+    public void Disabled_remote_desktop_service_is_enabled_and_started()
+    {
+        _registry.Seed(RegistryPaths.TermService, "Start", 4, RegistryValueKind.DWord);
+        var check = _preparation.Check().Single(c => c.Id == ReadinessCheckId.RdpService);
+        Assert.Equal(ReadinessState.Pending, check.State);
+        Assert.Equal("disabled", check.CurrentValue);
+
+        _preparation.Prepare();
+
+        Assert.Equal(3, _registry.GetValue(RegistryPaths.TermService, "Start"));
+        Assert.Contains(HostPreparation.RdpServiceName, _services.Running);
+    }
+
+    [Fact]
+    public void Stopped_service_only_matters_once_remote_desktop_is_on()
+    {
+        Assert.Equal(ReadinessState.Ok, StateOf(_preparation.Check(), ReadinessCheckId.RdpService)); // RDP off
+
+        _registry.Seed(RegistryPaths.TerminalServer, "fDenyTSConnections", 0, RegistryValueKind.DWord);
+        Assert.Equal(ReadinessState.Pending, StateOf(_preparation.Check(), ReadinessCheckId.RdpService));
+
+        Assert.Equal(ReadinessState.Ok, StateOf(_preparation.Fix(ReadinessCheckId.RdpService), ReadinessCheckId.RdpService));
+    }
+
+    [Fact]
+    public void Sleeping_pc_is_advice_with_the_power_settings_page()
+    {
+        _power.Sleep = TimeSpan.FromMinutes(30);
+
+        var check = _preparation.Check().Single(c => c.Id == ReadinessCheckId.Sleep);
+
+        Assert.Equal(ReadinessState.Advice, check.State);
+        Assert.Equal(ReadinessFix.OpenSettings, check.Fix);
+        Assert.Equal("ms-settings:powersleep", check.SettingsUri);
+        Assert.Contains("30", check.CurrentValue);
+    }
+
+    [Theory]
+    [InlineData(ReadinessCheckId.Edition)]
+    [InlineData(ReadinessCheckId.Sleep)]
+    [InlineData(ReadinessCheckId.AccountPassword)]
+    public void Items_without_automatic_fix_refuse_fix(ReadinessCheckId id)
+    {
+        Assert.Throws<InvalidOperationException>(() => _preparation.Fix(id));
+    }
+
+    [Fact]
+    public void Fix_requires_admin()
+    {
+        _privileges.IsAdmin = false;
+
+        Assert.Throws<AdminRequiredException>(() => _preparation.Fix(ReadinessCheckId.NetworkProfile));
     }
 }

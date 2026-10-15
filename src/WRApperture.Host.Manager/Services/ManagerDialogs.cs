@@ -35,6 +35,12 @@ public interface IManagerDialogs
     bool Confirm(string title, string message);
 
     void Error(string message);
+
+    /// <summary>New password for <paramref name="userName"/> (typed twice); null when cancelled.</summary>
+    string? AskNewPassword(string userName);
+
+    /// <summary>Opens a Windows settings page ("ms-settings:…").</summary>
+    void OpenSettings(string uri);
 }
 
 internal sealed class ManagerDialogs(IIconProvider icons) : IManagerDialogs
@@ -71,4 +77,13 @@ internal sealed class ManagerDialogs(IIconProvider icons) : IManagerDialogs
 
     public void Error(string message) =>
         MessageBox.Show(Owner!, message, Title, MessageBoxButton.OK, MessageBoxImage.Error);
+
+    public string? AskNewPassword(string userName)
+    {
+        var window = new PasswordWindow(userName) { Owner = Owner };
+        return window.ShowDialog() == true ? window.Password : null;
+    }
+
+    public void OpenSettings(string uri) =>
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri) { UseShellExecute = true })?.Dispose();
 }

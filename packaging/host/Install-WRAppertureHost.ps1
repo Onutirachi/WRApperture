@@ -48,6 +48,8 @@ param(
 $ErrorActionPreference = 'Stop'
 $ServiceName = 'WRAppertureAgent'
 $FirewallRule = 'WRAppertureAgent-TCP'
+$DiscoveryRule = 'WRAppertureAgent-Discovery-UDP'
+$DiscoveryPort = 5081
 $Binaries = @('wrahost.exe', 'WRApperture.Agent.exe', 'WRApperture.Host.exe', 'appsettings.json')
 $ManagerShortcut = Join-Path ([Environment]::GetFolderPath('CommonPrograms')) 'WRApperture (Host).lnk'
 
@@ -210,6 +212,12 @@ try {
         Get-NetFirewallRule -Name $FirewallRule -ErrorAction SilentlyContinue | Remove-NetFirewallRule
         New-NetFirewallRule -Name $FirewallRule -DisplayName 'WRApperture Agent' -Direction Inbound -Protocol TCP `
             -LocalPort $settings.port -Action Allow -Profile $profiles.Split(',') | Out-Null
+    } | Out-Null
+    # Clients find the host by UDP broadcast on the local network.
+    Invoke-Step (T 'installer.host.install.firewallDiscovery' $DiscoveryPort $profiles) {
+        Get-NetFirewallRule -Name $DiscoveryRule -ErrorAction SilentlyContinue | Remove-NetFirewallRule
+        New-NetFirewallRule -Name $DiscoveryRule -DisplayName 'WRApperture Agent (discovery)' -Direction Inbound -Protocol UDP `
+            -LocalPort $DiscoveryPort -RemoteAddress LocalSubnet -Action Allow -Profile $profiles.Split(',') | Out-Null
     } | Out-Null
 
     Invoke-Step (T 'installer.host.install.startService' $ServiceName) { Start-Service -Name $ServiceName } | Out-Null

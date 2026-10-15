@@ -24,6 +24,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ILanguageBarSettings, LanguageBarSettings>();
         services.AddSingleton<IStartMenuShortcuts, StartMenuShortcuts>();
         services.AddSingleton<IShortcutResolver, ShortcutResolver>();
+        services.AddSingleton<INetworkProfiles, WindowsNetworkProfiles>();
+        services.AddSingleton<ILocalAccounts, WindowsLocalAccounts>();
+        services.AddSingleton<IServiceControl, WindowsServiceControl>();
+        services.AddSingleton<IPowerSettings, WindowsPowerSettings>();
 
         services.AddSingleton<IAppPublisher, AppPublisher>();
         services.AddSingleton<IFileDescriptionReader, FileDescriptionReader>();

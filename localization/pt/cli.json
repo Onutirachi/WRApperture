@@ -6,6 +6,7 @@
   "commands.check": "Diagnostica se o host está pronto para RemoteApp",
   "commands.prepare": "Habilita RDP, NLA, allow-list e firewall (idempotente)",
   "commands.revert": "Desfaz as alterações feitas por 'prepare'",
+  "commands.fix": "Resolve um item da prontidão, por exemplo NetworkProfile ou RemoteDesktopUsers (veja 'check --json')",
   "commands.discover": "Lista os apps instalados (Menu Iniciar) que podem ser publicados",
   "commands.inspect": "Mostra o que seria publicado a partir de um atalho ou programa (somente leitura)",
   "commands.icon": "Exporta o ícone de um app publicado como PNG",
@@ -38,6 +39,8 @@
   "arguments.fileDescription": "Atalho (.lnk) ou programa (.exe)",
   "arguments.publishedAlias": "Alias do app publicado",
   "arguments.alias": "Alias do app",
+  "arguments.item": "item",
+  "arguments.itemDescription": "Item da prontidão (Id em 'check --json')",
 
   "output.yes": "sim",
   "output.no": "não",
@@ -58,8 +61,9 @@
   "output.readiness.expected": "ESPERADO",
   "output.readiness.pendingState": "PENDENTE",
   "output.readiness.notSupportedState": "NÃO SUPORTADO",
+  "output.readiness.adviceState": "AVISO",
   "output.readiness.ready": "Host pronto para RemoteApp.",
-  "output.readiness.pending": "{0} item(ns) pendente(s). Execute 'wrahost prepare' como administrador.",
+  "output.readiness.pending": "{0} item(ns) pendente(s). Execute 'wrahost prepare' (ou 'wrahost fix <item>' para os itens de rede, conta e entrada) como administrador.",
   "output.readiness.singleSessionReminder": "Lembrete: no Windows Pro só há uma sessão por vez. Abrir um RemoteApp desconecta quem estiver usando este PC.",
   "output.discover.name": "NOME",
   "output.discover.executable": "EXECUTÁVEL",
@@ -95,5 +99,6 @@
 
   "errors.validation": "Erro de validação: {0}",
   "errors.unexpected": "Erro inesperado: {0}",
+  "errors.unknownItem": "item desconhecido '{0}'. Use um destes: {1}.",
   "errors.notPublished": "app '{0}' não está publicado."
 }

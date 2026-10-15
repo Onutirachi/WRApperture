@@ -16,6 +16,25 @@ public static class ApiContract
     /// <summary>GET: <see cref="UpdateStatusDto"/>. POST: update now (<see cref="UpdateRequestResultDto"/>).</summary>
     public const string Update = "/api/update";
 
+    /// <summary>UDP port the agent answers discovery requests on (see <see cref="Discovery"/>).</summary>
+    public const int DiscoveryPort = 5081;
+
+    /// <summary>
+    /// POST without token: ask to pair (<see cref="PairingRequestDto"/> → 202 <see cref="PairingTicketDto"/>).
+    /// GET <see cref="PairingRequest"/>: its <see cref="PairingStatusDto"/>.
+    /// </summary>
+    public const string PairingRequests = "/pair/requests";
+
+    public static string PairingRequest(string id) => $"{PairingRequests}/{Uri.EscapeDataString(id)}";
+
+    /// <summary>
+    /// Loopback only, with <see cref="ApprovalHeader"/>: GET <see cref="PairingDetailsDto"/>, POST
+    /// <see cref="PairingDecisionDto"/>. Used by the approval window the agent opens on the host's screen.
+    /// </summary>
+    public static string PairingApproval(string id) => $"/pair/approval/{Uri.EscapeDataString(id)}";
+
+    public const string ApprovalHeader = "X-WRApperture-Approval";
+
     public const int DefaultIconSize = 48;
     public const int MinIconSize = 16;
     public const int MaxIconSize = 256;
@@ -29,14 +48,35 @@ public static class ApiContract
         public const string NotFound = "not_found";
         public const string BadRequest = "bad_request";
         public const string UpdateCheckFailed = "update_check_failed";
+
+        /// <summary>Too many pairing requests from this address (or in total) right now.</summary>
+        public const string PairingLimited = "pairing_limited";
+
+        /// <summary>Nobody is signed in at the host to approve a pairing request.</summary>
+        public const string NoApprover = "no_approver";
     }
 }
 
 public sealed record AppSummaryDto(string Alias, string DisplayName, string IconUrl);
 
 /// <param name="Features">Optional capabilities (<see cref="AgentFeatures"/>); null from agents older than 0.6.0.</param>
+/// <param name="Issues">What keeps remote access from working (<see cref="HostIssues"/>); null before <see cref="AgentFeatures.Readiness"/>.</param>
+/// <param name="SuggestedUser">What to type as user name to sign in to the host: "PC\user" or a Microsoft account e-mail.</param>
+/// <param name="MicrosoftAccount">The suggested user signs in with a Microsoft account (password, not PIN).</param>
 public sealed record HostInfoDto(string HostName, int RdpPort, string AgentVersion, string CertificateFingerprint,
-    IReadOnlyList<string>? Features = null);
+    IReadOnlyList<string>? Features = null, IReadOnlyList<string>? Issues = null, string? SuggestedUser = null,
+    bool MicrosoftAccount = false);
+
+/// <summary><see cref="HostInfoDto.Issues"/> codes; clients translate them (and ignore unknown ones).</summary>
+public static class HostIssues
+{
+    public const string RdpDisabled = "rdp-disabled";
+    public const string FirewallBlocked = "firewall-blocked";
+    public const string PublicNetwork = "public-network";
+    public const string AccountWithoutPassword = "account-without-password";
+    public const string AccountNotAllowed = "account-not-allowed";
+    public const string WindowsHelloOnly = "windows-hello-only";
+}
 
 public static class AgentFeatures
 {
@@ -45,6 +85,12 @@ public static class AgentFeatures
 
     /// <summary><see cref="ApiContract.Update"/> exists: the agent can update itself from the latest release.</summary>
     public const string SelfUpdate = "self-update";
+
+    /// <summary><see cref="HostInfoDto"/> carries Issues and SuggestedUser.</summary>
+    public const string Readiness = "readiness";
+
+    /// <summary><see cref="ApiContract.PairingRequests"/> exists: pairing approved on the host's screen, without a token.</summary>
+    public const string Pairing = "pairing";
 }
 
 /// <summary>What the client is about to open; decides which host sessions are in the way.</summary>

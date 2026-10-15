@@ -41,6 +41,25 @@ public class HostSyncTests : IDisposable
     }
 
     [Fact]
+    public async Task Keeps_what_the_host_reports_about_its_readiness()
+    {
+        _agent.Info = _agent.Info with { Issues = [HostIssues.PublicNetwork], SuggestedUser = "joao@outlook.com", MicrosoftAccount = true };
+
+        var synced = await _sync.SyncAsync(Samples.Host());
+
+        Assert.Equal([HostIssues.PublicNetwork], synced.Issues);
+        Assert.Equal("joao@outlook.com", synced.SuggestedUser);
+        Assert.True(synced.MicrosoftAccount);
+
+        // Older agents report nothing: issues clear, the last suggestion stays.
+        _agent.Info = new HostInfoDto("PC", 3390, "0.6.0", "FP");
+        var older = await _sync.SyncAsync(synced);
+        Assert.Empty(older.Issues);
+        Assert.Equal("joao@outlook.com", older.SuggestedUser);
+        Assert.True(older.MicrosoftAccount);
+    }
+
+    [Fact]
     public async Task Sends_cached_etag_only_when_icon_file_exists()
     {
         var host = Samples.Host() with { Apps = [new CachedApp("notepad", "N", "\"old\""), new CachedApp("calc", "C", "\"old-calc\"")] };
@@ -122,8 +141,9 @@ public class HostSyncTests : IDisposable
         public Dictionary<string, string?> SentETags { get; } = [];
         public List<int> IconSizes { get; } = [];
 
-        public Task<HostInfoDto> GetHostInfoAsync(CancellationToken ct = default) =>
-            Task.FromResult(new HostInfoDto("PC", 3390, "0.6.0", "FP", [AgentFeatures.DesktopSession]));
+        public HostInfoDto Info { get; set; } = new("PC", 3390, "0.6.0", "FP", [AgentFeatures.DesktopSession]);
+
+        public Task<HostInfoDto> GetHostInfoAsync(CancellationToken ct = default) => Task.FromResult(Info);
 
         public Task<IReadOnlyList<AppSummaryDto>> GetAppsAsync(CancellationToken ct = default) =>
             ThrowOnApps is not null

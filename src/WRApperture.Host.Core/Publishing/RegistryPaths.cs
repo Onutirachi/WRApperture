@@ -10,6 +10,14 @@ internal static class RegistryPaths
     public const string TerminalServer = @"SYSTEM\CurrentControlSet\Control\Terminal Server";
     public const string RdpTcp = TerminalServer + @"\WinStations\RDP-Tcp";
 
+    /// <summary>Group Policy values here override <see cref="TerminalServer"/> (e.g. fDenyTSConnections).</summary>
+    public const string TerminalServicesPolicy = @"SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services";
+
+    public const string TermService = @"SYSTEM\CurrentControlSet\Services\TermService";
+
+    /// <summary>DevicePasswordLessBuildVersion = 2: "only Windows Hello for Microsoft accounts" (no password sign-in).</summary>
+    public const string PasswordLess = CurrentVersion + @"\PasswordLess\Device";
+
     public const string ToolRoot = @"SOFTWARE\WRApperture";
     public const string PreparationSnapshot = ToolRoot + @"\PreparationSnapshot";
     public const string AgentSettings = ToolRoot + @"\Agent";

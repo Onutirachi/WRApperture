@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -5,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using WRApperture.Host.Agent.Certificates;
 using WRApperture.Host.Agent.Updates;
 using WRApperture.Host.Core;
+using WRApperture.Host.Core.Abstractions;
 using WRApperture.Host.Core.Agent;
 using WRApperture.Host.Core.HostInfo;
 using WRApperture.Host.Core.Models;
@@ -26,6 +28,14 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
     internal FakeSessions Sessions { get; } = new();
     internal FakeUpdateChecker Updates { get; } = new();
     internal FakeSetupRunner Setups { get; } = new();
+    internal FakePreparation Preparation { get; } = new();
+    internal FakeAccounts Accounts { get; } = new();
+
+    /// <summary>The host app the agent opens to approve pairing requests (never started: see <see cref="FakeSessions.Started"/>).</summary>
+    internal const string ApproverPath = @"C:\Fake\WRApperture.Host.exe";
+
+    /// <summary>Requests come from this address unless they carry <see cref="RemoteAddressHeader"/>.</summary>
+    internal const string RemoteAddressHeader = "X-Test-Remote-Address";
 
     /// <summary>The agent's own version in these tests; the scheduled loop never fires on its own.</summary>
     internal static readonly Version CurrentVersion = new(1, 0, 0);
@@ -46,6 +56,10 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
             services.AddSingleton(new AgentIdentity { Fingerprint = Fingerprint });
             services.AddSingleton<IUpdateChecker>(Updates);
             services.AddSingleton<IHostSetupRunner>(Setups);
+            services.AddSingleton<IHostPreparation>(Preparation);
+            services.AddSingleton<ILocalAccounts>(Accounts);
+            services.AddSingleton(new Pairing.PairingOptions { ApproverPath = ApproverPath });
+            services.AddSingleton<IStartupFilter, RemoteAddressFilter>();
             services.AddSingleton(new HostUpdaterOptions
             {
                 CurrentVersion = CurrentVersion,
@@ -54,6 +68,14 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
                 PrepareDownloadFolder = () => @"C:\Fake\updates\agent",
             });
         });
+    }
+
+    /// <summary>A client whose requests come from <paramref name="address"/> (TestServer has no real remote address).</summary>
+    public HttpClient CreateClientFrom(string address)
+    {
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Add(RemoteAddressHeader, address);
+        return client;
     }
 
     public HttpClient CreateAuthorizedClient(string token = Token)
@@ -81,16 +103,45 @@ internal sealed class FakePublisher : IAppPublisher
     public bool Unpublish(string alias) => throw new NotSupportedException();
 }
 
+/// <summary>Sets the connection's remote address: loopback by default, or the test header's value.</summary>
+internal sealed class RemoteAddressFilter : IStartupFilter
+{
+    public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
+    {
+        app.Use((context, nextMiddleware) =>
+        {
+            context.Connection.RemoteIpAddress = context.Request.Headers.TryGetValue(AgentFactory.RemoteAddressHeader, out var value)
+                ? System.Net.IPAddress.Parse(value.ToString())
+                : System.Net.IPAddress.Loopback;
+            return nextMiddleware(context);
+        });
+        next(app);
+    };
+}
+
 internal sealed class FakeSettings : IAgentSettingsStore
 {
     public string? CurrentToken { get; set; } = AgentFactory.Token;
     public bool AutoUpdate { get; set; } = true;
+    public List<(PairedClient Client, string Token)> Clients { get; } = [];
 
-    public AgentSettings Load() => new(ApiContract.DefaultPort, CurrentToken is not null, "THUMB", AutoUpdate);
+    public AgentSettings Load() => new(ApiContract.DefaultPort, CurrentToken is not null || Clients.Count > 0, "THUMB", AutoUpdate);
 
     public string RegenerateToken() => CurrentToken = Guid.NewGuid().ToString("N");
 
-    public bool VerifyToken(string? token) => CurrentToken is not null && token == CurrentToken;
+    public bool VerifyToken(string? token) =>
+        token is not null && (token == CurrentToken || Clients.Any(c => c.Token == token));
+
+    public (PairedClient Client, string Token) AddClient(string name, string? user)
+    {
+        var entry = (new PairedClient(Guid.NewGuid(), name, user, DateTimeOffset.UtcNow), Guid.NewGuid().ToString("N"));
+        Clients.Add(entry);
+        return entry;
+    }
+
+    public IReadOnlyList<PairedClient> ListClients() => Clients.Select(c => c.Client).ToList();
+
+    public bool RemoveClient(Guid id) => Clients.RemoveAll(c => c.Client.Id == id) > 0;
 
     public void SetPort(int port) { }
 
@@ -180,6 +231,14 @@ internal sealed class FakeSessions : WRApperture.Host.Core.Sessions.ISessionProv
         All.RemoveAll(s => s.Id == sessionId);
     }
 
+    public List<(int Session, string Program, string? Arguments)> Started { get; } = [];
+
+    public int StartProcess(int sessionId, string executable, string? arguments)
+    {
+        Started.Add((sessionId, executable, arguments));
+        return 4242;
+    }
+
     public void StartDesktopShell(int sessionId)
     {
         ShellStarted.Add(sessionId);
@@ -193,4 +252,41 @@ internal sealed class ManualTimeProvider : TimeProvider
     public DateTimeOffset Now { get; set; } = new(2026, 10, 7, 12, 0, 0, TimeSpan.Zero);
 
     public override DateTimeOffset GetUtcNow() => Now;
+}
+
+internal sealed class FakePreparation : IHostPreparation
+{
+    public List<ReadinessCheck> Checks { get; } = [];
+    public int Calls { get; private set; }
+
+    public static ReadinessCheck Pending(ReadinessCheckId id) => new(id, id.ToString(), ReadinessState.Pending, "x", "y");
+
+    public IReadOnlyList<ReadinessCheck> Check()
+    {
+        Calls++;
+        return Checks.ToList();
+    }
+
+    public IReadOnlyList<ReadinessCheck> Prepare() => throw new NotSupportedException();
+
+    public IReadOnlyList<ReadinessCheck> Fix(ReadinessCheckId id) => throw new NotSupportedException();
+
+    public IReadOnlyList<ReadinessCheck> SetAccountPassword(string password) => throw new NotSupportedException();
+
+    public IReadOnlyList<ReadinessCheck> Revert() => throw new NotSupportedException();
+}
+
+internal sealed class FakeAccounts : ILocalAccounts
+{
+    public LocalAccount? Console { get; set; } = new("joao", "PC-TESTE", "S-1-5-21-1-2-3-1001", true, null, true, false);
+
+    public LocalAccount? ConsoleUser() => Console;
+
+    public PasswordStatus GetPasswordStatus(LocalAccount account) => PasswordStatus.Set;
+
+    public void SetPassword(LocalAccount account, string password) => throw new NotSupportedException();
+
+    public void AddToRemoteDesktopUsers(string sid) => throw new NotSupportedException();
+
+    public void RemoveFromRemoteDesktopUsers(string sid) => throw new NotSupportedException();
 }

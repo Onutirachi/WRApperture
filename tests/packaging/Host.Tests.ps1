@@ -42,6 +42,7 @@ Describe 'Install-WRAppertureHost' {
         $r.Output | Should Match '\[dry run\] (Register|Update) the WRAppertureAgent service'
         $r.Output | Should Match 'automatic restart'
         $r.Output | Should Match 'TCP port 5080 in the firewall \(Domain,Private\)'
+        $r.Output | Should Match 'UDP port 5081 in the firewall .*\(Domain,Private\)'
         $r.Output | Should Match '\[dry run\] Start the WRAppertureAgent service'
         $dir | Should Not Exist
         [bool](Get-Service WRAppertureAgent -ErrorAction SilentlyContinue) | Should Be $serviceBefore

@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Hosting.WindowsServices;
 using WRApperture.Host.Agent.Certificates;
+using WRApperture.Host.Agent.Discovery;
 using WRApperture.Host.Agent.Endpoints;
 using WRApperture.Host.Agent.Icons;
+using WRApperture.Host.Agent.Pairing;
+using WRApperture.Host.Agent.Readiness;
 using WRApperture.Host.Agent.Security;
 using WRApperture.Host.Agent.Sessions;
 using WRApperture.Host.Agent.Updates;
@@ -63,6 +66,14 @@ builder.Services.AddSingleton<IHostSetupRunner, HostSetupRunner>();
 builder.Services.AddSingleton(new HostUpdaterOptions());
 builder.Services.AddSingleton<HostUpdater>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<HostUpdater>());
+builder.Services.AddSingleton<HostReadiness>();
+builder.Services.AddSingleton(new PairingOptions
+{
+    // Development: the host app is built to another folder (set Pairing:ApproverPath in appsettings or the environment).
+    ApproverPath = builder.Configuration["Pairing:ApproverPath"] ?? new PairingOptions().ApproverPath,
+});
+builder.Services.AddSingleton<PairingService>();
+builder.Services.AddHostedService<DiscoveryResponder>();
 
 // Runs only with the real Kestrel server (never under TestServer), so tests don't touch the cert store.
 builder.WebHost.ConfigureKestrel(kestrel =>
@@ -82,6 +93,7 @@ try
     app.MapAgentApi();
     app.MapSessionApi();
     app.MapUpdateApi();
+    app.MapPairingApi();
 
     app.Lifetime.ApplicationStarted.Register(() =>
     {

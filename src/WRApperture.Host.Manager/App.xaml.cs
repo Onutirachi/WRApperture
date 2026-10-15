@@ -26,6 +26,13 @@ public partial class App : Application
             .CreateLogger();
         DispatcherUnhandledException += OnUnhandledException;
 
+        // Opened by the agent to approve a pairing request: just that window, as the signed-in user, no elevation.
+        if (e.Args is [PairingApprovalWindow.Argument, var id, var secret, ..])
+        {
+            ShowPairingApproval(id, secret);
+            return;
+        }
+
         // Writing to the registry, firewall and service needs admin: ask once; if declined, open read-only.
         var isAdmin = Elevation.IsAdministrator();
         if (!isAdmin && !e.Args.Contains(Elevation.ReadOnlyArgument) && Elevation.TryRelaunchElevated())
@@ -46,6 +53,26 @@ public partial class App : Application
         Log.Information("Host manager started (admin: {Admin})", isAdmin);
         WRApperture.Ui.ThemeManager.Initialize(this);
         var window = new MainWindow { DataContext = _services.GetRequiredService<ManagerViewModel>() };
+        MainWindow = window;
+        window.Show();
+    }
+
+    private void ShowPairingApproval(string id, string secret)
+    {
+        _services = new ServiceCollection()
+            .AddLogging(b => b.AddSerilog(dispose: false))
+            .AddWRAppertureHostCore()
+            .AddSingleton<IAgentService, AgentService>()
+            .BuildServiceProvider();
+
+        var settings = _services.GetRequiredService<WRApperture.Host.Core.Agent.IAgentSettingsStore>().Load();
+        var fingerprint = _services.GetRequiredService<IAgentService>().Fingerprint(settings.CertificateThumbprint);
+        var client = new PairingApprovalClient(settings.Port, fingerprint, secret);
+        Exit += (_, _) => client.Dispose();
+
+        Log.Information("Pairing approval window for request {Id}", id);
+        WRApperture.Ui.ThemeManager.Initialize(this);
+        var window = new PairingApprovalWindow(client, id);
         MainWindow = window;
         window.Show();
     }
