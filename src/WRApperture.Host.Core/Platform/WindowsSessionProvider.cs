@@ -40,8 +40,9 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
                     : names.Contains("rdpshell") || names.Contains("rdpinit") ? SessionKind.RemoteApp
                     : SessionKind.Other;
 
-                result.Add(new HostSession(info.SessionId, user, Query(info.SessionId, Native.WtsDomainName),
-                    (SessionConnectState)info.State, info.SessionId == consoleId, kind));
+                var domain = Query(info.SessionId, Native.WtsDomainName);
+                result.Add(new HostSession(info.SessionId, user, domain,
+                    (SessionConnectState)info.State, info.SessionId == consoleId, kind, SidOf(domain, user)));
             }
         }
         finally
@@ -171,6 +172,19 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
         finally
         {
             Native.WTSFreeMemory(buffer);
+        }
+    }
+
+    private static string? SidOf(string? domain, string user)
+    {
+        try
+        {
+            var account = string.IsNullOrEmpty(domain) ? new System.Security.Principal.NTAccount(user) : new System.Security.Principal.NTAccount(domain, user);
+            return ((System.Security.Principal.SecurityIdentifier)account.Translate(typeof(System.Security.Principal.SecurityIdentifier))).Value;
+        }
+        catch (Exception ex) when (ex is System.Security.Principal.IdentityNotMappedException or SystemException)
+        {
+            return null;
         }
     }
 

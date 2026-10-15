@@ -25,6 +25,11 @@ internal sealed class FakeUserRegistryAccess : IUserRegistryAccess
 
     public object? GetValue(string sid, string path, string name) => _values.GetValueOrDefault(Key(sid, path, name));
 
+    public IReadOnlyList<string> GetValueNames(string sid, string path) =>
+        _values.Keys.Where(k => k.StartsWith($@"{sid}\{path}\", StringComparison.OrdinalIgnoreCase) &&
+                                !k[($@"{sid}\{path}\").Length..].Contains('\\'))
+            .Select(k => k[($@"{sid}\{path}\").Length..]).ToList();
+
     public void SetValue(string sid, string path, string name, object value, Microsoft.Win32.RegistryValueKind kind) =>
         _values[Key(sid, path, name)] = value;
 

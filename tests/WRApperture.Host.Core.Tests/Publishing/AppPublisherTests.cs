@@ -208,4 +208,67 @@ public class AppPublisherTests
         Assert.True(_publisher.Unpublish("n"));
         Assert.False(_publisher.Unpublish("n"));
     }
+
+    private const string Tray = @"C:\Program Files\Fortinet\FortiClient\FortiTray.exe";
+
+    [Fact]
+    public void Start_with_programs_are_stored_and_read_back()
+    {
+        _fs.Files.Add(Tray);
+
+        var result = _publisher.Publish(new PublishRequest(Notepad, "Notas", StartWith: [Tray, Tray, Notepad], AutoStartWith: false));
+
+        Assert.Equal([Tray], result.App.StartWithPrograms); // no duplicates, not the app itself
+        Assert.False(result.App.AutoStartWith);
+        var key = AppKey(result.App.Alias);
+        Assert.Equal(new[] { Tray }, _registry.GetValue(key, AppPublisher.StartWithValue));
+        Assert.Equal(RegistryValueKind.MultiString, _registry.GetKind(key, AppPublisher.StartWithValue));
+        Assert.Equal(0, _registry.GetValue(key, AppPublisher.AutoStartWithValue));
+
+        var read = _publisher.Get(result.App.Alias)!;
+        Assert.Equal([Tray], read.StartWithPrograms);
+        Assert.False(read.AutoStartWith);
+    }
+
+    [Fact]
+    public void Apps_without_start_with_keep_their_keys_as_before()
+    {
+        var app = _publisher.Publish(new PublishRequest(Notepad, "Notas")).App;
+
+        Assert.Empty(app.StartWithPrograms);
+        Assert.True(app.AutoStartWith);
+        Assert.Null(_registry.GetValue(AppKey(app.Alias), AppPublisher.StartWithValue));
+        Assert.Null(_registry.GetValue(AppKey(app.Alias), AppPublisher.AutoStartWithValue));
+    }
+
+    [Fact]
+    public void Republishing_without_start_with_keeps_it_and_an_empty_list_clears_it()
+    {
+        _fs.Files.Add(Tray);
+        var alias = _publisher.Publish(new PublishRequest(Notepad, "Notas", StartWith: [Tray], AutoStartWith: false)).App.Alias;
+
+        var kept = _publisher.Publish(new PublishRequest(Notepad, "Notas", alias));
+        Assert.Equal(PublishOutcome.Unchanged, kept.Outcome);
+        Assert.Equal([Tray], kept.App.StartWithPrograms);
+        Assert.False(kept.App.AutoStartWith);
+
+        var cleared = _publisher.Publish(new PublishRequest(Notepad, "Notas", alias, StartWith: [], AutoStartWith: true));
+        Assert.Equal(PublishOutcome.Updated, cleared.Outcome);
+        Assert.Null(_registry.GetValue(AppKey(alias), AppPublisher.StartWithValue));
+        Assert.Null(_registry.GetValue(AppKey(alias), AppPublisher.AutoStartWithValue));
+    }
+
+    [Theory]
+    [InlineData(@"FortiTray.exe")]
+    [InlineData(@"C:\Program Files\Fortinet\FortiClient\missing.exe")]
+    [InlineData(@"C:\Program Files\Fortinet\FortiClient\readme.txt")]
+    public void Start_with_programs_must_be_existing_absolute_executables(string program)
+    {
+        _fs.Files.Add(@"C:\Program Files\Fortinet\FortiClient\readme.txt");
+
+        var ex = Assert.Throws<AppValidationException>(() => _publisher.Publish(new PublishRequest(Notepad, "Notas", StartWith: [program])));
+
+        Assert.Equal("startWith", ex.Field);
+        Assert.Empty(_publisher.List());
+    }
 }

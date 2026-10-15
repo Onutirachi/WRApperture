@@ -1,7 +1,9 @@
 using System.Windows;
 using Microsoft.Win32;
 using WRApperture.Host.Core;
+using WRApperture.Host.Core.Abstractions;
 using WRApperture.Host.Core.Models;
+using WRApperture.Host.Core.StartWith;
 using WRApperture.Host.Manager.Views;
 using WRApperture.Shared.Localization;
 
@@ -17,7 +19,9 @@ public sealed record EditorInput(
     string? Arguments,
     string IconPath,
     int IconIndex,
-    bool ShowInList);
+    bool ShowInList,
+    IReadOnlyList<string>? StartWith = null,
+    bool AutoStartWith = true);
 
 public sealed record TokenInfo(string Token, string Port, string Addresses, string Fingerprint);
 
@@ -43,14 +47,15 @@ public interface IManagerDialogs
     void OpenSettings(string uri);
 }
 
-internal sealed class ManagerDialogs(IIconProvider icons) : IManagerDialogs
+internal sealed class ManagerDialogs(IIconProvider icons, IStartWithResolver startWith, ILocalAccounts accounts) : IManagerDialogs
 {
     private const string Title = "WRApperture";
 
     private static Window? Owner => Application.Current.MainWindow;
 
     public bool EditApp(EditorInput input, Func<PublishRequest, string?> trySave) =>
-        new AppEditorWindow(input, trySave, (path, index) => ViewModels.Icons.Load(icons, path, index, 48)) { Owner = Owner }.ShowDialog() == true;
+        new AppEditorWindow(input, trySave, (path, index) => ViewModels.Icons.Load(icons, path, index, 48),
+            path => startWith.Detect(path, accounts.ConsoleUser()?.Sid)) { Owner = Owner }.ShowDialog() == true;
 
     public IReadOnlyList<DiscoveredApp>? ChooseInstalled(IReadOnlyList<DiscoveredApp> apps)
     {

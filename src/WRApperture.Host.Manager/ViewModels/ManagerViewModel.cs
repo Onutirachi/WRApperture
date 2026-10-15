@@ -9,13 +9,15 @@ using WRApperture.Host.Core.Agent;
 using WRApperture.Host.Core.Errors;
 using WRApperture.Host.Core.Models;
 using WRApperture.Host.Core.Publishing;
+using WRApperture.Host.Core.StartWith;
 using WRApperture.Host.Manager.Services;
 using WRApperture.Shared.Localization;
 using WRApperture.Shared.Updates;
 
 namespace WRApperture.Host.Manager.ViewModels;
 
-public sealed class AppItemViewModel(PublishedApp app, ImageSource? icon)
+/// <param name="startWith">What starts with the app in remote sessions (shown under it).</param>
+public sealed class AppItemViewModel(PublishedApp app, ImageSource? icon, IReadOnlyList<StartWithProgram> startWith)
 {
     public PublishedApp App { get; } = app;
     public ImageSource? Icon { get; } = icon;
@@ -27,7 +29,8 @@ public sealed class AppItemViewModel(PublishedApp app, ImageSource? icon)
         CommandLinePolicy.Required => Strings.T("manager.app.arguments", App.RequiredArguments),
         CommandLinePolicy.Any => Strings.T("manager.app.anyArguments"),
         _ => string.Empty,
-    } + (App.ShowInList ? string.Empty : "  ·  " + Strings.T("manager.app.hidden"));
+    } + (App.ShowInList ? string.Empty : "  ·  " + Strings.T("manager.app.hidden"))
+      + (startWith.Count == 0 ? string.Empty : "  ·  " + Strings.T("manager.app.startsWith", string.Join(", ", startWith.Select(p => p.Name))));
 }
 
 /// <summary>A client paired by approval (it has its own token).</summary>
@@ -41,6 +44,7 @@ public sealed partial class ManagerViewModel : ObservableObject
     private readonly IIconProvider _icons;
     private readonly IHostPreparation _preparation;
     private readonly ILocalAccounts _accounts;
+    private readonly IStartWithResolver _startWith;
     private readonly IAgentSettingsStore _agentSettings;
     private readonly IAgentService _agent;
     private readonly IManagerDialogs _dialogs;
@@ -48,7 +52,7 @@ public sealed partial class ManagerViewModel : ObservableObject
     private readonly ILogger<ManagerViewModel> _logger;
 
     public ManagerViewModel(IAppPublisher publisher, IAppSourceInspector inspector, IAppDiscovery discovery, IIconProvider icons,
-        IHostPreparation preparation, ILocalAccounts accounts, IAgentSettingsStore agentSettings, IAgentService agent, IManagerDialogs dialogs,
+        IHostPreparation preparation, ILocalAccounts accounts, IStartWithResolver startWith, IAgentSettingsStore agentSettings, IAgentService agent, IManagerDialogs dialogs,
         IUpdateChecker updates, ILogger<ManagerViewModel> logger, bool isAdmin)
     {
         _updates = updates;
@@ -58,6 +62,7 @@ public sealed partial class ManagerViewModel : ObservableObject
         _icons = icons;
         _preparation = preparation;
         _accounts = accounts;
+        _startWith = startWith;
         _agentSettings = agentSettings;
         _agent = agent;
         _dialogs = dialogs;
@@ -92,9 +97,10 @@ public sealed partial class ManagerViewModel : ObservableObject
     private void Refresh()
     {
         Apps.Clear();
+        var sid = _accounts.ConsoleUser()?.Sid;
         foreach (var app in _publisher.List())
         {
-            Apps.Add(new AppItemViewModel(app, Icons.Load(_icons, app.IconPath, app.IconIndex)));
+            Apps.Add(new AppItemViewModel(app, Icons.Load(_icons, app.IconPath, app.IconIndex), _startWith.For(app, sid)));
         }
 
         OnPropertyChanged(nameof(HasNoApps));
@@ -170,7 +176,7 @@ public sealed partial class ManagerViewModel : ObservableObject
     {
         var app = SelectedApp!.App;
         var input = new EditorInput(Strings.T("manager.editor.editTitle"), app.Alias, app.DisplayName, app.RawPath ?? app.ExecutablePath,
-            app.CommandLinePolicy, app.RequiredArguments, app.IconPath, app.IconIndex, app.ShowInList);
+            app.CommandLinePolicy, app.RequiredArguments, app.IconPath, app.IconIndex, app.ShowInList, app.StartWithPrograms, app.AutoStartWith);
         if (_dialogs.EditApp(input, TrySave))
         {
             Refresh();

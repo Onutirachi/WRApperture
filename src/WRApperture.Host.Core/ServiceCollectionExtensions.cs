@@ -28,6 +28,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ILocalAccounts, WindowsLocalAccounts>();
         services.AddSingleton<IServiceControl, WindowsServiceControl>();
         services.AddSingleton<IPowerSettings, WindowsPowerSettings>();
+        services.AddSingleton<IProcessList, WindowsProcessList>();
+        services.AddSingleton<StartWith.IStartupPrograms, StartWith.StartupPrograms>();
+        services.AddSingleton<StartWith.IStartWithResolver, StartWith.StartWithResolver>();
 
         services.AddSingleton<IAppPublisher, AppPublisher>();
         services.AddSingleton<IFileDescriptionReader, FileDescriptionReader>();

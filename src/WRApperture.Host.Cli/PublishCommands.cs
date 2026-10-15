@@ -62,8 +62,13 @@ internal static class PublishCommands
         var icon = new Option<string?>("--icon") { Description = Strings.T("cli.options.icon") };
         var iconIndex = new Option<int>("--icon-index") { Description = Strings.T("cli.options.iconIndex"), DefaultValueFactory = _ => 0 };
         var hidden = new Option<bool>("--hidden") { Description = Strings.T("cli.options.hidden") };
+        var startWith = new Option<string[]>("--start-with") { Description = Strings.T("cli.options.startWith") };
+        var noAutoStartWith = new Option<bool>("--no-auto-start-with") { Description = Strings.T("cli.options.noAutoStartWith") };
 
-        var cmd = new Command("publish", Strings.T("cli.commands.publish")) { path, name, alias, args, policy, icon, iconIndex, hidden };
+        var cmd = new Command("publish", Strings.T("cli.commands.publish"))
+        {
+            path, name, alias, args, policy, icon, iconIndex, hidden, startWith, noAutoStartWith,
+        };
         cmd.SetAction(r => ExitCodes.Run(() =>
         {
             var fixedArgs = r.GetValue(args);
@@ -83,7 +88,9 @@ internal static class PublishCommands
                 r.GetValue(iconIndex),
                 argsPolicy,
                 fixedArgs,
-                !r.GetValue(hidden)));
+                !r.GetValue(hidden),
+                r.GetValue(startWith) is { Length: > 0 } programs ? programs : null,
+                r.GetValue(noAutoStartWith) ? false : null));
 
             var app = result.App;
             Console.WriteLine(result.Outcome switch

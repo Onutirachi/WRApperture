@@ -30,6 +30,8 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
     internal FakeSetupRunner Setups { get; } = new();
     internal FakePreparation Preparation { get; } = new();
     internal FakeAccounts Accounts { get; } = new();
+    internal FakeProcesses Processes { get; } = new();
+    internal FakeStartupPrograms Startup { get; } = new();
 
     /// <summary>The host app the agent opens to approve pairing requests (never started: see <see cref="FakeSessions.Started"/>).</summary>
     internal const string ApproverPath = @"C:\Fake\WRApperture.Host.exe";
@@ -58,6 +60,8 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
             services.AddSingleton<IHostSetupRunner>(Setups);
             services.AddSingleton<IHostPreparation>(Preparation);
             services.AddSingleton<ILocalAccounts>(Accounts);
+            services.AddSingleton<IProcessList>(Processes);
+            services.AddSingleton<WRApperture.Host.Core.StartWith.IStartupPrograms>(Startup);
             services.AddSingleton(new Pairing.PairingOptions { ApproverPath = ApproverPath });
             services.AddSingleton<IStartupFilter, RemoteAddressFilter>();
             services.AddSingleton(new HostUpdaterOptions
@@ -289,4 +293,18 @@ internal sealed class FakeAccounts : ILocalAccounts
     public void AddToRemoteDesktopUsers(string sid) => throw new NotSupportedException();
 
     public void RemoveFromRemoteDesktopUsers(string sid) => throw new NotSupportedException();
+}
+
+internal sealed class FakeProcesses : IProcessList
+{
+    public List<RunningProcess> All { get; } = [];
+
+    public IReadOnlyList<RunningProcess> InSessions(IReadOnlySet<int> sessionIds) => All.Where(p => sessionIds.Contains(p.SessionId)).ToList();
+}
+
+internal sealed class FakeStartupPrograms : WRApperture.Host.Core.StartWith.IStartupPrograms
+{
+    public List<WRApperture.Host.Core.StartWith.StartupProgram> Programs { get; } = [];
+
+    public IReadOnlyList<WRApperture.Host.Core.StartWith.StartupProgram> List(string? userSid) => Programs;
 }

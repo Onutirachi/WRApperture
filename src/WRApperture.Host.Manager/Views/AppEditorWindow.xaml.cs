@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Media;
 using Microsoft.Win32;
 using WRApperture.Host.Core.Models;
+using WRApperture.Host.Core.StartWith;
 using WRApperture.Host.Manager.Services;
 using WRApperture.Shared.Localization;
 
@@ -13,15 +14,18 @@ public partial class AppEditorWindow : Window
     private readonly EditorInput _input;
     private readonly Func<PublishRequest, string?> _trySave;
     private readonly Func<string, int, ImageSource?> _loadIcon;
+    private readonly Func<string, IReadOnlyList<StartWithProgram>> _detectStartWith;
     private string _iconPath;
     private int _iconIndex;
 
-    public AppEditorWindow(EditorInput input, Func<PublishRequest, string?> trySave, Func<string, int, ImageSource?> loadIcon)
+    public AppEditorWindow(EditorInput input, Func<PublishRequest, string?> trySave, Func<string, int, ImageSource?> loadIcon,
+        Func<string, IReadOnlyList<StartWithProgram>> detectStartWith)
     {
         InitializeComponent();
         _input = input;
         _trySave = trySave;
         _loadIcon = loadIcon;
+        _detectStartWith = detectStartWith;
         _iconPath = input.IconPath;
         _iconIndex = input.IconIndex;
 
@@ -40,6 +44,14 @@ public partial class AppEditorWindow : Window
             _ => NoArgs,
         }).IsChecked = true;
         IconPreview.Source = loadIcon(_iconPath, _iconIndex);
+        AutoStartBox.IsChecked = input.AutoStartWith;
+        foreach (var program in input.StartWith ?? [])
+        {
+            StartWithList.Items.Add(program);
+        }
+
+        PathBox.LostFocus += (_, _) => UpdateDetected();
+        UpdateDetected();
         Loaded += (_, _) => { NameBox.Focus(); NameBox.SelectAll(); };
     }
 
@@ -52,8 +64,42 @@ public partial class AppEditorWindow : Window
             _iconPath = dialog.FileName;
             _iconIndex = 0;
             IconPreview.Source = _loadIcon(_iconPath, _iconIndex);
+            UpdateDetected();
         }
     }
+
+    /// <summary>Shows which startup programs of the program's folder would start with it.</summary>
+    private void UpdateDetected()
+    {
+        var detected = string.IsNullOrWhiteSpace(PathBox.Text) ? [] : _detectStartWith(Environment.ExpandEnvironmentVariables(PathBox.Text.Trim().Trim('"')));
+        DetectedText.Text = detected.Count == 0
+            ? Strings.T("manager.editor.detectedNone")
+            : Strings.T("manager.editor.detected", string.Join(", ", detected.Select(p => $"{p.Name} ({System.IO.Path.GetFileName(p.ExecutablePath)})")));
+    }
+
+    private void OnAddStartWith(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Filter = $"{Strings.T("manager.editor.browseFilter")} (*.exe)|*.exe",
+            InitialDirectory = System.IO.Path.GetDirectoryName(Environment.ExpandEnvironmentVariables(PathBox.Text.Trim().Trim('"'))),
+        };
+        if (dialog.ShowDialog(this) == true && !StartWithList.Items.Contains(dialog.FileName))
+        {
+            StartWithList.Items.Add(dialog.FileName);
+        }
+    }
+
+    private void OnRemoveStartWith(object sender, RoutedEventArgs e)
+    {
+        if (StartWithList.SelectedItem is { } selected)
+        {
+            StartWithList.Items.Remove(selected);
+        }
+    }
+
+    private void OnStartWithSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) =>
+        RemoveStartWithButton.IsEnabled = StartWithList.SelectedItem is not null;
 
     private void OnSave(object sender, RoutedEventArgs e)
     {
@@ -71,7 +117,9 @@ public partial class AppEditorWindow : Window
             pathChanged && _iconPath == _input.IconPath ? 0 : _iconIndex,
             policy,
             policy == CommandLinePolicy.Required ? ArgsBox.Text.Trim() : null,
-            ShowBox.IsChecked == true);
+            ShowBox.IsChecked == true,
+            StartWithList.Items.Cast<string>().ToList(),
+            AutoStartBox.IsChecked == true);
 
         var error = _trySave(request);
         if (error is null)

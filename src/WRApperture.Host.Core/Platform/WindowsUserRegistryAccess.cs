@@ -19,6 +19,12 @@ internal sealed class WindowsUserRegistryAccess : IUserRegistryAccess
         return key?.GetValue(name);
     }
 
+    public IReadOnlyList<string> GetValueNames(string sid, string path)
+    {
+        using var key = Registry.Users.OpenSubKey($@"{sid}\{path}");
+        return key?.GetValueNames() ?? [];
+    }
+
     public void SetValue(string sid, string path, string name, object value, RegistryValueKind kind)
     {
         using var key = Registry.Users.CreateSubKey($@"{sid}\{path}", writable: true);

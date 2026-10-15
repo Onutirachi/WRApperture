@@ -27,7 +27,9 @@ public enum SessionConnectState
     Init = 9,
 }
 
-public sealed record HostSession(int Id, string User, string? Domain, SessionConnectState State, bool IsConsole, SessionKind Kind);
+/// <param name="Sid">The user's security identifier, when it could be resolved.</param>
+public sealed record HostSession(int Id, string User, string? Domain, SessionConnectState State, bool IsConsole, SessionKind Kind,
+    string? Sid = null);
 
 /// <summary>Windows Terminal Services session operations (requires LocalSystem for logoff/shell start).</summary>
 public interface ISessionProvider

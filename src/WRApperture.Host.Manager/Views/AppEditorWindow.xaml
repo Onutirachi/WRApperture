@@ -32,6 +32,22 @@
 
         <CheckBox x:Name="ShowBox" Content="{loc:T manager.editor.showInClients}" Margin="0,12,0,0" />
 
+        <!-- Programs started with the app in remote sessions -->
+        <TextBlock Text="{loc:T manager.editor.startWith}" FontWeight="SemiBold" Margin="0,16,0,2" />
+        <TextBlock Text="{loc:T manager.editor.startWithHint}" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,6" />
+        <CheckBox x:Name="AutoStartBox" Content="{loc:T manager.editor.autoStartWith}" />
+        <TextBlock x:Name="DetectedText" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="22,2,0,0" />
+        <TextBlock Text="{loc:T manager.editor.alsoStart}" Margin="0,8,0,4" />
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Margin="8,0,0,0">
+                <Button Content="{loc:T manager.editor.addStartWith}" Style="{StaticResource Secondary}" Click="OnAddStartWith" />
+                <Button x:Name="RemoveStartWithButton" Content="{loc:T manager.editor.removeStartWith}" Style="{StaticResource Secondary}" Margin="0,6,0,0"
+                        Click="OnRemoveStartWith" IsEnabled="False" />
+            </StackPanel>
+            <ListBox x:Name="StartWithList" Height="64" SelectionChanged="OnStartWithSelectionChanged"
+                     AutomationProperties.Name="{loc:T manager.editor.alsoStart}" />
+        </DockPanel>
+
         <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Error}" TextWrapping="Wrap" Margin="0,12,0,0" Visibility="Collapsed" />
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">

@@ -30,6 +30,8 @@
   "options.icon": "Icon file (default: the exe itself)",
   "options.iconIndex": "Icon index",
   "options.hidden": "Do not show in listings",
+  "options.startWith": "Program (.exe) to also start in the remote session when the app opens (repeatable)",
+  "options.noAutoStartWith": "Do not start the sign-in programs of the app's folder with it",
   "options.out": "Output PNG file",
   "options.size": "Size in pixels (16-256)",
 

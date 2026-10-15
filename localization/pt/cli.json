@@ -30,6 +30,8 @@
   "options.icon": "Arquivo do ícone (padrão: o próprio exe)",
   "options.iconIndex": "Índice do ícone",
   "options.hidden": "Não exibir em listagens",
+  "options.startWith": "Programa (.exe) para iniciar também na sessão remota quando o app abrir (pode repetir)",
+  "options.noAutoStartWith": "Não iniciar junto os programas de inicialização da pasta do app",
   "options.out": "Arquivo PNG de saída",
   "options.size": "Tamanho em pixels (16-256)",
 

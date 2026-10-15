@@ -38,6 +38,7 @@ Baixe os instaladores da página de [Releases](https://github.com/Onutirachi/WRA
 
    Antes de mudar qualquer coisa, **Resolver** explica o que muda, por quê e o efeito colateral. Tudo pode ser desfeito com `wrahost revert`, menos a senha.
 4. Arraste para a janela os atalhos (da área de trabalho ou do Menu Iniciar) ou programas `.exe` que quer usar remotamente. Nome, caminho, argumentos e ícone são preenchidos automaticamente. O botão **Do Menu Iniciar…** publica vários apps instalados de uma vez.
+5. Alguns apps dependem de um programa que o Windows inicia com o login. Exemplo: a janela de login do FortiClient vem do `FortiTray.exe`. Numa sessão de app remoto esses programas não rodam, então o agente inicia junto os programas de inicialização que ficam na pasta do app. O editor do app mostra o que foi encontrado em **Iniciar junto**, onde também dá para desligar isso ou acrescentar outro programa.
 
 O Windows Home não suporta RemoteApp; o instalador avisa e não instala.
 

@@ -13,6 +13,12 @@ internal sealed class AppPublisher(
     IFileSystemProbe fs,
     ILogger<AppPublisher> logger) : IAppPublisher
 {
+    /// <summary>REG_MULTI_SZ: programs to start with the app (<see cref="PublishedApp.StartWith"/>).</summary>
+    internal const string StartWithValue = "WRAppertureStartWith";
+
+    /// <summary>DWORD 0: do not start the startup programs of the app's folder (absent = on).</summary>
+    internal const string AutoStartWithValue = "WRAppertureAutoStartWith";
+
     public IReadOnlyList<PublishedApp> List() =>
         registry.GetSubKeyNames(RegistryPaths.Applications)
             .Select(Read)
@@ -29,6 +35,9 @@ internal sealed class AppPublisher(
         var arguments = request.CommandLinePolicy == CommandLinePolicy.Required ? request.RequiredArguments!.Trim() : null;
 
         var existing = ResolveExisting(request, validated.ExecutablePath, arguments);
+        var startWith = request.StartWith is null
+            ? existing?.StartWithPrograms ?? []
+            : ValidateStartWith(request.StartWith, validated.ExecutablePath);
         var alias = existing?.Alias ?? request.Alias ?? AliasGenerator.MakeUnique(
             AliasGenerator.Slugify(request.DisplayName),
             a => registry.KeyExists(RegistryPaths.App(a)));
@@ -43,7 +52,9 @@ internal sealed class AppPublisher(
             request.CommandLinePolicy,
             arguments,
             request.ShowInList,
-            IsManaged: existing?.IsManaged ?? true);
+            IsManaged: existing?.IsManaged ?? true,
+            startWith.Count == 0 ? null : startWith,
+            request.AutoStartWith ?? existing?.AutoStartWith ?? true);
 
         if (existing is not null && Equivalent(existing, desired))
         {
@@ -81,6 +92,37 @@ internal sealed class AppPublisher(
         registry.DeleteKey(RegistryPaths.App(existing.Alias));
         logger.LogInformation("RemoteApp {Alias} unpublished: {@Previous}", existing.Alias, existing);
         return true;
+    }
+
+    /// <summary>Absolute, existing programs (.exe), without duplicates or the app itself.</summary>
+    private IReadOnlyList<string> ValidateStartWith(IReadOnlyList<string> programs, string appPath)
+    {
+        var result = new List<string>();
+        foreach (var program in programs.Select(p => fs.Expand(p.Trim().Trim('"'))).Where(p => p.Length > 0))
+        {
+            if (!Path.IsPathFullyQualified(program))
+            {
+                throw new AppValidationException("startWith", Strings.T("host.validation.pathNotAbsolute", program));
+            }
+
+            if (!program.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new AppValidationException("startWith", Strings.T("host.validation.notExecutable"));
+            }
+
+            if (!fs.FileExists(program))
+            {
+                throw new AppValidationException("startWith", Strings.T("host.validation.fileNotFound", program));
+            }
+
+            if (!string.Equals(program, appPath, StringComparison.OrdinalIgnoreCase) &&
+                !result.Contains(program, StringComparer.OrdinalIgnoreCase))
+            {
+                result.Add(program);
+            }
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -126,7 +168,9 @@ internal sealed class AppPublisher(
             Enum.IsDefined(typeof(CommandLinePolicy), policy) ? (CommandLinePolicy)policy : CommandLinePolicy.None,
             NullIfEmpty(registry.GetValue(key, "RequiredCommandLine") as string),
             AsInt(registry.GetValue(key, "ShowInTSWA"), 1) != 0,
-            AsInt(registry.GetValue(key, RegistryPaths.ManagedMarker), 0) == 1);
+            AsInt(registry.GetValue(key, RegistryPaths.ManagedMarker), 0) == 1,
+            registry.GetValue(key, StartWithValue) is string[] { Length: > 0 } startWith ? startWith : null,
+            AsInt(registry.GetValue(key, AutoStartWithValue), 1) != 0);
     }
 
     private void Write(PublishedApp app)
@@ -144,6 +188,25 @@ internal sealed class AppPublisher(
         {
             registry.SetValue(key, RegistryPaths.ManagedMarker, 1, RegistryValueKind.DWord);
         }
+
+        // Only written when set, so apps keep their keys exactly as before this feature otherwise.
+        if (app.StartWithPrograms.Count > 0)
+        {
+            registry.SetValue(key, StartWithValue, app.StartWithPrograms.ToArray(), RegistryValueKind.MultiString);
+        }
+        else if (registry.GetValue(key, StartWithValue) is not null)
+        {
+            registry.DeleteValue(key, StartWithValue);
+        }
+
+        if (!app.AutoStartWith)
+        {
+            registry.SetValue(key, AutoStartWithValue, 0, RegistryValueKind.DWord);
+        }
+        else if (registry.GetValue(key, AutoStartWithValue) is not null)
+        {
+            registry.DeleteValue(key, AutoStartWithValue);
+        }
     }
 
     private static bool Equivalent(PublishedApp a, PublishedApp b) =>
@@ -154,7 +217,9 @@ internal sealed class AppPublisher(
         a.IconIndex == b.IconIndex &&
         a.CommandLinePolicy == b.CommandLinePolicy &&
         (a.RequiredArguments ?? string.Empty) == (b.RequiredArguments ?? string.Empty) &&
-        a.ShowInList == b.ShowInList;
+        a.ShowInList == b.ShowInList &&
+        a.StartWithPrograms.SequenceEqual(b.StartWithPrograms, StringComparer.OrdinalIgnoreCase) &&
+        a.AutoStartWith == b.AutoStartWith;
 
     private void EnsureAdmin()
     {

@@ -9,6 +9,9 @@ public interface IUserRegistryAccess
     IReadOnlyList<string> LoadedUserSids();
 
     object? GetValue(string sid, string path, string name);
+
+    /// <summary>Value names of HKU\&lt;SID&gt;\<paramref name="path"/>; empty when the key or hive is missing.</summary>
+    IReadOnlyList<string> GetValueNames(string sid, string path);
     void SetValue(string sid, string path, string name, object value, RegistryValueKind kind);
     void DeleteValue(string sid, string path, string name);
 }

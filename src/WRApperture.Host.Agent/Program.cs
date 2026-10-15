@@ -74,6 +74,7 @@ builder.Services.AddSingleton(new PairingOptions
 });
 builder.Services.AddSingleton<PairingService>();
 builder.Services.AddHostedService<DiscoveryResponder>();
+builder.Services.AddHostedService<StartWithLauncher>();
 
 // Runs only with the real Kestrel server (never under TestServer), so tests don't touch the cert store.
 builder.WebHost.ConfigureKestrel(kestrel =>
