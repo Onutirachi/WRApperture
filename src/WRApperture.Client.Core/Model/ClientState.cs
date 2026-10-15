@@ -57,6 +57,9 @@ public sealed record PairedHost
 
     /// <summary>The suggested user is a Microsoft account: the password, not the PIN, signs in.</summary>
     public bool MicrosoftAccount { get; init; }
+
+    /// <summary>VPNs connected on the host at the last sync.</summary>
+    public IReadOnlyList<string> Vpns { get; init; } = [];
     public DateTimeOffset? LastSyncUtc { get; init; }
 }
 

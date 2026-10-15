@@ -53,6 +53,7 @@ public sealed class HostSync(IconStore icons, Func<PairedHost, IAgentApi> client
             AgentFeatures = info.Features ?? [],
             AgentVersion = info.AgentVersion,
             Issues = info.Issues ?? [],
+            Vpns = info.Vpns ?? [],
             SuggestedUser = info.SuggestedUser ?? host.SuggestedUser,
             MicrosoftAccount = info.SuggestedUser is null ? host.MicrosoftAccount : info.MicrosoftAccount,
             LastSyncUtc = time.GetUtcNow(),

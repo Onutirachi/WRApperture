@@ -119,6 +119,8 @@ public sealed partial class MainViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(AskBeforeReleasingSession));
         OnPropertyChanged(nameof(HostVersionText));
+        OnPropertyChanged(nameof(HostVpnText));
+        OnPropertyChanged(nameof(HasHostVpn));
         ShowCachedApps();
         EvaluateHostUpdate();
         if (value is not null)
@@ -182,6 +184,13 @@ public sealed partial class MainViewModel : ObservableObject
     public string HostVersionText => SelectedHost is not { } option ? string.Empty
         : option.Host.AgentVersion is { } version ? Strings.T("client.main.hostVersion", option.Label, version)
         : Strings.T("client.main.hostVersionUnknown", option.Label);
+
+    /// <summary>"VPN on: Fortinet SSL VPN" next to the host list (empty when the host has none).</summary>
+    public string HostVpnText => SelectedHost is { Host.Vpns: { Count: > 0 } vpns }
+        ? Strings.T("client.main.hostVpn", string.Join(", ", vpns))
+        : string.Empty;
+
+    public bool HasHostVpn => HostVpnText.Length > 0;
 
     /// <summary>"WRApperture 0.17.0" for the settings menu.</summary>
     public string ClientVersionText => Strings.T("client.main.clientVersion", ProductVersion.Format(_updates.Current));
@@ -783,6 +792,8 @@ public sealed partial class MainViewModel : ObservableObject
         {
             ShowCachedApps();
             OnPropertyChanged(nameof(HostVersionText));
+            OnPropertyChanged(nameof(HostVpnText));
+            OnPropertyChanged(nameof(HasHostVpn));
         }
     }
 

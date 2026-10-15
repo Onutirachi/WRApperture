@@ -275,6 +275,22 @@ public class HostPreparationTests
     }
 
     [Fact]
+    public void A_public_vpn_network_is_ignored_and_never_made_private()
+    {
+        var vpn = new Guid("22222222-2222-2222-2222-222222222222");
+        _networks.Networks.Add(new NetworkProfile(vpn, "Rede 3", NetworkCategory.Public, "Fortinet SSL VPN"));
+
+        Assert.Equal(ReadinessState.Ok, StateOf(_preparation.Check(), ReadinessCheckId.NetworkProfile));
+
+        _networks.Networks[0] = _networks.Networks[0] with { Category = NetworkCategory.Public };
+        var check = _preparation.Check().Single(c => c.Id == ReadinessCheckId.NetworkProfile);
+        Assert.Equal("Public: Casa", check.CurrentValue); // only the local network
+
+        _preparation.Fix(ReadinessCheckId.NetworkProfile);
+        Assert.Equal(NetworkCategory.Public, _networks.Networks.Single(n => n.Id == vpn).Category);
+    }
+
+    [Fact]
     public void Prepare_never_changes_network_groups_nor_sign_in()
     {
         _networks.Networks[0] = _networks.Networks[0] with { Category = NetworkCategory.Public };

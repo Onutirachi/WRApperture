@@ -15,12 +15,12 @@ internal static class ApiEndpoints
     {
         app.MapGet(ApiContract.Health, () => Results.Text("ok"));
 
-        app.MapGet(ApiContract.Host, (IHostInfoProvider hostInfo, AgentIdentity identity, HostReadiness readiness) =>
+        app.MapGet(ApiContract.Host, (IHostInfoProvider hostInfo, AgentIdentity identity, HostReadiness readiness, HostVpns vpns) =>
         {
             var info = hostInfo.Get();
             var summary = readiness.Get();
             return Results.Ok(new HostInfoDto(info.HostName, info.RdpPort, AgentInfo.Version, identity.Fingerprint,
-                AgentInfo.Features, summary.Issues, summary.SuggestedUser, summary.MicrosoftAccount));
+                AgentInfo.Features, summary.Issues, summary.SuggestedUser, summary.MicrosoftAccount, vpns.Get()));
         });
 
         // Only alias and name leave the host: executable paths stay private.

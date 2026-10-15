@@ -246,7 +246,7 @@ internal sealed class HostPreparation(
 
     private void MakePublicNetworksPrivate()
     {
-        foreach (var network in networks.Connected().Where(n => n.Category == NetworkCategory.Public))
+        foreach (var network in networks.Connected().Where(n => n.Category == NetworkCategory.Public && !n.IsVpn))
         {
             _snapshot.RecordDword(NetworkSnapshotPrefix + network.Id.ToString("D"), new DwordSnapshot(true, (int)network.Category));
             networks.SetCategory(network.Id, NetworkCategory.Private);
@@ -376,7 +376,8 @@ internal sealed class HostPreparation(
 
     private ReadinessCheck CheckNetwork()
     {
-        var connected = networks.Connected();
+        // Other PCs come in through the local network, never through a VPN (FortiClient's network is Public).
+        var connected = networks.Connected().Where(n => !n.IsVpn).ToList();
         var publicOnes = connected.Where(n => n.Category == NetworkCategory.Public).Select(n => n.Name).ToList();
         var current = connected.Count == 0 ? Strings.T("host.readiness.networkNone")
             : publicOnes.Count > 0 ? Strings.T("host.readiness.networkPublic", string.Join(", ", publicOnes))

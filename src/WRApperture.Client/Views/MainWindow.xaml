@@ -28,6 +28,11 @@
                     <TextBlock Text="{loc:T client.main.hostLabel}" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource Muted}" />
                     <ComboBox Width="240" ItemsSource="{Binding Hosts}" SelectedItem="{Binding SelectedHost}"
                               DisplayMemberPath="Label" IsEnabled="{Binding HasHost}" AutomationProperties.Name="{loc:T client.main.selectedHost}" />
+                    <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="10"
+                            Padding="8,2" Margin="8,0,0,0" VerticalAlignment="Center" ToolTip="{loc:T client.main.hostVpnTip}"
+                            Visibility="{Binding HasHostVpn, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding HostVpnText}" FontSize="12" Foreground="{DynamicResource Success}" />
+                    </Border>
                     <Button Content="{loc:T client.main.addHost}" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding AddHostCommand}" />
                     <Button x:Name="MoreButton" Content="⋯" Style="{StaticResource Secondary}" Margin="8,0,0,0" Padding="10,6" IsEnabled="{Binding HasHost}"
                             ToolTip="{loc:T client.main.moreOptions}" Click="OnMoreClick" AutomationProperties.Name="{loc:T client.main.moreOptions}">

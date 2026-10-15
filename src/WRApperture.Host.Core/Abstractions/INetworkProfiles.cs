@@ -8,7 +8,12 @@ public enum NetworkCategory
     Domain = 2,
 }
 
-public sealed record NetworkProfile(Guid Id, string Name, NetworkCategory Category);
+/// <param name="VpnName">The VPN behind this network ("Fortinet SSL VPN"); null for local networks.</param>
+public sealed record NetworkProfile(Guid Id, string Name, NetworkCategory Category, string? VpnName = null)
+{
+    /// <summary>Other PCs never come in through a VPN, so its category does not matter for remote access.</summary>
+    public bool IsVpn => VpnName is not null;
+}
 
 /// <summary>The networks this PC is connected to and their Windows category (Network List Manager).</summary>
 public interface INetworkProfiles

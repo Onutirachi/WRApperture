@@ -2,6 +2,23 @@ using WRApperture.Host.Core.Sessions;
 
 namespace WRApperture.Host.Core.Tests.Sessions;
 
+public class VpnAdapterTests
+{
+    [Theory]
+    [InlineData(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "Ethernet 3", "Fortinet SSL VPN Virtual Ethernet Adapter", "Fortinet SSL VPN")]
+    [InlineData(System.Net.NetworkInformation.NetworkInterfaceType.Ppp, "Trabalho", "WAN Miniport (IKEv2)", "Trabalho")]
+    [InlineData(System.Net.NetworkInformation.NetworkInterfaceType.Unknown, "wg0", "WireGuard Tunnel", "WireGuard Tunnel")]
+    [InlineData(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "Ethernet 2", "TAP-Windows Adapter V9", "TAP-Windows Adapter V9")]
+    [InlineData(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "Ethernet", "Intel(R) Ethernet Controller I225-V", null)]
+    [InlineData(System.Net.NetworkInformation.NetworkInterfaceType.Tunnel, "Teredo", "Microsoft Teredo Tunneling Adapter", null)]
+    [InlineData(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "vEthernet", "Hyper-V Virtual Ethernet Adapter", null)]
+    public void Vpn_adapters_are_recognized_by_type_or_name(System.Net.NetworkInformation.NetworkInterfaceType type, string name,
+        string description, string? vpn)
+    {
+        Assert.Equal(vpn, WRApperture.Host.Core.Platform.WindowsNetworkProfiles.VpnName(type, name, description));
+    }
+}
+
 public class DesktopShellTests
 {
     [Theory]

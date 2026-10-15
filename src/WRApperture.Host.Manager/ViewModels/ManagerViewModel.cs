@@ -45,6 +45,7 @@ public sealed partial class ManagerViewModel : ObservableObject
     private readonly IHostPreparation _preparation;
     private readonly ILocalAccounts _accounts;
     private readonly IStartWithResolver _startWith;
+    private readonly INetworkProfiles _networks;
     private readonly IAgentSettingsStore _agentSettings;
     private readonly IAgentService _agent;
     private readonly IManagerDialogs _dialogs;
@@ -52,7 +53,8 @@ public sealed partial class ManagerViewModel : ObservableObject
     private readonly ILogger<ManagerViewModel> _logger;
 
     public ManagerViewModel(IAppPublisher publisher, IAppSourceInspector inspector, IAppDiscovery discovery, IIconProvider icons,
-        IHostPreparation preparation, ILocalAccounts accounts, IStartWithResolver startWith, IAgentSettingsStore agentSettings, IAgentService agent, IManagerDialogs dialogs,
+        IHostPreparation preparation, ILocalAccounts accounts, IStartWithResolver startWith, INetworkProfiles networks,
+        IAgentSettingsStore agentSettings, IAgentService agent, IManagerDialogs dialogs,
         IUpdateChecker updates, ILogger<ManagerViewModel> logger, bool isAdmin)
     {
         _updates = updates;
@@ -63,6 +65,7 @@ public sealed partial class ManagerViewModel : ObservableObject
         _preparation = preparation;
         _accounts = accounts;
         _startWith = startWith;
+        _networks = networks;
         _agentSettings = agentSettings;
         _agent = agent;
         _dialogs = dialogs;
@@ -95,6 +98,7 @@ public sealed partial class ManagerViewModel : ObservableObject
     [ObservableProperty] private string _paired = string.Empty;
     [ObservableProperty] private string _fingerprint = string.Empty;
     [ObservableProperty] private string _addresses = string.Empty;
+    [ObservableProperty] private string _vpns = string.Empty;
     [ObservableProperty] private string _status = string.Empty;
     [ObservableProperty] private bool _isWarning;
 
@@ -123,6 +127,7 @@ public sealed partial class ManagerViewModel : ObservableObject
         Fingerprint = _agent.Fingerprint(settings.CertificateThumbprint) ?? Strings.T("manager.connection.fingerprintPending");
         var ips = _agent.Ipv4Addresses();
         Addresses = ips.Count == 0 ? Strings.T("manager.connection.noNetwork") : string.Join(", ", ips);
+        Vpns = ActiveVpns() is { Count: > 0 } vpns ? string.Join(", ", vpns) : Strings.T("manager.connection.noVpn");
         OnPropertyChanged(nameof(AutoUpdate));
     }
 
@@ -237,6 +242,19 @@ public sealed partial class ManagerViewModel : ObservableObject
         if (token is not null)
         {
             _dialogs.ShowToken(new TokenInfo(token, Port, Addresses, Fingerprint));
+        }
+    }
+
+    private IReadOnlyList<string> ActiveVpns()
+    {
+        try
+        {
+            return _networks.Connected().Where(n => n.IsVpn).Select(n => n.VpnName!).Distinct().ToList();
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or InvalidCastException)
+        {
+            _logger.LogWarning(ex, "Could not list the networks");
+            return [];
         }
     }
 

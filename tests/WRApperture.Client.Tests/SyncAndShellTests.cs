@@ -43,11 +43,15 @@ public class HostSyncTests : IDisposable
     [Fact]
     public async Task Keeps_what_the_host_reports_about_its_readiness()
     {
-        _agent.Info = _agent.Info with { Issues = [HostIssues.PublicNetwork], SuggestedUser = "joao@outlook.com", MicrosoftAccount = true };
+        _agent.Info = _agent.Info with
+        {
+            Issues = [HostIssues.PublicNetwork], SuggestedUser = "joao@outlook.com", MicrosoftAccount = true, Vpns = ["Fortinet SSL VPN"],
+        };
 
         var synced = await _sync.SyncAsync(Samples.Host());
 
         Assert.Equal([HostIssues.PublicNetwork], synced.Issues);
+        Assert.Equal(["Fortinet SSL VPN"], synced.Vpns);
         Assert.Equal("joao@outlook.com", synced.SuggestedUser);
         Assert.True(synced.MicrosoftAccount);
 
@@ -55,6 +59,7 @@ public class HostSyncTests : IDisposable
         _agent.Info = new HostInfoDto("PC", 3390, "0.6.0", "FP");
         var older = await _sync.SyncAsync(synced);
         Assert.Empty(older.Issues);
+        Assert.Empty(older.Vpns);
         Assert.Equal("joao@outlook.com", older.SuggestedUser);
         Assert.True(older.MicrosoftAccount);
     }

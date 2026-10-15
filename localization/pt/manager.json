@@ -20,6 +20,7 @@
   "main.address": "Endereço",
   "main.port": "Porta",
   "main.paired": "Pareado",
+  "main.vpn": "VPN",
   "main.fingerprint": "Fingerprint",
   "main.newToken": "Token manual…",
   "main.restartAgent": "Reiniciar agente",
@@ -122,6 +123,7 @@
   "approval.close": "Fechar",
   "connection.fingerprintPending": "(criado quando o agente iniciar)",
   "connection.noNetwork": "sem rede",
+  "connection.noVpn": "nenhuma conectada",
 
   "agent.notInstalled": "não instalado (rode o instalador do WRApperture Host)",
   "agent.running": "rodando",

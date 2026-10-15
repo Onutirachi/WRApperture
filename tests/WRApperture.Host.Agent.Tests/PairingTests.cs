@@ -231,6 +231,18 @@ public class PairingTests : IDisposable
     }
 
     [Fact]
+    public async Task Host_info_lists_the_vpns_connected_right_now()
+    {
+        var client = _factory.CreateAuthorizedClient();
+        Assert.Empty((await client.GetFromJsonAsync<HostInfoDto>(ApiContract.Host))!.Vpns!);
+
+        _factory.Networks.All.Add(new WRApperture.Host.Core.Abstractions.NetworkProfile(Guid.NewGuid(), "Rede 3",
+            WRApperture.Host.Core.Abstractions.NetworkCategory.Public, "Fortinet SSL VPN"));
+
+        Assert.Equal(["Fortinet SSL VPN"], (await client.GetFromJsonAsync<HostInfoDto>(ApiContract.Host))!.Vpns!); // not cached
+    }
+
+    [Fact]
     public async Task Microsoft_account_is_suggested_by_its_email()
     {
         _factory.Accounts.Console = _factory.Accounts.Console! with { MicrosoftAccount = "joao@outlook.com" };

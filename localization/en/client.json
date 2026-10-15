@@ -11,6 +11,8 @@
   "main.hostVersion": "{0} · version {1}",
   "main.hostVersionUnknown": "{0} · version unknown (sync first)",
   "main.clientVersion": "WRApperture {0}",
+  "main.hostVpn": "VPN on: {0}",
+  "main.hostVpnTip": "The remote PC is connected to this VPN: apps opened from it reach the networks behind it.",
   "main.saveCredentials": "Save host credentials…",
   "main.deleteCredentials": "Remove saved credentials",
   "main.configureSigning": "Open apps without the security warning…",

@@ -63,9 +63,10 @@ public sealed record AppSummaryDto(string Alias, string DisplayName, string Icon
 /// <param name="Issues">What keeps remote access from working (<see cref="HostIssues"/>); null before <see cref="AgentFeatures.Readiness"/>.</param>
 /// <param name="SuggestedUser">What to type as user name to sign in to the host: "PC\user" or a Microsoft account e-mail.</param>
 /// <param name="MicrosoftAccount">The suggested user signs in with a Microsoft account (password, not PIN).</param>
+/// <param name="Vpns">VPNs connected on the host right now ("Fortinet SSL VPN"); null from agents before 0.20.0.</param>
 public sealed record HostInfoDto(string HostName, int RdpPort, string AgentVersion, string CertificateFingerprint,
     IReadOnlyList<string>? Features = null, IReadOnlyList<string>? Issues = null, string? SuggestedUser = null,
-    bool MicrosoftAccount = false);
+    bool MicrosoftAccount = false, IReadOnlyList<string>? Vpns = null);
 
 /// <summary><see cref="HostInfoDto.Issues"/> codes; clients translate them (and ignore unknown ones).</summary>
 public static class HostIssues

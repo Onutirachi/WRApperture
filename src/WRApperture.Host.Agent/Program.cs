@@ -67,6 +67,7 @@ builder.Services.AddSingleton(new HostUpdaterOptions());
 builder.Services.AddSingleton<HostUpdater>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<HostUpdater>());
 builder.Services.AddSingleton<HostReadiness>();
+builder.Services.AddSingleton<HostVpns>();
 builder.Services.AddSingleton(new PairingOptions
 {
     // Development: the host app is built to another folder (set Pairing:ApproverPath in appsettings or the environment).

@@ -32,6 +32,7 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
     internal FakeAccounts Accounts { get; } = new();
     internal FakeProcesses Processes { get; } = new();
     internal FakeStartupPrograms Startup { get; } = new();
+    internal FakeNetworks Networks { get; } = new();
 
     /// <summary>The host app the agent opens to approve pairing requests (never started: see <see cref="FakeSessions.Started"/>).</summary>
     internal const string ApproverPath = @"C:\Fake\WRApperture.Host.exe";
@@ -61,6 +62,7 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
             services.AddSingleton<IHostPreparation>(Preparation);
             services.AddSingleton<ILocalAccounts>(Accounts);
             services.AddSingleton<IProcessList>(Processes);
+            services.AddSingleton<INetworkProfiles>(Networks);
             services.AddSingleton<WRApperture.Host.Core.StartWith.IStartupPrograms>(Startup);
             services.AddSingleton(new Pairing.PairingOptions { ApproverPath = ApproverPath });
             services.AddSingleton<IStartupFilter, RemoteAddressFilter>();
@@ -293,6 +295,15 @@ internal sealed class FakeAccounts : ILocalAccounts
     public void AddToRemoteDesktopUsers(string sid) => throw new NotSupportedException();
 
     public void RemoveFromRemoteDesktopUsers(string sid) => throw new NotSupportedException();
+}
+
+internal sealed class FakeNetworks : INetworkProfiles
+{
+    public List<NetworkProfile> All { get; } = [new(Guid.NewGuid(), "Casa", NetworkCategory.Private)];
+
+    public IReadOnlyList<NetworkProfile> Connected() => All.ToList();
+
+    public void SetCategory(Guid networkId, NetworkCategory category) => throw new NotSupportedException();
 }
 
 internal sealed class FakeProcesses : IProcessList

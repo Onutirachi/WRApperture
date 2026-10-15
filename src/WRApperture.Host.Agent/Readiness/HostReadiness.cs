@@ -8,6 +8,23 @@ namespace WRApperture.Host.Agent.Readiness;
 /// <param name="Issues"><see cref="HostIssues"/> codes.</param>
 internal sealed record ReadinessSummary(IReadOnlyList<string> Issues, string? SuggestedUser, bool MicrosoftAccount);
 
+/// <summary>The VPNs connected on this PC, read on each request (they come and go).</summary>
+internal sealed class HostVpns(INetworkProfiles networks, ILogger<HostVpns> logger)
+{
+    public IReadOnlyList<string> Get()
+    {
+        try
+        {
+            return networks.Connected().Where(n => n.IsVpn).Select(n => n.VpnName!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or InvalidCastException)
+        {
+            logger.LogWarning(ex, "Could not list the networks");
+            return [];
+        }
+    }
+}
+
 /// <summary>What clients are told about this PC's readiness, refreshed at most once a minute.</summary>
 internal sealed class HostReadiness(IHostPreparation preparation, ILocalAccounts accounts, TimeProvider time, ILogger<HostReadiness> logger)
 {

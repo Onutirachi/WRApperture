@@ -161,6 +161,7 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <TextBlock Text="{loc:T manager.main.agent}" Style="{StaticResource Label}" Margin="0,0,0,4" />
                             <TextBlock Grid.Column="1" Text="{Binding AgentState}" TextWrapping="Wrap" Margin="0,0,0,4" />
@@ -168,8 +169,10 @@
                             <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Addresses}" TextWrapping="Wrap" Margin="0,0,0,4" />
                             <TextBlock Grid.Row="2" Text="{loc:T manager.main.port}" Style="{StaticResource Label}" Margin="0,0,0,4" />
                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Port}" Margin="0,0,0,4" />
-                            <TextBlock Grid.Row="3" Text="{loc:T manager.main.paired}" Style="{StaticResource Label}" />
-                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Paired}" TextWrapping="Wrap" />
+                            <TextBlock Grid.Row="3" Text="{loc:T manager.main.paired}" Style="{StaticResource Label}" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Paired}" TextWrapping="Wrap" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="4" Text="{loc:T manager.main.vpn}" Style="{StaticResource Label}" />
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Vpns}" TextWrapping="Wrap" />
                         </Grid>
                         <TextBlock Text="{loc:T manager.main.fingerprint}" Foreground="{DynamicResource Muted}" Margin="0,4,0,2" />
                         <TextBox Text="{Binding Fingerprint, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" BorderThickness="0"
