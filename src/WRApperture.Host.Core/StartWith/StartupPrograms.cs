@@ -10,6 +10,12 @@ public interface IStartupPrograms
 {
     /// <summary>Enabled startup programs of the PC and, when given, of the user <paramref name="userSid"/>.</summary>
     IReadOnlyList<StartupProgram> List(string? userSid);
+
+    /// <summary>
+    /// Notification-area programs (".exe" with "tray" in the name) in <paramref name="folder"/>. Some vendors start
+    /// them from a service instead of a startup entry: FortiClient's scheduler.exe starts FortiTray.exe.
+    /// </summary>
+    IReadOnlyList<StartupProgram> TrayProgramsIn(string folder);
 }
 
 /// <summary>
@@ -27,6 +33,14 @@ internal sealed class StartupPrograms(
     internal const string ApprovedRun = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
     internal const string ApprovedRun32 = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run32";
     internal const string ApprovedFolder = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder";
+
+    /// <summary>"Tray" as a word of the name: FortiTray, lghub_system_tray, TRAY (not Strayer).</summary>
+    private static readonly System.Text.RegularExpressions.Regex TrayWord =
+        new(@"Tray|TRAY|(^|[^A-Za-z])tray", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>The programs (.exe) of a folder, not its subfolders (replaceable in tests).</summary>
+    internal Func<string, IEnumerable<string>> ExecutablesIn { get; init; } =
+        folder => Directory.Exists(folder) ? Directory.EnumerateFiles(folder, "*.exe") : [];
 
     /// <summary>Shortcut files of the all-users Startup folder (replaceable in tests).</summary>
     internal Func<IEnumerable<string>> StartupFolderShortcuts { get; init; } = DefaultStartupFolderShortcuts;
@@ -61,6 +75,12 @@ internal sealed class StartupPrograms(
 
         return result;
     }
+
+    public IReadOnlyList<StartupProgram> TrayProgramsIn(string folder) =>
+        ExecutablesIn(folder)
+            .Where(path => TrayWord.IsMatch(Path.GetFileNameWithoutExtension(path)))
+            .Select(path => new StartupProgram(Path.GetFileNameWithoutExtension(path), path, null))
+            .ToList();
 
     private void AddRegistry(List<StartupProgram> result, string path, string approvedPath,
         Func<string, IReadOnlyList<string>> read, Func<string, string, object?> get, Func<string, object?> approved)

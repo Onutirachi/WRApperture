@@ -49,6 +49,17 @@ public class StartupProgramsTests
     }
 
     [Fact]
+    public void Tray_programs_are_the_folders_exe_files_with_tray_as_a_word()
+    {
+        var startup = new StartupPrograms(_registry, _users, _fs, _links)
+        {
+            ExecutablesIn = _ => [@"C:\V\FortiClient.exe", @"C:\V\FortiTray.exe", @"C:\V\lghub_system_tray.exe", @"C:\V\Strayer.exe"],
+        };
+
+        Assert.Equal(["FortiTray", "lghub_system_tray"], startup.TrayProgramsIn(@"C:\V").Select(p => p.Name));
+    }
+
+    [Fact]
     public void Expands_variables_and_reads_the_startup_folder()
     {
         _fs.Env["ProgramFiles"] = @"C:\Program Files";
@@ -145,9 +156,44 @@ public class StartWithResolverTests
         Assert.Equal([Extra], manualOnly.Select(p => p.ExecutablePath));
     }
 
+    [Fact]
+    public void Tray_programs_of_the_apps_folder_come_along_even_without_a_startup_entry()
+    {
+        // FortiClient: FortiTray.exe is started by its scheduler.exe service, not by a Run key.
+        _startup.Trays[@"C:\Program Files\Fortinet\FortiClient"] = [new StartupProgram("FortiTray", FortiTray, null)];
+
+        var tray = Assert.Single(_resolver.Detect(FortiClient, null));
+
+        Assert.Equal(FortiTray, tray.ExecutablePath);
+        Assert.True(tray.Automatic);
+    }
+
+    [Fact]
+    public void A_tray_program_also_in_a_startup_entry_comes_once_with_its_arguments()
+    {
+        _startup.Programs.Add(new StartupProgram("FortiClient", FortiTray, "-quiet"));
+        _startup.Trays[@"C:\Program Files\Fortinet\FortiClient"] = [new StartupProgram("FortiTray", FortiTray, null)];
+
+        var tray = Assert.Single(_resolver.Detect(FortiClient, null));
+
+        Assert.Equal("-quiet", tray.Arguments);
+    }
+
+    [Fact]
+    public void Tray_programs_are_not_looked_for_in_general_folders_nor_windows()
+    {
+        _startup.Trays[@"C:\Tools"] = [new StartupProgram("Tray", @"C:\Tools\Tray.exe", null)];
+        var windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        _startup.Trays[Path.Combine(windows, "System32")] = [new StartupProgram("Tray", Path.Combine(windows, @"System32\SecurityHealthSystray.exe"), null)];
+
+        Assert.Empty(_resolver.Detect(@"C:\Tools\app.exe", null));
+        Assert.Empty(_resolver.Detect(Path.Combine(windows, @"System32\notepad.exe"), null));
+    }
+
     private sealed class FakeStartup : IStartupPrograms
     {
         public List<StartupProgram> Programs { get; } = [];
+        public Dictionary<string, List<StartupProgram>> Trays { get; } = new(StringComparer.OrdinalIgnoreCase);
         public string? LastSid { get; private set; }
 
         public IReadOnlyList<StartupProgram> List(string? userSid)
@@ -155,5 +201,7 @@ public class StartWithResolverTests
             LastSid = userSid;
             return Programs;
         }
+
+        public IReadOnlyList<StartupProgram> TrayProgramsIn(string folder) => Trays.GetValueOrDefault(folder) ?? [];
     }
 }

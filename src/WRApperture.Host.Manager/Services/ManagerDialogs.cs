@@ -55,7 +55,7 @@ internal sealed class ManagerDialogs(IIconProvider icons, IStartWithResolver sta
 
     public bool EditApp(EditorInput input, Func<PublishRequest, string?> trySave) =>
         new AppEditorWindow(input, trySave, (path, index) => ViewModels.Icons.Load(icons, path, index, 48),
-            path => startWith.Detect(path, accounts.ConsoleUser()?.Sid)) { Owner = Owner }.ShowDialog() == true;
+            path => startWith.Detect(path, ViewModels.ManagerViewModel.UserSid(accounts))) { Owner = Owner }.ShowDialog() == true;
 
     public IReadOnlyList<DiscoveredApp>? ChooseInstalled(IReadOnlyList<DiscoveredApp> apps)
     {

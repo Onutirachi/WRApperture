@@ -72,6 +72,13 @@ public sealed partial class ManagerViewModel : ObservableObject
     }
 
     public bool IsAdmin { get; }
+
+    /// <summary>
+    /// Whose startup programs to show: the user at the PC's screen or, when nobody is there (this app used over
+    /// Remote Desktop), the user running this app.
+    /// </summary>
+    internal static string? UserSid(ILocalAccounts accounts) =>
+        accounts.ConsoleUser()?.Sid ?? System.Security.Principal.WindowsIdentity.GetCurrent().User?.Value;
     public bool IsReadOnly => !IsAdmin;
 
     public ObservableCollection<AppItemViewModel> Apps { get; } = [];
@@ -97,7 +104,7 @@ public sealed partial class ManagerViewModel : ObservableObject
     private void Refresh()
     {
         Apps.Clear();
-        var sid = _accounts.ConsoleUser()?.Sid;
+        var sid = UserSid(_accounts);
         foreach (var app in _publisher.List())
         {
             Apps.Add(new AppItemViewModel(app, Icons.Load(_icons, app.IconPath, app.IconIndex), _startWith.For(app, sid)));

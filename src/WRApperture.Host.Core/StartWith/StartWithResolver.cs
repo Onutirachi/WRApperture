@@ -17,7 +17,8 @@ public interface IStartWithResolver
 
 /// <summary>
 /// A startup program belongs with an app when it lives in the app's folder, or one of the two folders contains the
-/// other (e.g. a vendor's "bin" subfolder). Folders right below a drive and anything under Windows never match,
+/// other (e.g. a vendor's "bin" subfolder). The tray programs of the app's own folder belong with it too, since some
+/// vendors start them from a service. Folders right below a drive and anything under Windows never match,
 /// so publishing Notepad does not drag along whatever Windows starts from System32.
 /// </summary>
 internal sealed class StartWithResolver(IStartupPrograms startup) : IStartWithResolver
@@ -43,8 +44,11 @@ internal sealed class StartWithResolver(IStartupPrograms startup) : IStartWithRe
             return [];
         }
 
+        var trays = Depth(appFolder) >= 2 ? startup.TrayProgramsIn(appFolder) : [];
         return startup.List(userSid)
-            .Where(p => !SamePath(p.ExecutablePath, appPath) && FolderOf(p.ExecutablePath) is { } folder && Related(appFolder, folder))
+            .Where(p => FolderOf(p.ExecutablePath) is { } folder && Related(appFolder, folder))
+            .Concat(trays)
+            .Where(p => !SamePath(p.ExecutablePath, appPath))
             .GroupBy(p => p.ExecutablePath, StringComparer.OrdinalIgnoreCase)
             .Select(g => g.First())
             .Select(p => new StartWithProgram(p.Name, p.ExecutablePath, p.Arguments, Automatic: true))

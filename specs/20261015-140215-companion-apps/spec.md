@@ -23,12 +23,14 @@ Ao abrir o FortiClient pelo cliente, a janela de login aparece como no PC local.
 - Um programa pertence ao app quando fica na mesma pasta, ou quando uma das duas pastas contém a outra.
   - A pasta que contém a outra precisa estar pelo menos dois níveis abaixo da unidade: `C:\Program Files` não conta, `C:\Program Files\Fortinet` conta.
   - Nada da pasta do Windows entra. Por exemplo, o Bloco de Notas não puxa o ícone de segurança do Windows.
+- Também entram os **programas de bandeja da pasta do app**: arquivos `.exe` com "Tray" como palavra do nome, como `FortiTray.exe` e `lghub_system_tray.exe`, mas não `Strayer.exe`.
+  - Alguns fabricantes iniciam esses programas por um serviço, não pela inicialização do Windows. No FortiClient, quem inicia o `FortiTray.exe` é o `scheduler.exe` ("FortiClient Service Scheduler"). Por isso a primeira versão da regra não o encontrava.
 - Cada programa é iniciado uma vez por sessão. Se ele fechar, não é reaberto até a próxima sessão.
 - Sessões de área de trabalho completa ficam de fora: lá o próprio Explorer inicia esses programas.
 
 ### User Story 2 - Ver e ajustar no app do host (Priority: P2)
 
-- O editor do app ganha a seção **Iniciar junto**:
+- O editor do app ganha a seção **Iniciar junto**. Ela mostra os programas do usuário da tela do PC ou, se ninguém estiver nela (app do host usado por Área de Trabalho Remota), os do próprio usuário do app:
   - a caixa "Iniciar os programas de inicialização deste app (da pasta dele)", ligada por padrão, com o que foi encontrado ("Encontrados: FortiClient (FortiTray.exe)");
   - a lista **Iniciar também**, para escolher outros `.exe`.
 - A lista de apps mostra "inicia com FortiClient".

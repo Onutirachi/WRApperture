@@ -307,4 +307,6 @@ internal sealed class FakeStartupPrograms : WRApperture.Host.Core.StartWith.ISta
     public List<WRApperture.Host.Core.StartWith.StartupProgram> Programs { get; } = [];
 
     public IReadOnlyList<WRApperture.Host.Core.StartWith.StartupProgram> List(string? userSid) => Programs;
+
+    public IReadOnlyList<WRApperture.Host.Core.StartWith.StartupProgram> TrayProgramsIn(string folder) => [];
 }
