@@ -13,9 +13,15 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
     public IReadOnlyList<HostSession> List()
     {
         var consoleId = (int)Native.WTSGetActiveConsoleSessionId();
-        var processesBySession = Process.GetProcesses()
-            .GroupBy(p => SafeSessionId(p))
-            .ToDictionary(g => g.Key, g => g.Select(SafeName).ToHashSet(StringComparer.OrdinalIgnoreCase));
+        var processes = Process.GetProcesses().Select(p => (Session: SafeSessionId(p), Name: SafeName(p), p.Id)).ToList();
+        var processesBySession = processes
+            .GroupBy(p => p.Session)
+            .ToDictionary(g => g.Key, g => g.Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase));
+        // Only the shell makes a desktop session, not an Explorer that opened a program or serves others.
+        var shellSessions = processes
+            .Where(p => string.Equals(p.Name, "explorer", StringComparison.OrdinalIgnoreCase) && DesktopShell.IsShell(CommandLineOf(p.Id)))
+            .Select(p => p.Session)
+            .ToHashSet();
 
         var result = new List<HostSession>();
         if (!Native.WTSEnumerateSessionsW(CurrentServer, 0, 1, out var buffer, out var count))
@@ -36,7 +42,7 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
                 }
 
                 var names = processesBySession.GetValueOrDefault(info.SessionId) ?? [];
-                var kind = names.Contains("explorer") ? SessionKind.Desktop
+                var kind = shellSessions.Contains(info.SessionId) ? SessionKind.Desktop
                     : names.Contains("rdpshell") || names.Contains("rdpinit") ? SessionKind.RemoteApp
                     : SessionKind.Other;
 
@@ -200,6 +206,47 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
         }
     }
 
+    /// <summary>The process's command line (NtQueryInformationProcess, ProcessCommandLineInformation); null when unknown.</summary>
+    private static string? CommandLineOf(int processId)
+    {
+        var process = Native.OpenProcess(Native.ProcessQueryLimitedInformation, false, processId);
+        if (process == IntPtr.Zero)
+        {
+            return null;
+        }
+
+        try
+        {
+            Native.NtQueryInformationProcess(process, Native.ProcessCommandLineInformation, IntPtr.Zero, 0, out var size);
+            if (size <= 0)
+            {
+                return null;
+            }
+
+            var buffer = Marshal.AllocHGlobal(size);
+            try
+            {
+                if (Native.NtQueryInformationProcess(process, Native.ProcessCommandLineInformation, buffer, size, out _) != 0)
+                {
+                    return null;
+                }
+
+                // UNICODE_STRING: ushort Length (bytes), ushort MaximumLength, then the pointer (aligned).
+                var length = (ushort)Marshal.ReadInt16(buffer);
+                var text = Marshal.ReadIntPtr(buffer, IntPtr.Size);
+                return text == IntPtr.Zero ? null : Marshal.PtrToStringUni(text, length / 2);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
+        }
+        finally
+        {
+            Native.CloseHandle(process);
+        }
+    }
+
     private static string SafeName(Process p)
     {
         try
@@ -247,6 +294,15 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
             public int dwProcessId;
             public int dwThreadId;
         }
+
+        public const uint ProcessQueryLimitedInformation = 0x1000;
+        public const int ProcessCommandLineInformation = 60;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr OpenProcess(uint access, bool inherit, int processId);
+
+        [DllImport("ntdll.dll")]
+        public static extern int NtQueryInformationProcess(IntPtr process, int infoClass, IntPtr info, int length, out int returnLength);
 
         [DllImport("kernel32.dll")]
         public static extern uint WTSGetActiveConsoleSessionId();
