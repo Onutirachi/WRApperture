@@ -137,6 +137,7 @@
   "addHost.searchAgain": "Procurar de novo",
   "addHost.manual": "Adicionar manualmente (endereço e token)…",
   "addHost.oldVersion": "versão antiga: pareia com token",
+  "addHost.alreadyAdded": "{0} · já adicionado",
   "addHost.needsToken": "{0} tem um WRApperture (Host) antigo: pareie com um token dele, ou atualize-o antes.",
   "addHost.waitingHeading": "Aguardando {0} permitir…",
   "addHost.waitingHint": "Em {0}, uma janela pergunta se este computador pode usar os apps. Confira se ela mostra o mesmo código e clique em Permitir lá.",

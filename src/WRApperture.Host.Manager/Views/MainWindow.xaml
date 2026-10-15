@@ -62,7 +62,6 @@
                     <Button Content="{loc:T manager.main.fromStartMenu}" Style="{StaticResource Secondary}" Margin="0,0,8,6" Command="{Binding PublishInstalledCommand}" />
                     <Button Content="{loc:T manager.main.edit}" Style="{StaticResource Secondary}" Margin="0,0,8,6" Command="{Binding EditCommand}" />
                     <Button Content="{loc:T manager.main.remove}" Style="{StaticResource Secondary}" Margin="0,0,8,6" Command="{Binding RemoveCommand}" />
-                    <Button Content="⟳" Style="{StaticResource Secondary}" Margin="0,0,8,6" Padding="10,6" ToolTip="{loc:T manager.main.refresh}" AutomationProperties.Name="{loc:T manager.main.refresh}" Command="{Binding RefreshCommand}" />
                     <Button x:Name="ThemeButton" Content="◐" Style="{StaticResource Secondary}" Margin="0,0,8,6" Padding="10,6" ToolTip="{loc:T manager.main.themeTip}"
                             Click="OnThemeClick" AutomationProperties.Name="{loc:T manager.main.theme}" />
                 </WrapPanel>

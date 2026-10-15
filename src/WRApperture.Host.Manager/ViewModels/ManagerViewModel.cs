@@ -119,20 +119,7 @@ public sealed partial class ManagerViewModel : ObservableObject
         AgentInstalled = status.Installed;
         var settings = _agentSettings.Load();
         Port = settings.Port.ToString();
-        var clients = _agentSettings.ListClients();
-        Devices.Clear();
-        foreach (var client in clients)
-        {
-            var date = client.CreatedUtc.ToLocalTime().ToString("d", System.Globalization.CultureInfo.CurrentCulture);
-            Devices.Add(new DeviceItem(client.Id, client.Name, string.IsNullOrEmpty(client.User)
-                ? Strings.T("manager.devices.details", date)
-                : Strings.T("manager.devices.detailsUser", client.User, date)));
-        }
-
-        OnPropertyChanged(nameof(HasDevices));
-        Paired = clients.Count > 0 ? Strings.T("manager.connection.pairedDevices", clients.Count)
-            : settings.IsPaired ? Strings.T("manager.connection.pairedYes")
-            : Strings.T("manager.connection.pairedNo");
+        RefreshDevices();
         Fingerprint = _agent.Fingerprint(settings.CertificateThumbprint) ?? Strings.T("manager.connection.fingerprintPending");
         var ips = _agent.Ipv4Addresses();
         Addresses = ips.Count == 0 ? Strings.T("manager.connection.noNetwork") : string.Join(", ", ips);
@@ -251,6 +238,30 @@ public sealed partial class ManagerViewModel : ObservableObject
         {
             _dialogs.ShowToken(new TokenInfo(token, Port, Addresses, Fingerprint));
         }
+    }
+
+    /// <summary>Re-reads the paired devices (cheap: a few registry values); the list only changes when they did.</summary>
+    public void RefreshDevices()
+    {
+        var clients = _agentSettings.ListClients();
+        if (clients.Select(c => c.Id).SequenceEqual(Devices.Select(d => d.Id)) && Paired.Length > 0)
+        {
+            return;
+        }
+
+        Devices.Clear();
+        foreach (var client in clients)
+        {
+            var date = client.CreatedUtc.ToLocalTime().ToString("d", System.Globalization.CultureInfo.CurrentCulture);
+            Devices.Add(new DeviceItem(client.Id, client.Name, string.IsNullOrEmpty(client.User)
+                ? Strings.T("manager.devices.details", date)
+                : Strings.T("manager.devices.detailsUser", client.User, date)));
+        }
+
+        OnPropertyChanged(nameof(HasDevices));
+        Paired = clients.Count > 0 ? Strings.T("manager.connection.pairedDevices", clients.Count)
+            : _agentSettings.Load().IsPaired ? Strings.T("manager.connection.pairedYes")
+            : Strings.T("manager.connection.pairedNo");
     }
 
     [RelayCommand(CanExecute = nameof(IsAdmin))]

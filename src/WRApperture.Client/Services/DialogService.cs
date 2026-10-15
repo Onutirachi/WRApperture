@@ -18,7 +18,8 @@ public sealed record ReleaseDecision(bool Always);
 
 public interface IDialogService
 {
-    AddHostResult? AddHost(string? address = null, int? agentPort = null);
+    /// <param name="knownFingerprints">Hosts already added (marked as such in the list of PCs found).</param>
+    AddHostResult? AddHost(string? address = null, int? agentPort = null, IReadOnlyCollection<string>? knownFingerprints = null);
     CredentialsInput? AskCredentials(string hostName, string? userName, CredentialsContext? context = null);
 
     /// <summary>Null when the user cancels.</summary>
@@ -36,9 +37,9 @@ internal sealed class DialogService(IHostDiscovery discovery) : IDialogService
 {
     private const string Title = "WRApperture";
 
-    public AddHostResult? AddHost(string? address = null, int? agentPort = null)
+    public AddHostResult? AddHost(string? address = null, int? agentPort = null, IReadOnlyCollection<string>? knownFingerprints = null)
     {
-        var window = Owned(new AddHostWindow(discovery, address, agentPort ?? ApiContract.DefaultPort));
+        var window = Owned(new AddHostWindow(discovery, address, agentPort ?? ApiContract.DefaultPort, knownFingerprints ?? []));
         return window.ShowDialog() == true ? window.Result : null;
     }
 

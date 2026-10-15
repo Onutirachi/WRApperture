@@ -15,6 +15,32 @@ public partial class MainWindow : Window
         // Alternative to dragging: Ctrl+C on shortcuts/programs in Explorer, Ctrl+V here.
         CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste, OnPaste, (_, e) => e.CanExecute = Clipboard.ContainsFileDropList()));
         Loaded += (_, _) => Vm.CheckUpdatesCommand.Execute(null);
+
+        // Approvals happen in another window (process): pick up new or removed devices while this one is open.
+        var devices = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        devices.Tick += (_, _) => Vm.RefreshDevices();
+        Loaded += (_, _) => devices.Start();
+        Closed += (_, _) => devices.Stop();
+
+        // No refresh button: coming back to the window re-reads everything (apps, This PC, agent); F5 forces it.
+        var lastRefresh = DateTime.UtcNow;
+        Activated += (_, _) =>
+        {
+            if (DateTime.UtcNow - lastRefresh > TimeSpan.FromSeconds(5))
+            {
+                lastRefresh = DateTime.UtcNow;
+                Vm.RefreshCommand.Execute(null);
+            }
+        };
+        PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key == Key.F5)
+            {
+                e.Handled = true;
+                lastRefresh = DateTime.UtcNow;
+                Vm.RefreshCommand.Execute(null);
+            }
+        };
     }
 
     private void OnPaste(object sender, ExecutedRoutedEventArgs e)

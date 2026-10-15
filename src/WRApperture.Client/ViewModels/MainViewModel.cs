@@ -132,7 +132,7 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void AddHost()
     {
-        var result = _dialogs.AddHost();
+        var result = _dialogs.AddHost(knownFingerprints: KnownFingerprints());
         if (result is null)
         {
             return;
@@ -248,6 +248,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     private bool CanRefresh() => SelectedHost is not null && !IsBusy;
 
+    private IReadOnlyCollection<string> KnownFingerprints() => _state.Hosts.Select(h => h.PinnedFingerprint).ToList();
+
     /// <summary>
     /// The host no longer accepts this computer (removed from its devices, or its token regenerated). Pairing again
     /// goes through approval when the agent supports it, else through a token.
@@ -259,7 +261,9 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
-        var result = host.Supports(AgentFeatures.Pairing) ? _dialogs.AddHost() : _dialogs.AddHost(host.Address, host.AgentPort);
+        var result = host.Supports(AgentFeatures.Pairing)
+            ? _dialogs.AddHost(knownFingerprints: KnownFingerprints())
+            : _dialogs.AddHost(host.Address, host.AgentPort);
         if (result is not null)
         {
             SavePaired(result, host);

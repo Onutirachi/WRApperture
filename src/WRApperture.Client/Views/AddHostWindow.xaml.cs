@@ -11,6 +11,9 @@ using WRApperture.Shared.Localization;
 
 namespace WRApperture.Client.Views;
 
+/// <summary>A host in the list of PCs found: its address, or why it is special (older version, already added).</summary>
+public sealed record FoundHost(DiscoveredHost Host, string Detail);
+
 /// <summary>
 /// Adding a host: pick one found on the network and wait for the person at it to allow (the default), or type its
 /// address and a token, then confirm its fingerprint (manual, also for re-pairing an existing host).
@@ -28,6 +31,7 @@ public partial class AddHostWindow : Window
     }
 
     private readonly IHostDiscovery _discovery;
+    private readonly IReadOnlyCollection<string> _known;
     private readonly CancellationTokenSource _closing = new();
     private Mode _mode;
     private bool _busy;
@@ -35,10 +39,11 @@ public partial class AddHostWindow : Window
     private string _address = string.Empty;
     private int _port;
 
-    public AddHostWindow(IHostDiscovery discovery, string? address, int port)
+    public AddHostWindow(IHostDiscovery discovery, string? address, int port, IReadOnlyCollection<string> knownFingerprints)
     {
         InitializeComponent();
         _discovery = discovery;
+        _known = knownFingerprints;
         AddressBox.Text = address ?? string.Empty;
         PortBox.Text = port.ToString(CultureInfo.InvariantCulture);
         Closed += (_, _) => _closing.Cancel();
@@ -57,7 +62,7 @@ public partial class AddHostWindow : Window
 
     public AddHostResult? Result { get; private set; }
 
-    private DiscoveredHost? SelectedFound => FoundList.SelectedItem as DiscoveredHost;
+    private DiscoveredHost? SelectedFound => (FoundList.SelectedItem as FoundHost)?.Host;
 
     private void Show(Mode mode)
     {
@@ -84,7 +89,7 @@ public partial class AddHostWindow : Window
         try
         {
             var hosts = await _discovery.ScanAsync(ScanDuration, _closing.Token);
-            FoundList.ItemsSource = hosts;
+            FoundList.ItemsSource = hosts.Select(h => new FoundHost(h, DetailOf(h))).ToList();
             FindStatus.Visibility = hosts.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             FindStatus.Text = Strings.T("client.addHost.noneFound");
             if (hosts.Count == 1)
@@ -107,6 +112,12 @@ public partial class AddHostWindow : Window
             UpdatePrimary();
         }
     }
+
+    /// <summary>Already added hosts stay in the list: connecting again re-pairs them (e.g. after being removed).</summary>
+    private string DetailOf(DiscoveredHost host) =>
+        !host.SupportsPairing ? Strings.T("client.addHost.oldVersion")
+        : _known.Contains(host.Fingerprint, StringComparer.OrdinalIgnoreCase) ? Strings.T("client.addHost.alreadyAdded", host.Address)
+        : host.Address;
 
     private async void OnSearchClick(object sender, RoutedEventArgs e) => await SearchAsync();
 

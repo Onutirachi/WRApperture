@@ -137,6 +137,7 @@
   "addHost.searchAgain": "Search again",
   "addHost.manual": "Add manually (address and token)…",
   "addHost.oldVersion": "older version: pairs with a token",
+  "addHost.alreadyAdded": "{0} · already added",
   "addHost.needsToken": "{0} has an older WRApperture (Host): pair with a token from it, or update it first.",
   "addHost.waitingHeading": "Waiting for {0} to allow…",
   "addHost.waitingHint": "On {0}, a window asks whether to allow this computer. Check that it shows the same code, then click Allow there.",
