@@ -8,11 +8,11 @@ using WRApperture.Shared.Localization;
 
 namespace WRApperture.Host.Manager.ViewModels;
 
+/// <param name="Description">The requirement when it is met ("The account has a password"), the problem otherwise.</param>
 /// <param name="Detail">What is wrong and why it matters (empty when OK).</param>
 /// <param name="ActionLabel">Text of the item's button; null when there is nothing to do.</param>
-public sealed record ReadinessItem(ReadinessCheck Check, string Detail, string? ActionLabel)
+public sealed record ReadinessItem(ReadinessCheck Check, string Description, string Detail, string? ActionLabel)
 {
-    public string Description => Check.Description;
     public ReadinessState State => Check.State;
     public bool HasDetail => Detail.Length > 0;
     public bool HasAction => ActionLabel is not null;
@@ -52,7 +52,7 @@ public sealed partial class ManagerViewModel
         Readiness.Clear();
         foreach (var check in _checks.Where(IsShown))
         {
-            Readiness.Add(new ReadinessItem(check, DetailOf(check), ActionOf(check)));
+            Readiness.Add(new ReadinessItem(check, TitleOf(check), DetailOf(check), ActionOf(check)));
         }
 
         HasPendingReadiness = IsAdmin && PendingAutomatic().Any();
@@ -77,6 +77,24 @@ public sealed partial class ManagerViewModel
             ReadinessFix.OpenSettings when check.SettingsUri is not null => Strings.T("manager.readiness.openSettings"),
             _ => null,
         },
+    };
+
+    /// <summary>
+    /// Checks are worded as requirements ("Remote Desktop enabled"); next to a warning that reads as if it were true,
+    /// so a check that is not met says what is wrong instead.
+    /// </summary>
+    private string TitleOf(ReadinessCheck check) => check.State == ReadinessState.Ok ? check.Description : check.Id switch
+    {
+        ReadinessCheckId.RdpEnabled => Strings.T("manager.problem.rdpEnabled"),
+        ReadinessCheckId.RdpPolicy => Strings.T("manager.problem.rdpPolicy"),
+        ReadinessCheckId.RdpService => Strings.T("manager.problem.rdpService"),
+        ReadinessCheckId.FirewallRdp => Strings.T("manager.problem.firewall"),
+        ReadinessCheckId.NetworkProfile => Strings.T("manager.problem.network"),
+        ReadinessCheckId.AccountPassword => Strings.T("manager.problem.accountPassword", ConsoleUserName()),
+        ReadinessCheckId.RemoteDesktopUsers => Strings.T("manager.problem.remoteUsers", ConsoleUserName()),
+        ReadinessCheckId.MicrosoftAccount when check.State == ReadinessState.Pending => Strings.T("manager.problem.passwordless"),
+        ReadinessCheckId.Sleep => Strings.T("manager.problem.sleep"),
+        _ => check.Description,
     };
 
     private static string DetailOf(ReadinessCheck check)
