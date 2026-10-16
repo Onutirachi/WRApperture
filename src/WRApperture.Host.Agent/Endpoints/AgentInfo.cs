@@ -11,5 +11,5 @@ internal static class AgentInfo
         ?? "0.0.0";
 
     public static readonly IReadOnlyList<string> Features =
-        [AgentFeatures.DesktopSession, AgentFeatures.SelfUpdate, AgentFeatures.Readiness, AgentFeatures.Pairing];
+        [AgentFeatures.DesktopSession, AgentFeatures.SelfUpdate, AgentFeatures.Readiness, AgentFeatures.Pairing, AgentFeatures.Changes];
 }

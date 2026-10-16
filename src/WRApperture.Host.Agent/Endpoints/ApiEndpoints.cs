@@ -1,5 +1,6 @@
 using Microsoft.Net.Http.Headers;
 using WRApperture.Host.Agent.Certificates;
+using WRApperture.Host.Agent.Changes;
 using WRApperture.Host.Agent.Icons;
 using WRApperture.Host.Agent.Readiness;
 using WRApperture.Host.Core;
@@ -21,6 +22,19 @@ internal static class ApiEndpoints
             var summary = readiness.Get();
             return Results.Ok(new HostInfoDto(info.HostName, info.RdpPort, AgentInfo.Version, identity.Fingerprint,
                 AgentInfo.Features, summary.Issues, summary.SuggestedUser, summary.MicrosoftAccount, vpns.Get()));
+        });
+
+        // Long poll: one request waits per client; it ends early when the client goes away.
+        app.MapGet(ApiContract.Changes, async (string? since, HostChanges changes, HttpContext context) =>
+        {
+            try
+            {
+                return Results.Ok(new ChangesDto(await changes.WaitAsync(since, context.RequestAborted)));
+            }
+            catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+            {
+                return Results.Empty;
+            }
         });
 
         // Only alias and name leave the host: executable paths stay private.

@@ -182,6 +182,8 @@ public class HostSyncTests : IDisposable
         public Task<UpdateRequestResultDto> RequestHostUpdateAsync(CancellationToken ct = default) =>
             Task.FromResult(new UpdateRequestResultDto(UpdateOutcomes.UpToDate, "0.6.0", "0.6.0"));
 
+        public Task<string> WaitForChangesAsync(string? since, CancellationToken ct = default) => throw new NotSupportedException();
+
         public void Dispose()
         {
         }

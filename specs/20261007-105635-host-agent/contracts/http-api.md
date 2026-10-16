@@ -46,6 +46,16 @@ Esses recursos são anunciados em `features` como `readiness` e `pairing`.
 - Código de verificação: 6 dígitos de `SHA-256("WRApperture-pairing|<fingerprint>|<nonce>")` (veja `PairingCode`).
 - Descoberta: datagrama UDP de 512 bytes para a porta 5081 (`WRAPPERTURE-DISCOVER/1` seguido de espaços). A resposta, em JSON, é `{ hostName, agentPort, fingerprint, version, features }` e nunca passa de 512 bytes.
 
+## Mudanças em tempo real (`20261016-142601-live-sync`)
+
+Anunciado em `features` como `changes`, a partir do agente 0.20.0.
+
+- `GET /api/changes?since=<versão>`, com token: long polling, `200 ChangesDto { version }`.
+  - Sem `since`, ou com uma versão diferente da atual, a resposta é imediata.
+  - Com a versão atual, o agente segura a resposta até algo mudar, por no máximo 50 s (`ApiContract.ChangesWaitSeconds`). Depois desse tempo devolve a mesma versão.
+- A versão é opaca. Ela muda junto com o que `/api/apps` e `/api/host` mostram: apps visíveis, nome do host e porta RDP, problemas de acesso, VPNs e versão do agente. O agente a recalcula no máximo a cada 2 s.
+- Quando a versão muda, o cliente sincroniza o host. Quando o host não responde, o cliente marca o host como offline e tenta de novo a cada 30 s.
+
 ## CLI (extensão do `wrahost`)
 ```
 wrahost agent show                 # porta, pareado (sim/não), fingerprint

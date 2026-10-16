@@ -39,6 +39,12 @@ public interface IAgentApi : IDisposable
 
     /// <summary>The host's version and whether it updates itself. Only for agents that announce <see cref="AgentFeatures.SelfUpdate"/>.</summary>
     Task<UpdateStatusDto> GetHostUpdateStatusAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Waits (up to <see cref="ApiContract.ChangesWaitSeconds"/>) until the host's state differs from
+    /// <paramref name="since"/> and returns its version. Only for agents that announce <see cref="AgentFeatures.Changes"/>.
+    /// </summary>
+    Task<string> WaitForChangesAsync(string? since, CancellationToken ct = default);
 }
 
 /// <summary>Talks to a host agent over HTTPS with certificate pinning.</summary>
@@ -251,6 +257,15 @@ public sealed class AgentClient : IAgentApi
     }
 
     public void Dispose() => _http.Dispose();
+
+    public async Task<string> WaitForChangesAsync(string? since, CancellationToken ct = default)
+    {
+        var route = since is null ? ApiContract.Changes : $"{ApiContract.Changes}?since={Uri.EscapeDataString(since)}";
+        using var response = await SendAsync(new HttpRequestMessage(HttpMethod.Get, route), ct,
+            timeout: TimeSpan.FromSeconds(ApiContract.ChangesWaitSeconds + 15));
+        var changes = await response.Content.ReadFromJsonAsync<ChangesDto>(ct);
+        return changes?.Version ?? throw new AgentException(Strings.T("client.errors.invalidResponse"));
+    }
 
     private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct,
         bool allowNotModified = false, bool allowNotFound = false, TimeSpan? timeout = null)

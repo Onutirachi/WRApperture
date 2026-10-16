@@ -70,6 +70,7 @@ public partial class App : Application
             .AddSingleton(TimeProvider.System)
             .AddSingleton<Func<PairedHost, IAgentApi>>(_ => AgentClient.ForHost)
             .AddSingleton<HostSync>()
+            .AddSingleton<HostWatcher>()
             .AddSingleton<IUpdateChecker>(_ => UpdateChecker.CreateDefault())
             .AddSingleton<ClientUpdates>()
             .AddSingleton<IHostDiscovery>(sp => new HostDiscovery(logger: sp.GetRequiredService<ILogger<HostDiscovery>>()))

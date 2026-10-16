@@ -76,6 +76,7 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly IconStore _icons;
     private readonly RemoteAppLauncher _launcher;
     private readonly HostSync _sync;
+    private readonly HostWatcher _watcher;
     private readonly ICredentialStore _credentials;
     private readonly IDialogService _dialogs;
     private readonly IRdpSigner _signer;
@@ -86,7 +87,7 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly ILogger<MainViewModel> _logger;
     private ClientState _state;
 
-    public MainViewModel(HostStore store, IconStore icons, RemoteAppLauncher launcher, HostSync sync,
+    public MainViewModel(HostStore store, IconStore icons, RemoteAppLauncher launcher, HostSync sync, HostWatcher watcher,
         ICredentialStore credentials, IDialogService dialogs, IRdpSigner signer, ISigningSetup signingSetup, StartupRegistration startup,
         Func<PairedHost, IAgentApi> agents, ClientUpdates updates,
         ILogger<MainViewModel> logger)
@@ -96,6 +97,7 @@ public sealed partial class MainViewModel : ObservableObject
         _icons = icons;
         _launcher = launcher;
         _sync = sync;
+        _watcher = watcher;
         _credentials = credentials;
         _dialogs = dialogs;
         _signer = signer;
@@ -182,7 +184,10 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>The list refreshes by itself this often (and when the window is activated after <see cref="StaleAfter"/>).</summary>
+    /// <summary>
+    /// Hosts without live changes (agents before 0.20.0) refresh by themselves this often (and when the window is
+    /// activated after <see cref="StaleAfter"/>); the others as soon as something changes (see MainViewModel.Live.cs).
+    /// </summary>
     public static readonly TimeSpan AutoSyncInterval = TimeSpan.FromMinutes(5);
 
     public static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(1);
@@ -194,6 +199,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Background syncs (runs until the app exits). They never open dialogs: problems only show in the status bar.</summary>
     public async void StartAutoSync()
     {
+        StartWatching();
         while (true)
         {
             await Task.Delay(AutoSyncInterval);
@@ -746,8 +752,14 @@ public sealed partial class MainViewModel : ObservableObject
         _icons.DeleteHostFiles(option.Host.Id);
         _credentials.Delete(option.Host.Address);
         _state = _state with { Hosts = _state.Hosts.Where(h => h.Id != option.Host.Id).ToList() };
+        var wasSelected = ReferenceEquals(option, SelectedHost);
         Hosts.Remove(option);
-        SelectedHost = Hosts.FirstOrDefault();
+        UpdateWatches();
+        if (wasSelected || SelectedHost is null)
+        {
+            SelectedHost = Hosts.FirstOrDefault();
+        }
+
         _state = _state with { SelectedHostId = SelectedHost?.Host.Id };
         _store.Save(_state);
         if (SelectedHost is null)
@@ -825,6 +837,9 @@ public sealed partial class MainViewModel : ObservableObject
             OnPropertyChanged(nameof(HostVpnText));
             OnPropertyChanged(nameof(HasHostVpn));
         }
+
+        // An updated host may now announce live changes.
+        UpdateWatches();
     }
 
     /// <summary>A host's entries for the tray menu: the desktop first, then the apps by name.</summary>

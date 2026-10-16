@@ -16,6 +16,13 @@ public static class ApiContract
     /// <summary>GET: <see cref="UpdateStatusDto"/>. POST: update now (<see cref="UpdateRequestResultDto"/>).</summary>
     public const string Update = "/api/update";
 
+    /// <summary>
+    /// GET ?since=&lt;version&gt;: long poll. Answers <see cref="ChangesDto"/> as soon as the host's state differs from
+    /// <c>since</c> (at once without it), or after <see cref="ChangesWaitSeconds"/> with the same version.
+    /// </summary>
+    public const string Changes = "/api/changes";
+    public const int ChangesWaitSeconds = 50;
+
     /// <summary>UDP port the agent answers discovery requests on (see <see cref="Discovery"/>).</summary>
     public const int DiscoveryPort = 5081;
 
@@ -57,6 +64,9 @@ public static class ApiContract
     }
 }
 
+/// <param name="Version">Opaque: changes whenever what clients show about the host changes (apps, host info).</param>
+public sealed record ChangesDto(string Version);
+
 public sealed record AppSummaryDto(string Alias, string DisplayName, string IconUrl);
 
 /// <param name="Features">Optional capabilities (<see cref="AgentFeatures"/>); null from agents older than 0.6.0.</param>
@@ -92,6 +102,9 @@ public static class AgentFeatures
 
     /// <summary><see cref="ApiContract.PairingRequests"/> exists: pairing approved on the host's screen, without a token.</summary>
     public const string Pairing = "pairing";
+
+    /// <summary><see cref="ApiContract.Changes"/> exists: clients learn about changes as they happen.</summary>
+    public const string Changes = "changes";
 }
 
 /// <summary>What the client is about to open; decides which host sessions are in the way.</summary>

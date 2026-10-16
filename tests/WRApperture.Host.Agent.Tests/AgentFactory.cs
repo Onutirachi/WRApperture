@@ -43,6 +43,9 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
     /// <summary>The agent's own version in these tests; the scheduled loop never fires on its own.</summary>
     internal static readonly Version CurrentVersion = new(1, 0, 0);
 
+    /// <summary>How long /api/changes holds a request when nothing changes.</summary>
+    internal static readonly TimeSpan ChangesMaxWait = TimeSpan.FromMilliseconds(400);
+
     internal HostUpdater Updater => Services.GetRequiredService<HostUpdater>();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -66,6 +69,11 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
             services.AddSingleton<WRApperture.Host.Core.StartWith.IStartupPrograms>(Startup);
             services.AddSingleton(new Pairing.PairingOptions { ApproverPath = ApproverPath });
             services.AddSingleton<IStartupFilter, RemoteAddressFilter>();
+            services.AddSingleton(new WRApperture.Host.Agent.Changes.HostChangesOptions
+            {
+                PollInterval = TimeSpan.FromMilliseconds(20),
+                MaxWait = ChangesMaxWait,
+            });
             services.AddSingleton(new HostUpdaterOptions
             {
                 CurrentVersion = CurrentVersion,

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting.WindowsServices;
 using WRApperture.Host.Agent.Certificates;
+using WRApperture.Host.Agent.Changes;
 using WRApperture.Host.Agent.Discovery;
 using WRApperture.Host.Agent.Endpoints;
 using WRApperture.Host.Agent.Icons;
@@ -68,6 +69,8 @@ builder.Services.AddSingleton<HostUpdater>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<HostUpdater>());
 builder.Services.AddSingleton<HostReadiness>();
 builder.Services.AddSingleton<HostVpns>();
+builder.Services.AddSingleton(new HostChangesOptions());
+builder.Services.AddSingleton<HostChanges>();
 builder.Services.AddSingleton(new PairingOptions
 {
     // Development: the host app is built to another folder (set Pairing:ApproverPath in appsettings or the environment).
