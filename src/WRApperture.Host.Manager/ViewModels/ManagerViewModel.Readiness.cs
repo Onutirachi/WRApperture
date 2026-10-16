@@ -40,7 +40,11 @@ public sealed partial class ManagerViewModel
 
     public ObservableCollection<ReadinessItem> Readiness { get; } = [];
 
+    /// <summary>"Resolve all" is offered: an administrator can fix something automatically.</summary>
     [ObservableProperty] private bool _hasPendingReadiness;
+
+    /// <summary>Something keeps remote access from working (fixable here or not): the page is flagged in the sidebar.</summary>
+    [ObservableProperty] private bool _needsAttention;
 
     private void RefreshReadiness(IReadOnlyList<ReadinessCheck>? checks = null)
     {
@@ -52,6 +56,7 @@ public sealed partial class ManagerViewModel
         }
 
         HasPendingReadiness = IsAdmin && PendingAutomatic().Any();
+        NeedsAttention = Readiness.Any(r => r.State is ReadinessState.Pending or ReadinessState.NotSupported);
         FixItemCommand.NotifyCanExecuteChanged();
     }
 

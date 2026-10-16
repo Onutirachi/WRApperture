@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Input;
 using WRApperture.Host.Manager.ViewModels;
 using WRApperture.Shared.Localization;
+using WRApperture.Ui;
 
 namespace WRApperture.Host.Manager.Views;
 
@@ -76,22 +77,32 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(() => Vm.AddFilesCommand.Execute(files));
     }
 
-    private void OnThemeClick(object sender, RoutedEventArgs e)
+    private bool _syncingTheme;
+
+    /// <summary>The settings page's theme choice follows the current preference.</summary>
+    private void OnSettingsShown(object sender, RoutedEventArgs e)
     {
-        if (ThemeButton.ContextMenu is null)
+        _syncingTheme = true;
+        (ThemeManager.Preference switch
         {
-            ThemeButton.ContextMenu = new System.Windows.Controls.ContextMenu();
-            WRApperture.Ui.ThemeMenu.AddTo(ThemeButton.ContextMenu);
-            ThemeButton.ContextMenu.Items.Add(new System.Windows.Controls.Separator());
-            var language = new System.Windows.Controls.MenuItem { Header = Strings.T("common.language.menu") };
-            language.Click += (_, _) => WRApperture.Ui.LanguageWindow.Choose(this, Restart);
-            ThemeButton.ContextMenu.Items.Add(language);
+            ThemePreference.Light => ThemeLight,
+            ThemePreference.Dark => ThemeDark,
+            _ => ThemeSystem,
+        }).IsChecked = true;
+        _syncingTheme = false;
+    }
+
+    private void OnThemeChecked(object sender, RoutedEventArgs e)
+    {
+        if (_syncingTheme)
+        {
+            return;
         }
 
-        ThemeButton.ContextMenu.PlacementTarget = ThemeButton;
-        ThemeButton.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-        ThemeButton.ContextMenu.IsOpen = true;
+        ThemeManager.SetPreference(sender == ThemeLight ? ThemePreference.Light : sender == ThemeDark ? ThemePreference.Dark : ThemePreference.System);
     }
+
+    private void OnLanguageClick(object sender, RoutedEventArgs e) => LanguageWindow.Choose(this, Restart);
 
     /// <summary>Same arguments, same elevation: a process started by an elevated one is elevated too.</summary>
     private static void Restart()

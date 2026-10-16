@@ -9,7 +9,7 @@
         <TextBlock x:Name="Heading" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,10" />
         <TextBlock x:Name="SessionsText" TextWrapping="Wrap" Margin="0,0,0,10" />
 
-        <Border x:Name="LogoffWarning" Background="{DynamicResource WarningBackground}" CornerRadius="4" Padding="10">
+        <Border x:Name="LogoffWarning" Background="{DynamicResource WarningBackground}" CornerRadius="8" Padding="10">
             <TextBlock x:Name="LogoffWarningText" TextWrapping="Wrap" Foreground="{DynamicResource Warning}"
                        Text="{loc:T client.release.appWarning}" />
         </Border>

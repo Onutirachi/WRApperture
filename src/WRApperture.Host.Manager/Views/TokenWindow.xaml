@@ -31,7 +31,7 @@
         <TextBlock Text="{loc:T manager.token.fingerprint}" Margin="0,12,0,4" Foreground="{DynamicResource Muted}" />
         <TextBox x:Name="FingerprintBox" IsReadOnly="True" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Padding="0" />
 
-        <Border Background="{DynamicResource WarningBackground}" CornerRadius="4" Padding="10" Margin="0,14,0,0">
+        <Border Background="{DynamicResource WarningBackground}" CornerRadius="8" Padding="10" Margin="0,14,0,0">
             <TextBlock Foreground="{DynamicResource Warning}" TextWrapping="Wrap"
                        Text="{loc:T manager.token.warning}" />
         </Border>

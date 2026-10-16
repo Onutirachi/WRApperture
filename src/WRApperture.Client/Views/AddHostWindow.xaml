@@ -12,7 +12,7 @@
             <TextBlock Text="{loc:T client.addHost.findHeading}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6" />
             <TextBlock Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,0,0,10" Text="{loc:T client.addHost.findIntro}" />
 
-            <Border BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="4" MinHeight="140">
+            <Border Background="{DynamicResource Surface}" CornerRadius="8" MinHeight="140">
                 <Grid>
                     <ListBox x:Name="FoundList" BorderThickness="0" Background="Transparent" MaxHeight="220"
                              SelectionChanged="OnFoundSelectionChanged" MouseDoubleClick="OnFoundDoubleClick"
@@ -41,7 +41,7 @@
         <StackPanel x:Name="WaitStep" Visibility="Collapsed">
             <TextBlock x:Name="WaitHeading" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,12" />
             <TextBlock Text="{loc:T client.addHost.codeLabel}" Margin="0,0,0,4" />
-            <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="12,8"
+            <Border Background="{DynamicResource Surface}" CornerRadius="8" Padding="12,8"
                     HorizontalAlignment="Left">
                 <TextBlock x:Name="CodeText" FontFamily="Consolas" FontSize="28" FontWeight="SemiBold" />
             </Border>
@@ -70,7 +70,7 @@
             <TextBlock Text="{loc:T client.addHost.confirmHeading}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
             <TextBlock x:Name="HostNameText" FontWeight="SemiBold" />
             <TextBlock Text="{loc:T client.addHost.fingerprintLabel}" Margin="0,10,0,4" />
-            <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" Padding="8" CornerRadius="4">
+            <Border Background="{DynamicResource Surface}" Padding="8" CornerRadius="8">
                 <TextBlock x:Name="FingerprintText" FontFamily="Consolas" TextWrapping="Wrap" />
             </Border>
             <TextBlock Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0" FontSize="12"

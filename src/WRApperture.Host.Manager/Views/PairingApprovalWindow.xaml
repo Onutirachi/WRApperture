@@ -16,13 +16,13 @@
             <TextBlock x:Name="OriginText" Foreground="{DynamicResource Muted}" Margin="0,2,0,0" TextWrapping="Wrap" />
 
             <TextBlock Text="{loc:T manager.approval.codeLabel}" Margin="0,16,0,4" />
-            <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="12,8"
+            <Border Background="{DynamicResource Surface}" CornerRadius="8" Padding="12,8"
                     HorizontalAlignment="Left">
                 <TextBlock x:Name="CodeText" FontFamily="Consolas" FontSize="28" FontWeight="SemiBold" />
             </Border>
             <TextBlock Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap" Text="{loc:T manager.approval.codeHint}" />
 
-            <Border Background="{DynamicResource WarningBackground}" CornerRadius="4" Padding="10" Margin="0,14,0,0">
+            <Border Background="{DynamicResource WarningBackground}" CornerRadius="8" Padding="10" Margin="0,14,0,0">
                 <TextBlock Foreground="{DynamicResource Warning}" TextWrapping="Wrap" Text="{loc:T manager.approval.effect}" />
             </Border>
 
