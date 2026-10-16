@@ -123,6 +123,13 @@ internal sealed class WindowsSessionProvider(ILogger<WindowsSessionProvider> log
         return pid;
     }
 
+    public int StartHidden(int sessionId, string executable, string arguments)
+    {
+        var pid = StartInSession(sessionId, executable, arguments);
+        logger.LogInformation("Ran {Program} {Arguments} in session {Session}", Path.GetFileName(executable), arguments, sessionId);
+        return pid;
+    }
+
     /// <summary>Starts a process as the session's user on its interactive desktop (requires LocalSystem).</summary>
     private static int StartInSession(int sessionId, string executable, string? arguments, bool showWindow = false)
     {

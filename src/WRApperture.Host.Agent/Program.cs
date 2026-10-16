@@ -6,6 +6,7 @@ using WRApperture.Host.Agent.Endpoints;
 using WRApperture.Host.Agent.Icons;
 using WRApperture.Host.Agent.Pairing;
 using WRApperture.Host.Agent.Readiness;
+using WRApperture.Host.Agent.Remote;
 using WRApperture.Host.Agent.Security;
 using WRApperture.Host.Agent.Sessions;
 using WRApperture.Host.Agent.Updates;
@@ -71,6 +72,8 @@ builder.Services.AddSingleton<HostReadiness>();
 builder.Services.AddSingleton<HostVpns>();
 builder.Services.AddSingleton(new HostChangesOptions());
 builder.Services.AddSingleton<HostChanges>();
+builder.Services.AddSingleton<RunningApps>();
+builder.Services.AddSingleton<ManagerApp>();
 builder.Services.AddSingleton(new PairingOptions
 {
     // Development: the host app is built to another folder (set Pairing:ApproverPath in appsettings or the environment).
@@ -99,6 +102,7 @@ try
     app.MapSessionApi();
     app.MapUpdateApi();
     app.MapPairingApi();
+    app.MapRemoteApi();
 
     app.Lifetime.ApplicationStarted.Register(() =>
     {

@@ -33,6 +33,7 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
     internal FakeProcesses Processes { get; } = new();
     internal FakeStartupPrograms Startup { get; } = new();
     internal FakeNetworks Networks { get; } = new();
+    internal FakeFiles Files { get; } = new();
 
     /// <summary>The host app the agent opens to approve pairing requests (never started: see <see cref="FakeSessions.Started"/>).</summary>
     internal const string ApproverPath = @"C:\Fake\WRApperture.Host.exe";
@@ -66,6 +67,7 @@ public sealed class AgentFactory : WebApplicationFactory<Program>
             services.AddSingleton<ILocalAccounts>(Accounts);
             services.AddSingleton<IProcessList>(Processes);
             services.AddSingleton<INetworkProfiles>(Networks);
+            services.AddSingleton<IFileSystemProbe>(Files);
             services.AddSingleton<WRApperture.Host.Core.StartWith.IStartupPrograms>(Startup);
             services.AddSingleton(new Pairing.PairingOptions { ApproverPath = ApproverPath });
             services.AddSingleton<IStartupFilter, RemoteAddressFilter>();
@@ -112,7 +114,16 @@ internal sealed class FakePublisher : IAppPublisher
     public PublishedApp? Get(string alias) =>
         Apps.FirstOrDefault(a => string.Equals(a.Alias, alias, StringComparison.OrdinalIgnoreCase));
 
-    public PublishResult Publish(PublishRequest request) => throw new NotSupportedException();
+    public List<PublishRequest> Published { get; } = [];
+
+    public PublishResult Publish(PublishRequest request)
+    {
+        Published.Add(request);
+        var app = new PublishedApp(request.Alias ?? request.DisplayName, request.DisplayName, request.ExecutablePath, null, request.ExecutablePath, 0,
+            request.CommandLinePolicy, request.RequiredArguments, request.ShowInList, true);
+        Apps.Add(app);
+        return new PublishResult(app, PublishOutcome.Created, []);
+    }
 
     public bool Unpublish(string alias) => throw new NotSupportedException();
 }
@@ -247,6 +258,14 @@ internal sealed class FakeSessions : WRApperture.Host.Core.Sessions.ISessionProv
 
     public List<(int Session, string Program, string? Arguments)> Started { get; } = [];
 
+    public List<(int Session, string Program, string Arguments)> Hidden { get; } = [];
+
+    public int StartHidden(int sessionId, string executable, string arguments)
+    {
+        Hidden.Add((sessionId, executable, arguments));
+        return 4343;
+    }
+
     public int StartProcess(int sessionId, string executable, string? arguments)
     {
         Started.Add((sessionId, executable, arguments));
@@ -336,4 +355,15 @@ internal sealed class FakeStartupPrograms : WRApperture.Host.Core.StartWith.ISta
     public IReadOnlyList<WRApperture.Host.Core.StartWith.StartupProgram> List(string? userSid) => Programs;
 
     public IReadOnlyList<WRApperture.Host.Core.StartWith.StartupProgram> TrayProgramsIn(string folder) => [];
+}
+
+internal sealed class FakeFiles : IFileSystemProbe
+{
+    public HashSet<string> Existing { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public bool FileExists(string path) => Existing.Contains(path) || File.Exists(path);
+
+    public string Expand(string path) => Environment.ExpandEnvironmentVariables(path);
+
+    public bool IsUserWritableLocation(string filePath) => false;
 }

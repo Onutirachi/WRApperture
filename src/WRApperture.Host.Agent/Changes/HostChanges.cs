@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using WRApperture.Host.Agent.Endpoints;
 using WRApperture.Host.Agent.Readiness;
+using WRApperture.Host.Agent.Remote;
 using WRApperture.Host.Core;
 using WRApperture.Host.Core.HostInfo;
 
@@ -21,7 +22,7 @@ internal sealed class HostChangesOptions
 /// /api/changes. Computed at most once per <see cref="HostChangesOptions.PollInterval"/>, however many clients wait.
 /// </summary>
 internal sealed class HostChanges(IAppPublisher publisher, IHostInfoProvider hostInfo, HostReadiness readiness, HostVpns vpns,
-    HostChangesOptions options, ILogger<HostChanges> logger)
+    RunningApps running, HostChangesOptions options, ILogger<HostChanges> logger)
 {
     private readonly object _gate = new();
     private string? _version;
@@ -62,8 +63,11 @@ internal sealed class HostChanges(IAppPublisher publisher, IHostInfoProvider hos
         {
             var info = hostInfo.Get();
             text.Append(AgentInfo.Version).Append('|').Append(info.HostName).Append('|').Append(info.RdpPort).Append('\n');
-            foreach (var app in publisher.List().Where(a => a.ShowInList))
+            var apps = publisher.List().Where(a => a.ShowInList).ToList();
+            var open = running.Find(apps);
+            foreach (var app in apps)
             {
+                text.Append(open.ContainsKey(app.Alias) ? '*' : '-');
                 text.Append(app.Alias).Append('|').Append(app.DisplayName).Append('|').Append(app.ExecutablePath).Append('|')
                     .Append(app.IconPath).Append('|').Append(app.IconIndex).Append('\n');
             }

@@ -2,7 +2,8 @@ namespace WRApperture.Client.Core.Model;
 
 /// <param name="DisplayName">Name published on the host.</param>
 /// <param name="CustomName">Name chosen on this computer only (never sent to the host).</param>
-public sealed record CachedApp(string Alias, string DisplayName, string? IconETag = null, string? CustomName = null)
+/// <param name="Running">Open on the host (in a RemoteApp session) at the last sync.</param>
+public sealed record CachedApp(string Alias, string DisplayName, string? IconETag = null, string? CustomName = null, bool Running = false)
 {
     /// <summary>What the user sees: the local name, or the host's.</summary>
     public string Name => CustomName ?? DisplayName;
@@ -60,6 +61,9 @@ public sealed record PairedHost
 
     /// <summary>VPNs connected on the host at the last sync.</summary>
     public IReadOnlyList<string> Vpns { get; init; } = [];
+
+    /// <summary>The RemoteApp alias of the host's own app ("Manage host"); null when the host offers none.</summary>
+    public string? ManagerAlias { get; init; }
 
     /// <summary>Name chosen on this computer only (never sent to the host); null shows the host's name.</summary>
     public string? CustomName { get; init; }

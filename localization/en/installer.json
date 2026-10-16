@@ -76,6 +76,7 @@
   "host.uninstall.askPurge": "Also undo the PC preparation and delete the token? Clients will need to pair again. (y/N)",
   "host.uninstall.removeService": "Stop and remove the {0} service",
   "host.uninstall.closeManager": "Close the running WRApperture (Host)",
+  "host.uninstall.removeManagerApp": "Remove the host app published for \"Manage host\"",
   "host.uninstall.removeShortcut": "Remove the \"WRApperture (Host)\" Start menu shortcut",
   "host.uninstall.removeDesktopShortcut": "Remove the desktop shortcut {0}",
   "host.uninstall.removeFirewall": "Remove the agent's firewall rule",

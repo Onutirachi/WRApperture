@@ -56,6 +56,19 @@ Anunciado em `features` como `changes`, a partir do agente 0.20.0.
 - A versão é opaca. Ela muda junto com o que `/api/apps` e `/api/host` mostram: apps visíveis, nome do host e porta RDP, problemas de acesso, VPNs e versão do agente. O agente a recalcula no máximo a cada 2 s.
 - Quando a versão muda, o cliente sincroniza o host. Quando o host não responde, o cliente marca o host como offline e tenta de novo a cada 30 s.
 
+## Controle remoto (`20261016-175109-remote-control`)
+
+Anunciado em `features` como `remote-control`, a partir do agente 0.21.0. Só age em sessões RemoteApp, nunca nas de área de trabalho.
+
+- `GET /api/host` traz `managerAlias`: o alias do app do host (WRApperture.Host.exe) para o botão "Gerenciar host", ou `null`.
+  - O agente publica `wrapperture-host` oculto (`ShowInList=false`) quando o app ainda não está publicado.
+  - Se ele já foi publicado à mão, o alias é o dessa entrada.
+- `GET /api/apps`: cada app traz `running`, que indica se ele está aberto numa sessão RemoteApp. Um app conta como aberto quando o caminho do processo é igual ao executável publicado. O estado entra na versão de `/api/changes`.
+- `POST /api/apps/{alias}/close`: roda `taskkill /PID …`, sem `/F`, na sessão do app, como clicar no X.
+- `POST /api/apps/{alias}/kill`: encerra os processos do app.
+- As duas rotas respondem `200 AppStopResultDto { processes }`, ou `404` quando o app não existe.
+- `POST /api/session/end` `{ user }`: faz logoff das sessões RemoteApp do usuário, ou de todas quando `user` é `null`. Responde `200 SessionEndResultDto { ended }`.
+
 ## CLI (extensão do `wrahost`)
 ```
 wrahost agent show                 # porta, pareado (sim/não), fingerprint

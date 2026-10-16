@@ -76,6 +76,7 @@
   "host.uninstall.askPurge": "Desfazer também a preparação do PC e apagar o token? Os clientes precisarão parear de novo. (s/N)",
   "host.uninstall.removeService": "Parar e remover o serviço {0}",
   "host.uninstall.closeManager": "Fechar o WRApperture (Host) em execução",
+  "host.uninstall.removeManagerApp": "Remover o app do host publicado para \"Gerenciar host\"",
   "host.uninstall.removeShortcut": "Remover atalho \"WRApperture (Host)\" do Menu Iniciar",
   "host.uninstall.removeDesktopShortcut": "Remover o atalho da área de trabalho {0}",
   "host.uninstall.removeFirewall": "Remover a regra de firewall do agente",

@@ -26,6 +26,26 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
+        <!-- Icon pill that turns red on hover: actions that close things on the host. -->
+        <Style x:Key="EndSessionButton" TargetType="Button" BasedOn="{StaticResource Secondary}">
+            <Setter Property="Padding" Value="10,8" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource Error}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Green dot on an app open on the host. -->
+        <Style x:Key="RunningDot" TargetType="Ellipse">
+            <Setter Property="Fill" Value="{DynamicResource Success}" />
+            <Setter Property="Stroke" Value="{DynamicResource Background}" />
+            <Setter Property="StrokeThickness" Value="2" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+        </Style>
+
         <!-- The ⋯ menu of a host card: acts on the selected host (the button selects its card first). -->
         <ContextMenu x:Key="HostMenu">
             <MenuItem Header="{loc:T client.host.rename}" Command="{Binding RenameHostCommand}">
@@ -43,6 +63,10 @@
                       IsChecked="{Binding AskBeforeReleasingSession, Mode=TwoWay}"
                       ToolTip="{loc:T client.main.askBeforeReleaseTip}" />
             <Separator />
+            <MenuItem Header="{loc:T client.endSession.menu}" Command="{Binding EndSessionCommand}"
+                      Visibility="{Binding CanControlHost, Converter={StaticResource BoolToVis}}">
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE7E8;" FontSize="14" /></MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="{loc:T client.main.syncNow}" Command="{Binding RefreshCommand}" InputGestureText="F5">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE895;" FontSize="14" /></MenuItem.Icon>
             </MenuItem>
@@ -237,7 +261,7 @@
                         </Grid>
 
                         <!-- Search (shrinks first when the window narrows), then the fixed buttons -->
-                        <DockPanel DockPanel.Dock="Top" Margin="28,4,28,10">
+                        <DockPanel x:Name="Toolbar" DockPanel.Dock="Top" Margin="28,4,28,10" SizeChanged="OnToolbarSizeChanged">
                             <!-- Tiles / list: one button, showing the view it switches to -->
                             <Button DockPanel.Dock="Right" Command="{Binding ToggleViewCommand}" Padding="10,8" Margin="8,0,0,0">
                                 <Button.Style>
@@ -264,12 +288,29 @@
                                 </Button.Style>
                             </Button>
 
+                            <!-- Ends the RemoteApp session: every remote app closes (asks first) -->
+                            <Button DockPanel.Dock="Right" Style="{StaticResource EndSessionButton}" Command="{Binding EndSessionCommand}" Margin="8,0,0,0"
+                                    ToolTip="{loc:T client.endSession.tip}" AutomationProperties.Name="{loc:T client.endSession.title}"
+                                    Visibility="{Binding CanControlHost, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE7E8;" FontSize="14" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Button>
+
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Secondary}" Margin="8,0,0,0" Command="{Binding ManageHostCommand}"
+                                    ToolTip="{loc:T client.manage.tip}" AutomationProperties.Name="{loc:T client.manage.name}"
+                                    Visibility="{Binding CanManageHost, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource ArrowsGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                          Stretch="Uniform" Width="14" Height="14" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="ManageLabel" Text="{loc:T client.manage.name}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                                </StackPanel>
+                            </Button>
+
                             <Button x:Name="DesktopButton" DockPanel.Dock="Right" Style="{StaticResource Secondary}" Margin="8,0,0,0"
-                                    Command="{Binding OpenDesktopCommand}" ToolTip="{loc:T client.desktop.tip}"
+                                    Command="{Binding OpenDesktopCommand}" ToolTip="{loc:T client.desktop.tip}" AutomationProperties.Name="{loc:T client.desktop.name}"
                                     Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE7F4;" FontSize="14" Margin="0,0,8,0" />
-                                    <TextBlock Text="{loc:T client.desktop.name}" VerticalAlignment="Center" />
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE7F4;" FontSize="14" />
+                                    <TextBlock x:Name="DesktopLabel" Text="{loc:T client.desktop.name}" VerticalAlignment="Center" Margin="8,0,0,0" />
                                 </StackPanel>
                                 <Button.ContextMenu>
                                     <ContextMenu>
@@ -347,6 +388,9 @@
                                                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                             </Border>
                                                             <Image Source="{Binding Icon}" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                            <Ellipse Style="{StaticResource RunningDot}" Width="14" Height="14" Margin="0,0,-4,-4"
+                                                                     ToolTip="{loc:T client.tile.running}"
+                                                                     Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
                                                         </Grid>
                                                         <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" TextAlignment="Center"
                                                                    TextTrimming="CharacterEllipsis" MaxHeight="36" />
@@ -383,6 +427,8 @@
                                                                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                                     </Border>
                                                                     <Image Source="{Binding Icon}" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                                    <Ellipse Style="{StaticResource RunningDot}" Width="11" Height="11" Margin="0,0,-3,-3"
+                                                                             Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
                                                                 </Grid>
                                                                 <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                                             </DockPanel>
@@ -436,6 +482,17 @@
                                                     <MenuItem Header="{loc:T client.tile.resetName}" Visibility="{Binding IsRenamed, Converter={StaticResource BoolToVis}}"
                                                               Command="{Binding PlacementTarget.Tag.ResetAppNameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                               CommandParameter="{Binding}" />
+                                                    <Separator Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+                                                    <MenuItem Header="{loc:T client.tile.close}" Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}"
+                                                              Command="{Binding PlacementTarget.Tag.CloseAppCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                              CommandParameter="{Binding}">
+                                                        <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE711;" FontSize="14" /></MenuItem.Icon>
+                                                    </MenuItem>
+                                                    <MenuItem Header="{loc:T client.tile.kill}" Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}"
+                                                              Command="{Binding PlacementTarget.Tag.KillAppCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                              CommandParameter="{Binding}">
+                                                        <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE7BA;" FontSize="14" Foreground="{DynamicResource Error}" /></MenuItem.Icon>
+                                                    </MenuItem>
                                                     <Separator />
                                                     <MenuItem Header="{loc:T client.tile.createShortcut}"
                                                               Command="{Binding PlacementTarget.Tag.CreateShortcutCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"

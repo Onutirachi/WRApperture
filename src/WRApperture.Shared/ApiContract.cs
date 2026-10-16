@@ -13,6 +13,9 @@ public static class ApiContract
     public const string SessionRelease = "/api/session/release";
     public const int SessionReleaseTimeoutSeconds = 45;
 
+    /// <summary>POST <see cref="SessionEndRequestDto"/>: logs off the RemoteApp sessions (all their apps close).</summary>
+    public const string SessionEnd = "/api/session/end";
+
     /// <summary>GET: <see cref="UpdateStatusDto"/>. POST: update now (<see cref="UpdateRequestResultDto"/>).</summary>
     public const string Update = "/api/update";
 
@@ -48,6 +51,12 @@ public static class ApiContract
 
     public static string Icon(string alias) => $"{Apps}/{Uri.EscapeDataString(alias)}/icon";
 
+    /// <summary>POST: asks the app's windows in RemoteApp sessions to close, like its X (<see cref="AppStopResultDto"/>).</summary>
+    public static string CloseApp(string alias) => $"{Apps}/{Uri.EscapeDataString(alias)}/close";
+
+    /// <summary>POST: ends the app's processes in RemoteApp sessions, like "End task" (<see cref="AppStopResultDto"/>).</summary>
+    public static string KillApp(string alias) => $"{Apps}/{Uri.EscapeDataString(alias)}/kill";
+
     public static class Errors
     {
         public const string Unauthorized = "unauthorized";
@@ -67,16 +76,26 @@ public static class ApiContract
 /// <param name="Version">Opaque: changes whenever what clients show about the host changes (apps, host info).</param>
 public sealed record ChangesDto(string Version);
 
-public sealed record AppSummaryDto(string Alias, string DisplayName, string IconUrl);
+/// <param name="Running">Open in a RemoteApp session right now (agents before 0.21.0 always send false).</param>
+public sealed record AppSummaryDto(string Alias, string DisplayName, string IconUrl, bool Running = false);
+
+/// <param name="Processes">How many of the app's processes were asked to close (or ended).</param>
+public sealed record AppStopResultDto(int Processes);
+
+/// <param name="User">The RDP user whose RemoteApp sessions end; null for all of them.</param>
+public sealed record SessionEndRequestDto(string? User);
+
+public sealed record SessionEndResultDto(int Ended);
 
 /// <param name="Features">Optional capabilities (<see cref="AgentFeatures"/>); null from agents older than 0.6.0.</param>
 /// <param name="Issues">What keeps remote access from working (<see cref="HostIssues"/>); null before <see cref="AgentFeatures.Readiness"/>.</param>
 /// <param name="SuggestedUser">What to type as user name to sign in to the host: "PC\user" or a Microsoft account e-mail.</param>
 /// <param name="MicrosoftAccount">The suggested user signs in with a Microsoft account (password, not PIN).</param>
 /// <param name="Vpns">VPNs connected on the host right now ("Fortinet SSL VPN"); null from agents before 0.20.0.</param>
+/// <param name="ManagerAlias">The RemoteApp alias of the host's own app ("Manage host"); null when unavailable.</param>
 public sealed record HostInfoDto(string HostName, int RdpPort, string AgentVersion, string CertificateFingerprint,
     IReadOnlyList<string>? Features = null, IReadOnlyList<string>? Issues = null, string? SuggestedUser = null,
-    bool MicrosoftAccount = false, IReadOnlyList<string>? Vpns = null);
+    bool MicrosoftAccount = false, IReadOnlyList<string>? Vpns = null, string? ManagerAlias = null);
 
 /// <summary><see cref="HostInfoDto.Issues"/> codes; clients translate them (and ignore unknown ones).</summary>
 public static class HostIssues
@@ -105,6 +124,12 @@ public static class AgentFeatures
 
     /// <summary><see cref="ApiContract.Changes"/> exists: clients learn about changes as they happen.</summary>
     public const string Changes = "changes";
+
+    /// <summary>
+    /// <see cref="HostInfoDto.ManagerAlias"/>, <see cref="AppSummaryDto.Running"/>, <see cref="ApiContract.CloseApp"/>,
+    /// <see cref="ApiContract.KillApp"/> and <see cref="ApiContract.SessionEnd"/>.
+    /// </summary>
+    public const string RemoteControl = "remote-control";
 }
 
 /// <summary>What the client is about to open; decides which host sessions are in the way.</summary>

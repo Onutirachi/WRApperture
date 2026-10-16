@@ -41,6 +41,19 @@ public class HostSyncTests : IDisposable
     }
 
     [Fact]
+    public async Task Keeps_which_apps_are_open_and_the_hosts_own_app()
+    {
+        _agent.RunningAlias = "calc";
+        _agent.Info = _agent.Info with { ManagerAlias = "wrapperture-host" };
+
+        var synced = await _sync.SyncAsync(Samples.Host());
+
+        Assert.False(synced.Apps.Single(a => a.Alias == "notepad").Running);
+        Assert.True(synced.Apps.Single(a => a.Alias == "calc").Running);
+        Assert.Equal("wrapperture-host", synced.ManagerAlias);
+    }
+
+    [Fact]
     public async Task Keeps_what_the_host_reports_about_its_readiness()
     {
         _agent.Info = _agent.Info with
@@ -143,6 +156,7 @@ public class HostSyncTests : IDisposable
         public bool NotModified { get; set; }
         public string? FailIconFor { get; set; }
         public Exception? ThrowOnApps { get; set; }
+        public string? RunningAlias { get; set; }
         public Dictionary<string, string?> SentETags { get; } = [];
         public List<int> IconSizes { get; } = [];
 
@@ -157,8 +171,8 @@ public class HostSyncTests : IDisposable
                 ? Task.FromException<IReadOnlyList<AppSummaryDto>>(ThrowOnApps)
                 : Task.FromResult<IReadOnlyList<AppSummaryDto>>(
                 [
-                    new("notepad", "Bloco de Notas", ApiContract.Icon("notepad")),
-                    new("calc", "Calculadora", ApiContract.Icon("calc")),
+                    new("notepad", "Bloco de Notas", ApiContract.Icon("notepad"), RunningAlias == "notepad"),
+                    new("calc", "Calculadora", ApiContract.Icon("calc"), RunningAlias == "calc"),
                 ]);
 
         public Task<IconResult> GetIconAsync(string alias, int size, string? etag, CancellationToken ct = default)
@@ -183,6 +197,10 @@ public class HostSyncTests : IDisposable
             Task.FromResult(new UpdateRequestResultDto(UpdateOutcomes.UpToDate, "0.6.0", "0.6.0"));
 
         public Task<string> WaitForChangesAsync(string? since, CancellationToken ct = default) => throw new NotSupportedException();
+
+        public Task<int> StopAppAsync(string alias, bool force, CancellationToken ct = default) => throw new NotSupportedException();
+
+        public Task<int> EndSessionAsync(string? rdpUser, CancellationToken ct = default) => throw new NotSupportedException();
 
         public void Dispose()
         {

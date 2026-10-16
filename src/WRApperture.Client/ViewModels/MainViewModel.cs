@@ -157,6 +157,7 @@ public sealed partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(AskBeforeReleasingSession));
         OnPropertyChanged(nameof(HostVpnText));
         OnPropertyChanged(nameof(HasHostVpn));
+        NotifyHostCapabilities();
         ShowCachedApps();
         EvaluateHostUpdate();
         if (value is not null)
@@ -836,6 +837,7 @@ public sealed partial class MainViewModel : ObservableObject
             ShowCachedApps();
             OnPropertyChanged(nameof(HostVpnText));
             OnPropertyChanged(nameof(HasHostVpn));
+            NotifyHostCapabilities();
         }
 
         // An updated host may now announce live changes.

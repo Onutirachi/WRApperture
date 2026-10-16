@@ -15,6 +15,9 @@ public sealed class AppTileViewModel(CachedApp app, string iconPath, bool isDesk
     public bool IsDesktop { get; } = isDesktop;
     public bool CanRename => !IsDesktop;
 
+    /// <summary>Open on the host right now (the tile shows a dot; Close and End task apply).</summary>
+    public bool IsRunning => App.Running && !IsDesktop;
+
     /// <summary>Shown name: the local one, or the host's.</summary>
     public string DisplayName => App.Name;
     public bool IsRenamed => App.CustomName is not null;

@@ -3,6 +3,7 @@ using WRApperture.Host.Agent.Certificates;
 using WRApperture.Host.Agent.Changes;
 using WRApperture.Host.Agent.Icons;
 using WRApperture.Host.Agent.Readiness;
+using WRApperture.Host.Agent.Remote;
 using WRApperture.Host.Core;
 using WRApperture.Host.Core.HostInfo;
 using WRApperture.Shared;
@@ -16,12 +17,12 @@ internal static class ApiEndpoints
     {
         app.MapGet(ApiContract.Health, () => Results.Text("ok"));
 
-        app.MapGet(ApiContract.Host, (IHostInfoProvider hostInfo, AgentIdentity identity, HostReadiness readiness, HostVpns vpns) =>
+        app.MapGet(ApiContract.Host, (IHostInfoProvider hostInfo, AgentIdentity identity, HostReadiness readiness, HostVpns vpns, ManagerApp manager) =>
         {
             var info = hostInfo.Get();
             var summary = readiness.Get();
             return Results.Ok(new HostInfoDto(info.HostName, info.RdpPort, AgentInfo.Version, identity.Fingerprint,
-                AgentInfo.Features, summary.Issues, summary.SuggestedUser, summary.MicrosoftAccount, vpns.Get()));
+                AgentInfo.Features, summary.Issues, summary.SuggestedUser, summary.MicrosoftAccount, vpns.Get(), manager.Alias()));
         });
 
         // Long poll: one request waits per client; it ends early when the client goes away.
@@ -38,10 +39,12 @@ internal static class ApiEndpoints
         });
 
         // Only alias and name leave the host: executable paths stay private.
-        app.MapGet(ApiContract.Apps, (IAppPublisher publisher) =>
-            Results.Ok(publisher.List()
-                .Where(a => a.ShowInList)
-                .Select(a => new AppSummaryDto(a.Alias, a.DisplayName, ApiContract.Icon(a.Alias)))));
+        app.MapGet(ApiContract.Apps, (IAppPublisher publisher, RunningApps running) =>
+        {
+            var apps = publisher.List().Where(a => a.ShowInList).ToList();
+            var open = running.Find(apps);
+            return Results.Ok(apps.Select(a => new AppSummaryDto(a.Alias, a.DisplayName, ApiContract.Icon(a.Alias), open.ContainsKey(a.Alias))));
+        });
 
         app.MapGet(ApiContract.Apps + "/{alias}/icon", (string alias, int? size, IAppPublisher publisher, IconCache icons, HttpContext context) =>
         {

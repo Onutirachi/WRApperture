@@ -74,6 +74,8 @@ internal sealed class TrayIcon : IDisposable
             {
                 _menu.Items.Add(AppItem(host, tile));
             }
+
+            AddEndSession(_menu.Items, host);
         }
         else if (_vm.Hosts.Count > 1)
         {
@@ -92,6 +94,8 @@ internal sealed class TrayIcon : IDisposable
                     submenu.DropDownItems.Add(AppItem(host, tile));
                 }
 
+                AddEndSession(submenu.DropDownItems, host);
+
                 _menu.Items.Add(submenu);
             }
         }
@@ -100,6 +104,20 @@ internal sealed class TrayIcon : IDisposable
         var exit = new ToolStripMenuItem(Strings.T("client.tray.exit"));
         exit.Click += (_, _) => _exit();
         _menu.Items.Add(exit);
+    }
+
+    /// <summary>"End remote session…" for hosts that support it.</summary>
+    private void AddEndSession(ToolStripItemCollection items, HostOption host)
+    {
+        if (!host.Host.Supports(WRApperture.Shared.AgentFeatures.RemoteControl))
+        {
+            return;
+        }
+
+        items.Add(new ToolStripSeparator());
+        var end = new ToolStripMenuItem(Strings.T("client.endSession.menu"));
+        end.Click += async (_, _) => await _vm.EndSessionOfAsync(host);
+        items.Add(end);
     }
 
     private ToolStripMenuItem AppItem(HostOption host, AppTileViewModel tile)

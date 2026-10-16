@@ -157,6 +157,13 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>A narrow window keeps the search box usable: the labeled buttons show only their icons (names stay in the tooltips).</summary>
+    private void OnToolbarSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var compact = e.NewSize.Width < 620;
+        DesktopLabel.Visibility = ManageLabel.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+    }
+
     private void OnAppsKeyDown(object sender, KeyEventArgs e)
     {
         if (Vm.SelectedApp is not { } tile)

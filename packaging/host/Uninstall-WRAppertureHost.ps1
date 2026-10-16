@@ -98,6 +98,14 @@ try {
     }
 
     $wrahost = Join-Path $InstallDir 'wrahost.exe'
+    # The host app published for the clients' "Manage host" goes with the program (apps published by hand stay).
+    $managerApp = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Terminal Server\TSAppAllowList\Applications\wrapperture-host'
+    if (Test-Path $wrahost) {
+        if ($DryRun -or (Test-Path $managerApp)) {
+            Invoke-Step (T 'installer.host.uninstall.removeManagerApp') { & $wrahost unpublish wrapperture-host | Out-Host }
+        }
+    }
+
     if ($Purge) {
         if ($DryRun -or (Test-Path $wrahost)) {
             Invoke-Step (T 'installer.host.uninstall.revert') { & $wrahost revert | Out-Host }

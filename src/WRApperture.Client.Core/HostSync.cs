@@ -42,7 +42,7 @@ public sealed class HostSync(IconStore icons, Func<PairedHost, IAgentApi> client
             }
 
             // Local names stay with apps that are still published (and leave with removed ones).
-            cached.Add(new CachedApp(app.Alias, app.DisplayName, etag).WithCustomName(old?.CustomName));
+            cached.Add(new CachedApp(app.Alias, app.DisplayName, etag, Running: app.Running).WithCustomName(old?.CustomName));
         }
 
         _logger.LogInformation("Synced host {Host}: {Count} apps", host.Address, cached.Count);
@@ -54,6 +54,7 @@ public sealed class HostSync(IconStore icons, Func<PairedHost, IAgentApi> client
             AgentVersion = info.AgentVersion,
             Issues = info.Issues ?? [],
             Vpns = info.Vpns ?? [],
+            ManagerAlias = info.ManagerAlias,
             SuggestedUser = info.SuggestedUser ?? host.SuggestedUser,
             MicrosoftAccount = info.SuggestedUser is null ? host.MicrosoftAccount : info.MicrosoftAccount,
             LastSyncUtc = time.GetUtcNow(),

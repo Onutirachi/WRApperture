@@ -114,6 +114,10 @@ public class HostWatcherTests
 
         public Task<UpdateStatusDto> GetHostUpdateStatusAsync(CancellationToken ct = default) => throw new NotSupportedException();
 
+        public Task<int> StopAppAsync(string alias, bool force, CancellationToken ct = default) => throw new NotSupportedException();
+
+        public Task<int> EndSessionAsync(string? rdpUser, CancellationToken ct = default) => throw new NotSupportedException();
+
         public void Dispose()
         {
         }

@@ -80,4 +80,7 @@ public interface ISessionProvider
 
     /// <summary>Starts a program as the session's user, on its screen. Returns the process id.</summary>
     int StartProcess(int sessionId, string executable, string? arguments);
+
+    /// <summary>Runs a console program as the session's user without a window (e.g. taskkill, which must run there).</summary>
+    int StartHidden(int sessionId, string executable, string arguments);
 }

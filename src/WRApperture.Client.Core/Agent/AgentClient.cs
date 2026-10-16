@@ -45,6 +45,15 @@ public interface IAgentApi : IDisposable
     /// <paramref name="since"/> and returns its version. Only for agents that announce <see cref="AgentFeatures.Changes"/>.
     /// </summary>
     Task<string> WaitForChangesAsync(string? since, CancellationToken ct = default);
+
+    /// <summary>
+    /// Asks the app's windows on the host to close (<paramref name="force"/>: ends its processes instead). Returns how
+    /// many processes it reached. Only for agents that announce <see cref="AgentFeatures.RemoteControl"/>.
+    /// </summary>
+    Task<int> StopAppAsync(string alias, bool force, CancellationToken ct = default);
+
+    /// <summary>Logs off the RemoteApp sessions of <paramref name="rdpUser"/> (all of them when null); returns how many.</summary>
+    Task<int> EndSessionAsync(string? rdpUser, CancellationToken ct = default);
 }
 
 /// <summary>Talks to a host agent over HTTPS with certificate pinning.</summary>
@@ -257,6 +266,25 @@ public sealed class AgentClient : IAgentApi
     }
 
     public void Dispose() => _http.Dispose();
+
+    public async Task<int> StopAppAsync(string alias, bool force, CancellationToken ct = default)
+    {
+        var route = force ? ApiContract.KillApp(alias) : ApiContract.CloseApp(alias);
+        using var response = await SendAsync(new HttpRequestMessage(HttpMethod.Post, route), ct);
+        return (await response.Content.ReadFromJsonAsync<AppStopResultDto>(ct))?.Processes
+               ?? throw new AgentException(Strings.T("client.errors.invalidResponse"));
+    }
+
+    public async Task<int> EndSessionAsync(string? rdpUser, CancellationToken ct = default)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, ApiContract.SessionEnd)
+        {
+            Content = JsonContent.Create(new SessionEndRequestDto(string.IsNullOrWhiteSpace(rdpUser) ? null : rdpUser)),
+        };
+        using var response = await SendAsync(request, ct, timeout: TimeSpan.FromSeconds(ApiContract.SessionReleaseTimeoutSeconds));
+        return (await response.Content.ReadFromJsonAsync<SessionEndResultDto>(ct))?.Ended
+               ?? throw new AgentException(Strings.T("client.errors.invalidResponse"));
+    }
 
     public async Task<string> WaitForChangesAsync(string? since, CancellationToken ct = default)
     {
