@@ -34,8 +34,13 @@ public sealed partial class HostOption(PairedHost host) : ObservableObject
     ];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Label), nameof(VersionText), nameof(AppsText), nameof(ColorBrush))]
+    [NotifyPropertyChangedFor(nameof(Label), nameof(VersionText), nameof(AppsText), nameof(ColorBrush), nameof(HasVpn), nameof(HasColor))]
     private PairedHost _host = host;
+
+    /// <summary>The host was on a VPN at the last sync (a "VPN" tag on the card).</summary>
+    public bool HasVpn => Host.Vpns.Count > 0;
+
+    public bool HasColor => Host.Color is not null;
 
     public static string ColorName(string key) => key switch
     {
@@ -117,7 +122,7 @@ public sealed partial class MainViewModel : ObservableObject
     public ICollectionView AppsView { get; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasHost), nameof(HasNoHost))]
+    [NotifyPropertyChangedFor(nameof(HasHost), nameof(HasNoHost), nameof(ShowHostArea), nameof(ShowNoHost))]
     [NotifyCanExecuteChangedFor(nameof(RefreshCommand), nameof(RemoveHostCommand), nameof(SaveCredentialsCommand), nameof(DeleteCredentialsCommand))]
     private HostOption? _selectedHost;
 
@@ -863,7 +868,13 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     /// <summary>The settings page replaces the host's area until "Back".</summary>
-    [ObservableProperty] private bool _isSettingsOpen;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowHostArea), nameof(ShowNoHost))]
+    private bool _isSettingsOpen;
+
+    public bool ShowHostArea => HasHost && !IsSettingsOpen;
+
+    public bool ShowNoHost => HasNoHost && !IsSettingsOpen;
 
     [RelayCommand]
     private void ToggleSettings() => IsSettingsOpen = !IsSettingsOpen;

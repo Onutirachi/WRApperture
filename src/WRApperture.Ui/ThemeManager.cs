@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using Microsoft.Win32;
 
 namespace WRApperture.Ui;
@@ -23,6 +24,14 @@ public static class ThemeManager
     private const string SettingsValue = "Theme";
     private const string PersonalizeKey = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
     private const int DwmUseImmersiveDarkMode = 20;
+    private const int DwmSystemBackdropType = 38;
+    private const int BackdropMica = 2; // DWMSBT_MAINWINDOW
+
+    /// <summary>
+    /// Windows 11 22H2 (build 22621) and later draw a Mica backdrop behind a window that asks for it. Before that the
+    /// windows keep the palette's solid Background.
+    /// </summary>
+    public static bool MicaAvailable { get; } = Environment.OSVersion.Version.Build >= 22621;
 
     private static readonly ResourceDictionary DarkColors = new()
     {
@@ -41,7 +50,7 @@ public static class ThemeManager
         Preference = LoadPreference();
         Apply();
 
-        // Title bars follow too: every window gets the attribute when it loads.
+        // Title bars and the Mica backdrop follow too: every window gets them when it loads.
         EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent,
             new RoutedEventHandler((sender, _) => ApplyTitleBar((Window)sender)));
 
@@ -115,10 +124,47 @@ public static class ThemeManager
             return;
         }
 
+        // Also tints Mica dark or light.
         var dark = IsDark ? 1 : 0;
         _ = DwmSetWindowAttribute(hwnd, DwmUseImmersiveDarkMode, ref dark, sizeof(int));
+        ApplyMica(window, hwnd);
+    }
+
+    /// <summary>
+    /// Mica shows through wherever WPF paints nothing: the window background becomes transparent and the frame is
+    /// extended over the whole client area. Layers and controls are translucent so the backdrop tints them.
+    /// </summary>
+    private static void ApplyMica(Window window, IntPtr hwnd)
+    {
+        if (!MicaAvailable || window.AllowsTransparency || HwndSource.FromHwnd(hwnd)?.CompositionTarget is not { } target)
+        {
+            return;
+        }
+
+        var backdrop = BackdropMica;
+        if (DwmSetWindowAttribute(hwnd, DwmSystemBackdropType, ref backdrop, sizeof(int)) != 0)
+        {
+            return; // refused: keep the solid background
+        }
+
+        target.BackgroundColor = Colors.Transparent;
+        window.Background = Brushes.Transparent;
+        var margins = new Margins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
+        _ = DwmExtendFrameIntoClientArea(hwnd, ref margins);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Margins
+    {
+        public int Left;
+        public int Right;
+        public int Top;
+        public int Bottom;
     }
 
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref Margins margins);
 }
