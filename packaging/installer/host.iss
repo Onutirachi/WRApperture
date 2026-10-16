@@ -83,16 +83,39 @@ begin
 end;
 
 { The agent service and the host app lock their files: stop them before copying (also when the agent itself
-  started this setup to update: it is stopped here and the setup keeps running). }
+  started this setup to update: it is stopped here and the setup keeps running).
+  The service restarts itself 5 s after a crash, and killing it counts as one: it would come back mid-copy and lock
+  WRApperture.Agent.exe. So it is disabled first, asked to stop and waited for (up to 30 s); only what is left is
+  killed. RestoreAgentStart puts it back to automatic (the configuration script also does). }
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   Code: Integer;
+  Script: String;
 begin
-  Exec(ExpandConstant('{sys}\sc.exe'), 'stop WRAppertureAgent', '', SW_HIDE, ewWaitUntilTerminated, Code);
-  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM WRApperture.Host.exe', '', SW_HIDE, ewWaitUntilTerminated, Code);
-  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM WRApperture.Agent.exe', '', SW_HIDE, ewWaitUntilTerminated, Code);
-  Sleep(1500);
+  Script :=
+    '$ErrorActionPreference = ''SilentlyContinue''; ' +
+    '$s = Get-Service WRAppertureAgent; ' +
+    'if ($s) { Set-Service WRAppertureAgent -StartupType Disabled; ' +
+    '  if ($s.Status -ne ''Stopped'') { Stop-Service WRAppertureAgent -Force -NoWait; ' +
+    '    try { $s.WaitForStatus(''Stopped'', [TimeSpan]::FromSeconds(30)) } catch {} } }; ' +
+    'Get-Process WRApperture.Agent, WRApperture.Host | Stop-Process -Force; ' +
+    'Wait-Process -Name WRApperture.Agent, WRApperture.Host -Timeout 15';
+  Exec('powershell.exe', '-NoProfile -ExecutionPolicy Bypass -Command "' + Script + '"', '', SW_HIDE, ewWaitUntilTerminated, Code);
   Result := '';
+end;
+
+{ Back to automatic start (no-op when the service does not exist, e.g. on a first install). }
+procedure RestoreAgentStart();
+var
+  Code: Integer;
+begin
+  Exec(ExpandConstant('{sys}\sc.exe'), 'config WRAppertureAgent start= auto', '', SW_HIDE, ewWaitUntilTerminated, Code);
+end;
+
+{ Also when the setup is cancelled or fails after PrepareToInstall: the agent must not stay disabled. }
+procedure DeinitializeSetup();
+begin
+  RestoreAgentStart();
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -101,6 +124,7 @@ var
   Logs: String;
 begin
   if CurStep <> ssPostInstall then Exit;
+  RestoreAgentStart();
   WizardForm.StatusLabel.Caption := CustomMessage('setup_configuring');
   Logs := ExpandConstant('{commonappdata}\WRApperture\logs');
   if not Exec('powershell.exe',
