@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:WRApperture.Ui;assembly=WRApperture.Ui"
+        xmlns:ui="clr-namespace:WRApperture.Ui;assembly=WRApperture.Ui"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -136,7 +137,9 @@
                     </DockPanel>
                 </Border>
 
-                <Grid>
+                <Grid ClipToBounds="True">
+                    <Path Style="{StaticResource PortalWatermark}" />
+
                     <!-- Published apps -->
                     <DockPanel Visibility="{Binding IsChecked, ElementName=AppsPage, Converter={StaticResource BoolToVis}}">
                         <TextBlock DockPanel.Dock="Top" Text="{loc:T manager.main.apps}" Style="{StaticResource PageTitle}" Margin="28,20,28,14" />
@@ -172,6 +175,7 @@
                             </StackPanel>
 
                             <ListBox ItemsSource="{Binding Apps}" SelectedItem="{Binding SelectedApp}" Background="Transparent" Padding="22,0,22,12"
+                                     ui:ListSelection.ClearOnEmptyClick="True"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="{loc:T manager.main.apps}">
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem">

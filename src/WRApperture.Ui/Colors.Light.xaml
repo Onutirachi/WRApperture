@@ -27,6 +27,7 @@
     <SolidColorBrush x:Key="SuccessBackground" Color="#1F0F7B0F" />
     <SolidColorBrush x:Key="Overlay" Color="#99F3F3F3" />
     <SolidColorBrush x:Key="Text" Color="#1B1B1B" />
+    <SolidColorBrush x:Key="Watermark" Color="#0F000000" />
     <SolidColorBrush x:Key="ScrollThumb" Color="#72000000" />
 
     <!-- Pinned system colors: default controls must not inherit a mismatching Windows theme. -->

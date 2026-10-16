@@ -872,15 +872,12 @@ public sealed partial class MainViewModel : ObservableObject
             _state = _state with { ListView = value };
             _store.Save(_state);
             OnPropertyChanged();
-            OnPropertyChanged(nameof(IsGridView));
         }
     }
 
-    public bool IsGridView
-    {
-        get => !IsListView;
-        set => IsListView = !value;
-    }
+    /// <summary>The single tiles/list button: switches to the other one.</summary>
+    [RelayCommand]
+    private void ToggleView() => IsListView = !IsListView;
 
     /// <summary>The settings page replaces the host's area until "Back".</summary>
     [ObservableProperty]

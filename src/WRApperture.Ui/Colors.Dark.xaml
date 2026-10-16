@@ -27,6 +27,7 @@
     <SolidColorBrush x:Key="SuccessBackground" Color="#2E22C55E" />
     <SolidColorBrush x:Key="Overlay" Color="#99000000" />
     <SolidColorBrush x:Key="Text" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="Watermark" Color="#0CFFFFFF" />
     <SolidColorBrush x:Key="ScrollThumb" Color="#5CFFFFFF" />
 
     <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#2C2C2C" />
