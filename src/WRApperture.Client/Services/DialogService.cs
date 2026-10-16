@@ -3,6 +3,7 @@ using WRApperture.Client.Core.Agent;
 using WRApperture.Client.Core.Discovery;
 using WRApperture.Client.Views;
 using WRApperture.Shared;
+using WRApperture.Shared.Localization;
 
 namespace WRApperture.Client.Services;
 
@@ -27,6 +28,9 @@ public interface IDialogService
 
     /// <summary>Local name for an app; null when the user cancels.</summary>
     string? AskAppName(string currentName, string hostName);
+
+    /// <summary>Local name for a host; null when the user cancels, blank or the computer's name to use the computer's name.</summary>
+    string? AskHostName(string currentName, string computerName);
 
     bool Confirm(string title, string message);
     void Error(string message);
@@ -58,6 +62,13 @@ internal sealed class DialogService(IHostDiscovery discovery) : IDialogService
     public string? AskAppName(string currentName, string hostName)
     {
         var window = Owned(new RenameAppWindow(currentName, hostName));
+        return window.ShowDialog() == true ? window.Result : null;
+    }
+
+    public string? AskHostName(string currentName, string computerName)
+    {
+        var window = Owned(new RenameAppWindow(currentName, computerName, Strings.T("client.rename.hostTitle"),
+            Strings.T("client.rename.computerName", computerName)));
         return window.ShowDialog() == true ? window.Result : null;
     }
 

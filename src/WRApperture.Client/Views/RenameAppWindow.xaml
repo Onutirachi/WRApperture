@@ -6,7 +6,7 @@
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         Style="{StaticResource BaseWindow}">
     <StackPanel Margin="20">
-        <TextBlock Text="{loc:T client.rename.title}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
+        <TextBlock x:Name="Heading" Text="{loc:T client.rename.title}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
 
         <TextBlock Text="{loc:T client.rename.nameLabel}" Margin="0,0,0,4" />
         <TextBox x:Name="NameBox" AutomationProperties.Name="{loc:T client.rename.nameLabel}" />

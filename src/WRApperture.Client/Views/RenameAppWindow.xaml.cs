@@ -7,12 +7,21 @@ public partial class RenameAppWindow : Window
 {
     private readonly string _hostName;
 
-    public RenameAppWindow(string currentName, string hostName)
+    /// <param name="hostName">The name the host gives it (restored by "Use the original name").</param>
+    /// <param name="title">Heading for renaming something else than an app (a host).</param>
+    /// <param name="originalText">Line telling the original name, for <paramref name="title"/>.</param>
+    public RenameAppWindow(string currentName, string hostName, string? title = null, string? originalText = null)
     {
         InitializeComponent();
         _hostName = hostName;
         NameBox.Text = currentName;
-        HostNameText.Text = Strings.T("client.rename.hostName", hostName);
+        HostNameText.Text = originalText ?? Strings.T("client.rename.hostName", hostName);
+        if (title is not null)
+        {
+            Title = title;
+            Heading.Text = title;
+        }
+
         RestoreButton.IsEnabled = currentName != hostName;
         Loaded += (_, _) =>
         {

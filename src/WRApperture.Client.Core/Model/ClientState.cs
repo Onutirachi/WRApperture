@@ -60,6 +60,12 @@ public sealed record PairedHost
 
     /// <summary>VPNs connected on the host at the last sync.</summary>
     public IReadOnlyList<string> Vpns { get; init; } = [];
+
+    /// <summary>Name chosen on this computer only (never sent to the host); null shows the host's name.</summary>
+    public string? CustomName { get; init; }
+
+    /// <summary>Color of the host's card, a key of the client's palette ("blue", "green"…); null for none.</summary>
+    public string? Color { get; init; }
     public DateTimeOffset? LastSyncUtc { get; init; }
 }
 
@@ -81,6 +87,9 @@ public sealed record ClientState
 
     /// <summary>Install new versions of the client by itself (checked every 6 hours). On by default, also for older files.</summary>
     public bool AutoUpdate { get; init; } = true;
+
+    /// <summary>Apps shown as a list instead of tiles.</summary>
+    public bool ListView { get; init; }
 
     /// <summary>Last version announced while <see cref="AutoUpdate"/> is off, so each version is announced once.</summary>
     public string? UpdateNoticeVersion { get; init; }

@@ -23,16 +23,46 @@ using WRApperture.Shared.Updates;
 
 namespace WRApperture.Client.ViewModels;
 
-/// <summary>Combo item; updated in place so the ComboBox selection never flickers.</summary>
+/// <summary>A card in the hosts list; updated in place so the selection never flickers.</summary>
 public sealed partial class HostOption(PairedHost host) : ObservableObject
 {
+    /// <summary>Card colors (keys stored in hosts.json), in menu order.</summary>
+    public static readonly IReadOnlyList<(string Key, string Hex)> Palette =
+    [
+        ("blue", "#3B82F6"), ("green", "#22C55E"), ("orange", "#F97316"), ("purple", "#A855F7"),
+        ("red", "#EF4444"), ("teal", "#14B8A6"), ("pink", "#EC4899"), ("gray", "#9CA3AF"),
+    ];
+
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Label))]
+    [NotifyPropertyChangedFor(nameof(Label), nameof(VersionText), nameof(AppsText), nameof(ColorBrush))]
     private PairedHost _host = host;
 
-    public string Label => string.Equals(Host.DisplayName, Host.Address, StringComparison.OrdinalIgnoreCase)
-        ? Host.DisplayName
-        : $"{Host.DisplayName} ({Host.Address})";
+    public static string ColorName(string key) => key switch
+    {
+        "blue" => Strings.T("client.color.blue"),
+        "green" => Strings.T("client.color.green"),
+        "orange" => Strings.T("client.color.orange"),
+        "purple" => Strings.T("client.color.purple"),
+        "red" => Strings.T("client.color.red"),
+        "teal" => Strings.T("client.color.teal"),
+        "pink" => Strings.T("client.color.pink"),
+        _ => Strings.T("client.color.gray"),
+    };
+
+    /// <summary>The host did not answer on the last sync.</summary>
+    [ObservableProperty] private bool _isOffline;
+
+    /// <summary>The name shown everywhere on this computer: the local one, or the host's.</summary>
+    public string Label => Host.CustomName ?? Host.DisplayName;
+
+    public string VersionText => Host.AgentVersion is { } version ? $"v{version}" : string.Empty;
+
+    public string AppsText => Strings.T("client.host.apps", Host.Apps.Count);
+
+    public System.Windows.Media.Brush ColorBrush =>
+        Palette.FirstOrDefault(c => c.Key == Host.Color) is { Hex: { } hex }
+            ? new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex))
+            : System.Windows.Media.Brushes.Transparent;
 }
 
 public sealed partial class MainViewModel : ObservableObject
@@ -109,7 +139,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     public bool HasHost => SelectedHost is not null;
     public bool HasNoHost => SelectedHost is null;
-    public bool HasNoApps => SelectedHost is { Host.Apps.Count: 0 } && !IsBusy; // the desktop tile is always there
+    public bool HasNoApps => SelectedHost is { Host.Apps.Count: 0 } && !IsBusy;
 
     partial void OnSearchTextChanged(string value) => AppsView.Refresh();
 
@@ -118,7 +148,6 @@ public sealed partial class MainViewModel : ObservableObject
     partial void OnSelectedHostChanged(HostOption? value)
     {
         OnPropertyChanged(nameof(AskBeforeReleasingSession));
-        OnPropertyChanged(nameof(HostVersionText));
         OnPropertyChanged(nameof(HostVpnText));
         OnPropertyChanged(nameof(HasHostVpn));
         ShowCachedApps();
@@ -180,11 +209,6 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>"PC-SALA · version 0.17.0" for the host menu.</summary>
-    public string HostVersionText => SelectedHost is not { } option ? string.Empty
-        : option.Host.AgentVersion is { } version ? Strings.T("client.main.hostVersion", option.Label, version)
-        : Strings.T("client.main.hostVersionUnknown", option.Label);
-
     /// <summary>"VPN on: Fortinet SSL VPN" next to the host list (empty when the host has none).</summary>
     public string HostVpnText => SelectedHost is { Host.Vpns: { Count: > 0 } vpns }
         ? Strings.T("client.main.hostVpn", string.Join(", ", vpns))
@@ -207,6 +231,7 @@ public sealed partial class MainViewModel : ObservableObject
         try
         {
             var synced = await _sync.SyncAsync(option.Host);
+            option.IsOffline = false;
             ReplaceHost(synced);
             SetStatus(Strings.T("client.status.synced", synced.Apps.Count, DateTime.Now.ToString("t", CultureInfo.CurrentCulture)), warning: false);
             ShowHostUpdateWarning();
@@ -214,6 +239,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
         catch (AgentUnreachableException ex)
         {
+            option.IsOffline = true;
             _logger.LogWarning(ex, "Host {Address} offline", option.Host.Address);
             var when = option.Host.LastSyncUtc?.ToLocalTime().ToString("g", CultureInfo.CurrentCulture) ?? Strings.T("client.status.never");
             SetStatus(Strings.T("client.status.offline", when), warning: true);
@@ -791,19 +817,74 @@ public sealed partial class MainViewModel : ObservableObject
         if (ReferenceEquals(option, SelectedHost))
         {
             ShowCachedApps();
-            OnPropertyChanged(nameof(HostVersionText));
             OnPropertyChanged(nameof(HostVpnText));
             OnPropertyChanged(nameof(HasHostVpn));
         }
     }
 
-    /// <summary>A host's tiles as the grid shows them: the desktop first, then the apps by name.</summary>
+    /// <summary>A host's entries for the tray menu: the desktop first, then the apps by name.</summary>
     public IReadOnlyList<AppTileViewModel> TilesFor(HostOption option) =>
-        new[] { AppTileViewModel.Desktop() }
-            .Concat(option.Host.Apps
-                .OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase)
-                .Select(app => new AppTileViewModel(app, _icons.PngPath(option.Host.Id, app.Alias))))
-            .ToList();
+        new[] { AppTileViewModel.Desktop() }.Concat(AppTilesFor(option)).ToList();
+
+    /// <summary>A host's apps by name, as the grid shows them (the desktop has its own button).</summary>
+    private IEnumerable<AppTileViewModel> AppTilesFor(HostOption option) =>
+        option.Host.Apps
+            .OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase)
+            .Select(app => new AppTileViewModel(app, _icons.PngPath(option.Host.Id, app.Alias)));
+
+    /// <summary>The "Desktop" button's entry (its context menu creates shortcuts to it).</summary>
+    public AppTileViewModel DesktopTile { get; } = AppTileViewModel.Desktop();
+
+    [RelayCommand]
+    private Task OpenDesktopAsync() => OpenAppAsync(DesktopTile);
+
+    /// <summary>Apps as a list instead of tiles (remembered).</summary>
+    public bool IsListView
+    {
+        get => _state.ListView;
+        set
+        {
+            if (_state.ListView == value)
+            {
+                return;
+            }
+
+            _state = _state with { ListView = value };
+            _store.Save(_state);
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsGridView));
+        }
+    }
+
+    public bool IsGridView
+    {
+        get => !IsListView;
+        set => IsListView = !value;
+    }
+
+    /// <summary>The settings page replaces the host's area until "Back".</summary>
+    [ObservableProperty] private bool _isSettingsOpen;
+
+    [RelayCommand]
+    private void ToggleSettings() => IsSettingsOpen = !IsSettingsOpen;
+
+    [RelayCommand(CanExecute = nameof(HasHost))]
+    private void RenameHost()
+    {
+        var host = SelectedHost!.Host;
+        var name = _dialogs.AskHostName(host.CustomName ?? host.DisplayName, host.DisplayName);
+        if (name is null)
+        {
+            return;
+        }
+
+        var clean = string.Join(' ', name.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        ReplaceHost(host with { CustomName = clean.Length == 0 || clean == host.DisplayName ? null : clean });
+    }
+
+    [RelayCommand(CanExecute = nameof(HasHost))]
+    private void SetHostColor(string? key) =>
+        ReplaceHost(SelectedHost!.Host with { Color = HostOption.Palette.Any(c => c.Key == key) ? key : null });
 
     /// <summary>Tray menu: opens an app of any host, switching to that host first if needed.</summary>
     public void OpenFromTray(HostOption option, AppTileViewModel tile)
@@ -811,6 +892,12 @@ public sealed partial class MainViewModel : ObservableObject
         if (!ReferenceEquals(SelectedHost, option))
         {
             SelectedHost = option; // rebuilds Apps from the cache right away (the sync runs in the background)
+        }
+
+        if (tile.IsDesktop)
+        {
+            OpenDesktopCommand.Execute(null);
+            return;
         }
 
         var match = Apps.FirstOrDefault(a => a.IsDesktop == tile.IsDesktop &&
@@ -827,7 +914,7 @@ public sealed partial class MainViewModel : ObservableObject
         Apps.Clear();
         if (SelectedHost is { } option)
         {
-            foreach (var tile in TilesFor(option))
+            foreach (var tile in AppTilesFor(option))
             {
                 Apps.Add(tile);
             }

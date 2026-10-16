@@ -13,8 +13,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        ThemeMenu.AddTo(ThemeItem);
-        LanguageItem.Click += (_, _) => LanguageWindow.Choose(this, ((App)Application.Current).Restart);
+        AddColorItems();
         Activated += (_, _) => Vm.OnWindowActivated();
         PreviewKeyDown += (_, e) =>
         {
@@ -23,8 +22,94 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 Vm.RefreshCommand.Execute(null);
             }
+            else if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                e.Handled = true;
+                Search.Focus();
+                Search.SelectAll();
+            }
         };
+        // The settings page shows the current theme each time it opens (the tray or Windows may have changed it).
+        DataContextChanged += (_, _) => Vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainViewModel.IsSettingsOpen) && Vm.IsSettingsOpen)
+            {
+                SyncThemeChoice();
+            }
+        };
+        SyncThemeChoice();
     }
+
+    private ContextMenu HostMenu => (ContextMenu)FindResource("HostMenu");
+
+    /// <summary>"Color" submenu: no color, then the palette, each with its swatch.</summary>
+    private void AddColorItems()
+    {
+        var color = HostMenu.Items.OfType<MenuItem>().First(m => Equals(m.Tag, "color"));
+        color.Items.Add(new MenuItem { Header = WRApperture.Shared.Localization.Strings.T("client.color.none") });
+        foreach (var (key, hex) in HostOption.Palette)
+        {
+            color.Items.Add(new MenuItem
+            {
+                Header = HostOption.ColorName(key),
+                Tag = key,
+                Icon = new System.Windows.Shapes.Rectangle
+                {
+                    Width = 12, Height = 12, RadiusX = 2, RadiusY = 2,
+                    Fill = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex)),
+                },
+            });
+        }
+
+        foreach (var item in color.Items.OfType<MenuItem>())
+        {
+            item.Click += (_, _) => Vm.SetHostColorCommand.Execute(item.Tag as string);
+        }
+    }
+
+    /// <summary>A card's ○○○: selects that host, then opens its menu under the button.</summary>
+    private void OnHostMenuClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: HostOption host } button)
+        {
+            return;
+        }
+
+        Vm.SelectedHost = host;
+        var menu = HostMenu;
+        menu.DataContext = DataContext;
+        menu.PlacementTarget = button;
+        menu.Placement = PlacementMode.Bottom;
+        menu.IsOpen = true;
+    }
+
+    private bool _syncingTheme;
+
+    /// <summary>The settings page's theme choice follows the current preference.</summary>
+    private void SyncThemeChoice()
+    {
+        _syncingTheme = true;
+        (ThemeManager.Preference switch
+        {
+            ThemePreference.Light => ThemeLight,
+            ThemePreference.Dark => ThemeDark,
+            _ => ThemeSystem,
+        }).IsChecked = true;
+        _syncingTheme = false;
+    }
+
+    private void OnThemeChecked(object sender, RoutedEventArgs e)
+    {
+        if (_syncingTheme)
+        {
+            return;
+        }
+
+        ThemeManager.SetPreference(sender == ThemeLight ? ThemePreference.Light : sender == ThemeDark ? ThemePreference.Dark : ThemePreference.System);
+    }
+
+    private void OnLanguageClick(object sender, RoutedEventArgs e) =>
+        LanguageWindow.Choose(this, ((App)Application.Current).Restart);
 
     private MainViewModel Vm => (MainViewModel)DataContext;
 
@@ -51,17 +136,6 @@ public partial class MainWindow : Window
         }
 
         base.OnClosing(e);
-    }
-
-    private void OnMoreClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button { ContextMenu: { } menu } button)
-        {
-            menu.DataContext = DataContext;
-            menu.PlacementTarget = button;
-            menu.Placement = PlacementMode.Bottom;
-            menu.IsOpen = true;
-        }
     }
 
     private void OnAppDoubleClick(object sender, MouseButtonEventArgs e)
