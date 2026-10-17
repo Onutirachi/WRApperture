@@ -62,7 +62,8 @@ public sealed partial class HostOption(PairedHost host) : ObservableObject
 
     public string VersionText => Host.AgentVersion is { } version ? $"v{version}" : string.Empty;
 
-    public string AppsText => Strings.T("client.host.apps", Host.Apps.Count);
+    public string AppsText => Strings.T("client.host.apps",
+        Host.Apps.Count(a => !string.Equals(a.Alias, Host.ManagerAlias, StringComparison.OrdinalIgnoreCase)));
 
     public System.Windows.Media.Brush ColorBrush =>
         Palette.FirstOrDefault(c => c.Key == Host.Color) is { Hex: { } hex }
@@ -146,7 +147,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     public bool HasHost => SelectedHost is not null;
     public bool HasNoHost => SelectedHost is null;
-    public bool HasNoApps => SelectedHost is { Host.Apps.Count: 0 } && !IsBusy;
+    public bool HasNoApps => SelectedHost is not null && Apps.Count == 0 && !IsBusy;
 
     partial void OnSearchTextChanged(string value) => AppsView.Refresh();
 
@@ -846,11 +847,16 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>A host's entries for the tray menu: the desktop first, then the apps by name.</summary>
     public IReadOnlyList<AppTileViewModel> TilesFor(HostOption option) =>
-        new[] { AppTileViewModel.Desktop() }.Concat(AppTilesFor(option)).ToList();
+        new[] { AppTileViewModel.Desktop() }
+            .Concat(option.Host.ManagerAlias is { } alias ? [AppTileViewModel.Manager(alias)] : Array.Empty<AppTileViewModel>())
+            .Concat(AppTilesFor(option))
+            .ToList();
 
     /// <summary>A host's apps by name, as the grid shows them (the desktop has its own button).</summary>
     private IEnumerable<AppTileViewModel> AppTilesFor(HostOption option) =>
         option.Host.Apps
+            // The host's own app has its fixed "Manage host" button (also when it was published by hand).
+            .Where(a => !string.Equals(a.Alias, option.Host.ManagerAlias, StringComparison.OrdinalIgnoreCase))
             .OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase)
             .Select(app => new AppTileViewModel(app, _icons.PngPath(option.Host.Id, app.Alias)));
 
@@ -922,6 +928,12 @@ public sealed partial class MainViewModel : ObservableObject
         if (tile.IsDesktop)
         {
             OpenDesktopCommand.Execute(null);
+            return;
+        }
+
+        if (tile.IsManager)
+        {
+            ManageHostCommand.Execute(null);
             return;
         }
 

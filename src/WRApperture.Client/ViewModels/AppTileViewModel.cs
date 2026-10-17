@@ -6,14 +6,18 @@ using WRApperture.Shared.Localization;
 
 namespace WRApperture.Client.ViewModels;
 
-public sealed class AppTileViewModel(CachedApp app, string iconPath, bool isDesktop = false)
+public sealed class AppTileViewModel(CachedApp app, string iconPath, bool isDesktop = false, bool isManager = false)
 {
     /// <summary>The fixed "Desktop" tile that opens the host's full desktop.</summary>
     public static AppTileViewModel Desktop() => new(new CachedApp("@desktop", Strings.T("client.desktop.name")), string.Empty, isDesktop: true);
 
+    /// <summary>The fixed "Manage host" entry: the host's own app, published as <paramref name="alias"/>.</summary>
+    public static AppTileViewModel Manager(string alias) => new(new CachedApp(alias, Strings.T("client.manage.name")), string.Empty, isManager: true);
+
     public CachedApp App { get; } = app;
     public bool IsDesktop { get; } = isDesktop;
-    public bool CanRename => !IsDesktop;
+    public bool IsManager { get; } = isManager;
+    public bool CanRename => !IsDesktop && !IsManager;
 
     /// <summary>Open on the host right now (the tile shows a dot; Close and End task apply).</summary>
     public bool IsRunning => App.Running && !IsDesktop;
@@ -26,7 +30,7 @@ public sealed class AppTileViewModel(CachedApp app, string iconPath, bool isDesk
         : IsRenamed ? Strings.T("client.tile.renamedTip", DisplayName, App.DisplayName) : DisplayName)
         + "\n" + Strings.T("client.tile.moreTip");
     public string Initial => DisplayName.Length > 0 ? DisplayName[..1].ToUpperInvariant() : "?";
-    public ImageSource? Icon { get; } = isDesktop ? Services.Artwork.DesktopImage : LoadIcon(iconPath);
+    public ImageSource? Icon { get; } = isDesktop ? Services.Artwork.DesktopImage : isManager ? null : LoadIcon(iconPath);
 
     /// <summary>The cached PNG (tray menu); empty for the desktop tile.</summary>
     public string IconPath { get; } = iconPath;

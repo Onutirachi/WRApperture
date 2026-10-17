@@ -109,8 +109,9 @@ public sealed partial class ManagerViewModel : ObservableObject
     {
         Apps.Clear();
         var sid = UserSid(_accounts);
-        // The built-in entry behind the clients' "Manage host" is not the user's to edit.
-        foreach (var app in _publisher.List().Where(a => !string.Equals(a.Alias, Core.Publishing.BuiltInApps.ManagerAlias, StringComparison.OrdinalIgnoreCase)))
+        // The built-in entry behind the clients' "Manage host" (hidden from clients) is not the user's to edit; one
+        // published by hand shows like any app, even when its name gave it the same alias.
+        foreach (var app in _publisher.List().Where(a => a.ShowInList || !Core.Publishing.BuiltInApps.IsManager(a.Alias)))
         {
             Apps.Add(new AppItemViewModel(app, Icons.Load(_icons, app.IconPath, app.IconIndex), _startWith.For(app, sid)));
         }

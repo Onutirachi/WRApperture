@@ -27,7 +27,7 @@ public sealed partial class MainViewModel
 
     [RelayCommand]
     private Task ManageHostAsync() => SelectedHost?.Host.ManagerAlias is { } alias
-        ? OpenAppAsync(new AppTileViewModel(new CachedApp(alias, Strings.T("client.manage.name")), string.Empty))
+        ? OpenAppAsync(AppTileViewModel.Manager(alias))
         : Task.CompletedTask;
 
     [RelayCommand]

@@ -7,4 +7,6 @@ public static class BuiltInApps
     public const string ManagerAlias = "wrapperture-host";
 
     public const string ManagerDisplayName = "WRApperture Host";
+
+    public static bool IsManager(string alias) => string.Equals(alias, ManagerAlias, StringComparison.OrdinalIgnoreCase);
 }

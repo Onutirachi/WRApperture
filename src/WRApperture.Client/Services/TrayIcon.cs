@@ -131,7 +131,9 @@ internal sealed class TrayIcon : IDisposable
     private Image? ImageFor(AppTileViewModel tile)
     {
         var pixels = (int)Math.Round(MenuIconSize * _menu.DeviceDpi / 96.0);
-        var image = tile.IsDesktop ? RenderDesktop(pixels) : LoadImage(tile.IconPath, pixels) ?? RenderTile(tile, pixels);
+        var image = tile.IsDesktop ? RenderDesktop(pixels)
+            : tile.IsManager ? RenderManager(pixels)
+            : LoadImage(tile.IconPath, pixels) ?? RenderTile(tile, pixels);
         if (image is not null)
         {
             _images.Add(image);
@@ -164,12 +166,43 @@ internal sealed class TrayIcon : IDisposable
         }
     }
 
-    /// <summary>The desktop item's art, drawn as vectors at menu size.</summary>
+    /// <summary>The desktop item: the monitor icon of the window's "Desktop" button, in the menu's text color.</summary>
     private static Bitmap RenderDesktop(int pixels)
     {
-        using var stream = new MemoryStream(Artwork.ToPng(Artwork.Desktop, pixels));
-        using var decoded = Image.FromStream(stream);
-        return new Bitmap(decoded);
+        var color = SystemColors.MenuText;
+        var brush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(color.R, color.G, color.B));
+        var glyph = new System.Windows.Media.FormattedText("", System.Globalization.CultureInfo.InvariantCulture,
+            System.Windows.FlowDirection.LeftToRight, new System.Windows.Media.Typeface("Segoe Fluent Icons, Segoe MDL2 Assets"), pixels * 0.85,
+            brush, 1.0);
+
+        var visual = new System.Windows.Media.DrawingVisual();
+        using (var context = visual.RenderOpen())
+        {
+            context.DrawText(glyph, new System.Windows.Point((pixels - glyph.Width) / 2, (pixels - glyph.Height) / 2));
+        }
+
+        return ToBitmap(visual, pixels);
+    }
+
+    /// <summary>The "Manage host" item: the arrows of the window's button, in the menu's text color.</summary>
+    private static Bitmap RenderManager(int pixels)
+    {
+        var color = SystemColors.MenuText;
+        var brush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(color.R, color.G, color.B));
+        var arrows = (System.Windows.Media.Geometry)System.Windows.Application.Current.FindResource("ArrowsGeometry");
+        var size = pixels * 0.8;
+        var scale = size / Math.Max(arrows.Bounds.Width, arrows.Bounds.Height);
+        var visual = new System.Windows.Media.DrawingVisual();
+        using (var context = visual.RenderOpen())
+        {
+            context.PushTransform(new System.Windows.Media.TranslateTransform(
+                (pixels - arrows.Bounds.Width * scale) / 2 - arrows.Bounds.X * scale,
+                (pixels - arrows.Bounds.Height * scale) / 2 - arrows.Bounds.Y * scale));
+            context.PushTransform(new System.Windows.Media.ScaleTransform(scale, scale));
+            context.DrawGeometry(brush, null, arrows);
+        }
+
+        return ToBitmap(visual, pixels);
     }
 
     /// <summary>Draws the grid's fallback tile with WPF (same accent color, initial and font) as a menu image.</summary>
@@ -188,6 +221,11 @@ internal sealed class TrayIcon : IDisposable
             context.DrawText(glyph, new System.Windows.Point((pixels - glyph.Width) / 2, (pixels - glyph.Height) / 2));
         }
 
+        return ToBitmap(visual, pixels);
+    }
+
+    private static Bitmap ToBitmap(System.Windows.Media.Visual visual, int pixels)
+    {
         var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(pixels, pixels, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(visual);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
