@@ -127,6 +127,32 @@ public class RemoteAppLauncherTests : IDisposable
     }
 
     [Fact]
+    public void App_open_again_while_mstsc_holds_its_file_launches_a_copy()
+    {
+        var starter = new RecordingStarter();
+        var launcher = new RemoteAppLauncher(_dir.Paths, starter);
+        var host = Samples.Host();
+        var file = launcher.WriteRdpFile(host, host.Apps[0]);
+        var copy = Path.Combine(Path.GetDirectoryName(file)!, Path.GetFileNameWithoutExtension(file) + "@1.rdp");
+
+        // Like a running mstsc: readable, not writable.
+        using (new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            launcher.Launch(host, host.Apps[0]);
+
+            Assert.Equal($"\"{copy}\"", starter.Arguments);
+            Assert.Contains("||bloco-de-notas", File.ReadAllText(copy, Encoding.Unicode));
+            // Shortcuts keep pointing to the file in use.
+            Assert.Equal(file, launcher.WriteRdpFile(host, host.Apps[0]));
+        }
+
+        launcher.Launch(host, host.Apps[0]);
+
+        Assert.Equal($"\"{file}\"", starter.Arguments);
+        Assert.False(File.Exists(copy));
+    }
+
+    [Fact]
     public void Files_of_different_hosts_do_not_collide()
     {
         var launcher = new RemoteAppLauncher(_dir.Paths, new RecordingStarter());
