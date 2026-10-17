@@ -89,6 +89,8 @@ public partial class App : Application
         var vm = _services.GetRequiredService<MainViewModel>();
         var window = new MainWindow { DataContext = vm };
         MainWindow = window;
+        // Apps opened from the tray: the progress card shows on the screen itself.
+        Views.ProgressToast.Follow(vm, window);
         window.Closed += (_, _) => Shutdown();
         _tray = new TrayIcon(vm, ShowMainWindow, ExitApp);
         window.HiddenToTray += () =>

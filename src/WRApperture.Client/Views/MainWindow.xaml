@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:WRApperture.Client.ViewModels"
+        xmlns:local="clr-namespace:WRApperture.Client.Views"
         xmlns:loc="clr-namespace:WRApperture.Ui;assembly=WRApperture.Ui"
         xmlns:ui="clr-namespace:WRApperture.Ui;assembly=WRApperture.Ui"
         mc:Ignorable="d"
@@ -566,32 +567,7 @@
 
                         <!-- Progress overlay: releasing the host / opening an app (blocks clicks meanwhile) -->
                         <Grid Background="{DynamicResource Overlay}" Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVis}}">
-                            <Border Background="{DynamicResource Popup}" CornerRadius="12" Padding="28,22" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420"
-                                    Effect="{StaticResource PopupShadow}">
-                                <StackPanel>
-                                    <Grid Width="40" Height="40" HorizontalAlignment="Center" Margin="0,0,0,14">
-                                        <Ellipse Stroke="{DynamicResource Surface}" StrokeThickness="4" />
-                                        <Path Stroke="{DynamicResource Accent}" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                              Data="M 20,2 A 18,18 0 0 1 38,20" RenderTransformOrigin="0.5,0.5">
-                                            <Path.RenderTransform>
-                                                <RotateTransform x:Name="SpinnerRotation" />
-                                            </Path.RenderTransform>
-                                            <Path.Triggers>
-                                                <EventTrigger RoutedEvent="Loaded">
-                                                    <BeginStoryboard>
-                                                        <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetName="SpinnerRotation" Storyboard.TargetProperty="Angle"
-                                                                             From="0" To="360" Duration="0:0:0.9" RepeatBehavior="Forever" />
-                                                        </Storyboard>
-                                                    </BeginStoryboard>
-                                                </EventTrigger>
-                                            </Path.Triggers>
-                                        </Path>
-                                    </Grid>
-                                    <TextBlock Text="{Binding ProgressMessage}" FontSize="15" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" />
-                                    <TextBlock Text="{Binding ProgressDetail}" Foreground="{DynamicResource Muted}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,0" />
-                                </StackPanel>
-                            </Border>
+                            <local:ProgressCard HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Grid>
                     </Grid>
                 </DockPanel>

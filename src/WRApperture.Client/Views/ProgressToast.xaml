@@ -1,0 +1,10 @@
+<Window x:Class="WRApperture.Client.Views.ProgressToast"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:WRApperture.Client.Views"
+        Title="WRApperture" WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight" WindowStartupLocation="CenterScreen" Topmost="True" ShowInTaskbar="False" ShowActivated="False"
+        Focusable="False" IsHitTestVisible="False" FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True">
+    <!-- The progress card on its own, centered on the screen, while the main window is hidden (apps opened from the tray). -->
+    <views:ProgressCard Margin="24" MinWidth="300" />
+</Window>
