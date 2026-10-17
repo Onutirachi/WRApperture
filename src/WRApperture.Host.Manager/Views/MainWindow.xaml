@@ -93,347 +93,349 @@
         <!-- The page: a translucent layer over the backdrop -->
         <Border Grid.Column="1" Background="{DynamicResource Layer}" BorderBrush="{DynamicResource Border}" BorderThickness="1,1,0,0"
                 CornerRadius="10,0,0,0">
-            <DockPanel>
-                <!-- Status bar -->
-                <Border DockPanel.Dock="Bottom" Padding="24,8">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Background" Value="Transparent" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsWarning}" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource WarningBackground}" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <DockPanel>
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding CurrentVersion, StringFormat=v{0}}" Foreground="{DynamicResource Faint}" Margin="12,0,0,0" />
-                        <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{DynamicResource Muted}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsWarning}" Value="True">
-                                            <Setter Property="Foreground" Value="{DynamicResource Warning}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </DockPanel>
-                </Border>
-
-                <!-- Read-only banner -->
-                <Border DockPanel.Dock="Top" Background="{DynamicResource WarningBackground}" CornerRadius="10" Padding="16,10" Margin="28,16,28,0"
-                        Visibility="{Binding IsReadOnly, Converter={StaticResource BoolToVis}}">
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Secondary}" Command="{Binding ElevateCommand}" AutomationProperties.Name="{loc:T manager.main.elevate}" Margin="12,0,0,0">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource Icon}" Text="&#xE7EF;" FontSize="14" Margin="0,0,8,0" />
-                                <TextBlock Text="{loc:T manager.main.elevate}" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
-                        <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource Warning}" TextWrapping="Wrap" Text="{loc:T manager.main.readOnly}" />
-                    </DockPanel>
-                </Border>
-
-                <Grid ClipToBounds="True">
-                    <Path Style="{StaticResource PortalWatermark}" />
-
-                    <!-- Published apps -->
-                    <DockPanel Visibility="{Binding IsChecked, ElementName=AppsPage, Converter={StaticResource BoolToVis}}">
-                        <TextBlock DockPanel.Dock="Top" Text="{loc:T manager.main.apps}" Style="{StaticResource PageTitle}" Margin="28,20,28,14" />
-
-                        <DockPanel DockPanel.Dock="Top" Margin="28,0,28,6" LastChildFill="False">
-                            <Button DockPanel.Dock="Left" Style="{StaticResource Primary}" Command="{Binding AddFilesCommand}" AutomationProperties.Name="{loc:T manager.main.addApp}" Margin="0,0,8,6">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="14" Margin="0,0,8,0" Foreground="{DynamicResource OnAccent}" />
-                                    <TextBlock Text="{loc:T manager.main.addApp}" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
-                            <Button DockPanel.Dock="Left" Content="{loc:T manager.main.fromStartMenu}" Style="{StaticResource Secondary}" Margin="0,0,8,6"
-                                    Command="{Binding PublishInstalledCommand}" />
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Subtle}" Command="{Binding RemoveCommand}" Padding="10,8" Margin="4,0,0,6"
-                                    ToolTip="{loc:T manager.main.remove}" AutomationProperties.Name="{loc:T manager.main.remove}">
-                                <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" />
-                            </Button>
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Subtle}" Command="{Binding EditCommand}" Padding="10,8" Margin="4,0,0,6"
-                                    ToolTip="{loc:T manager.main.edit}" AutomationProperties.Name="{loc:T manager.main.edit}">
-                                <TextBlock Style="{StaticResource Icon}" Text="&#xE70F;" />
-                            </Button>
-                        </DockPanel>
-                        <TextBlock DockPanel.Dock="Top" Foreground="{DynamicResource Faint}" FontSize="12" Margin="28,0,28,10" TextWrapping="Wrap"
-                                   Text="{loc:T manager.main.tip}" />
-
-                        <Grid>
-                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False" MaxWidth="380"
-                                        Visibility="{Binding HasNoApps, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Style="{StaticResource Icon}" Text="&#xE71D;" FontSize="40" Foreground="{DynamicResource Faint}" Margin="0,0,0,14" />
-                                <TextBlock Text="{loc:T manager.main.empty}" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" />
-                                <TextBlock Foreground="{DynamicResource Muted}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0"
-                                           Text="{loc:T manager.main.emptyHint}" />
-                            </StackPanel>
-
-                            <ListBox ItemsSource="{Binding Apps}" SelectedItem="{Binding SelectedApp}" Background="Transparent" Padding="22,0,22,12"
-                                     ui:ListSelection.ClearOnEmptyClick="True"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="{loc:T manager.main.apps}">
-                                <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem">
-                                        <Setter Property="Foreground" Value="{DynamicResource Text}" />
-                                        <Setter Property="AutomationProperties.Name" Value="{Binding DisplayName}" />
-                                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                                        <Setter Property="Margin" Value="6,3" />
-                                        <Setter Property="Cursor" Value="Hand" />
-                                        <EventSetter Event="MouseDoubleClick" Handler="OnAppDoubleClick" />
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="ListBoxItem">
-                                                    <Border x:Name="Bd" Background="{DynamicResource Surface}" CornerRadius="10" Padding="14,10">
-                                                        <ContentPresenter />
-                                                    </Border>
-                                                    <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileHover}" />
-                                                        </Trigger>
-                                                        <Trigger Property="IsSelected" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileSelected}" />
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Setter Property="ContextMenu">
-                                            <Setter.Value>
-                                                <ContextMenu DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
-                                                    <MenuItem Header="{loc:T manager.main.edit}" FontWeight="SemiBold" Command="{Binding EditCommand}">
-                                                        <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE70F;" FontSize="14" /></MenuItem.Icon>
-                                                    </MenuItem>
-                                                    <MenuItem Header="{loc:T manager.main.remove}" Command="{Binding RemoveCommand}">
-                                                        <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="14" Foreground="{DynamicResource Error}" /></MenuItem.Icon>
-                                                    </MenuItem>
-                                                </ContextMenu>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}" />
-                                    </Style>
-                                </ListBox.ItemContainerStyle>
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type vm:AppItemViewModel}">
-                                        <DockPanel>
-                                            <Image DockPanel.Dock="Left" Source="{Binding Icon}" Width="32" Height="32" Margin="0,0,14,0" VerticalAlignment="Center"
-                                                   RenderOptions.BitmapScalingMode="HighQuality" />
-                                            <StackPanel VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding Path}" Foreground="{DynamicResource Faint}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
-                                                <TextBlock Text="{Binding Details}" Foreground="{DynamicResource Faint}" FontSize="12" TextTrimming="CharacterEllipsis" />
-                                            </StackPanel>
-                                        </DockPanel>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                        </Grid>
-                    </DockPanel>
-
-                    <!-- This PC: what remote access needs -->
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsChecked, ElementName=ThisPcPage, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Style="{StaticResource Page}">
-                            <DockPanel>
-                                <Button DockPanel.Dock="Right" Style="{StaticResource Primary}" Command="{Binding PrepareCommand}" AutomationProperties.Name="{loc:T manager.main.prepare}" VerticalAlignment="Center"
-                                        Visibility="{Binding HasPendingReadiness, Converter={StaticResource BoolToVis}}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE90F;" FontSize="14" Margin="0,0,8,0" Foreground="{DynamicResource OnAccent}" />
-                                        <TextBlock Text="{loc:T manager.main.prepare}" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </Button>
-                                <TextBlock Text="{loc:T manager.main.thisPc}" Style="{StaticResource PageTitle}" />
-                            </DockPanel>
-                            <TextBlock Text="{loc:T manager.thisPc.hint}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,8,0,16" />
-
-                            <ItemsControl ItemsSource="{Binding Readiness}" x:Name="ReadinessList">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type vm:ReadinessItem}">
-                                        <Border Style="{StaticResource Card}" Margin="0,0,0,8" Padding="16,12">
-                                            <DockPanel>
-                                                <Grid DockPanel.Dock="Left" Width="30" Height="30" Margin="0,0,14,0" VerticalAlignment="Top">
-                                                    <Ellipse x:Name="Circle" Fill="{DynamicResource WarningBackground}" />
-                                                    <TextBlock x:Name="Glyph" Style="{StaticResource Icon}" Text="&#xE7BA;" FontSize="14" Foreground="{DynamicResource Warning}" />
-                                                </Grid>
-                                                <Button DockPanel.Dock="Right" Content="{Binding ActionLabel}" Style="{StaticResource Secondary}" VerticalAlignment="Center" Margin="12,0,0,0"
-                                                        Command="{Binding DataContext.FixItemCommand, ElementName=ReadinessList}" CommandParameter="{Binding}"
-                                                        Visibility="{Binding HasAction, Converter={StaticResource BoolToVis}}" />
-                                                <StackPanel VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
-                                                    <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,3,0,0"
-                                                               Visibility="{Binding HasDetail, Converter={StaticResource BoolToVis}}" />
-                                                </StackPanel>
-                                            </DockPanel>
-                                        </Border>
-                                        <DataTemplate.Triggers>
-                                            <DataTrigger Binding="{Binding State}" Value="Ok">
-                                                <Setter TargetName="Circle" Property="Fill" Value="{DynamicResource SuccessBackground}" />
-                                                <Setter TargetName="Glyph" Property="Text" Value="&#xE73E;" />
-                                                <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Success}" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding State}" Value="Advice">
-                                                <Setter TargetName="Circle" Property="Fill" Value="{DynamicResource TileHover}" />
-                                                <Setter TargetName="Glyph" Property="Text" Value="&#xE946;" />
-                                                <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Muted}" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding State}" Value="NotSupported">
-                                                <Setter TargetName="Circle" Property="Fill" Value="{DynamicResource ErrorBackground}" />
-                                                <Setter TargetName="Glyph" Property="Text" Value="&#xE711;" />
-                                                <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Error}" />
-                                            </DataTrigger>
-                                        </DataTemplate.Triggers>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </ScrollViewer>
-
-                    <!-- Connection with the clients -->
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsChecked, ElementName=ConnectionPage, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Style="{StaticResource Page}">
-                            <TextBlock Text="{loc:T manager.main.connection}" Style="{StaticResource PageTitle}" />
-
-                            <TextBlock Text="{loc:T manager.main.agent}" Style="{StaticResource SectionTitle}" />
-                            <Border Style="{StaticResource Card}">
-                                <StackPanel>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" MinWidth="90" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        <TextBlock Text="{loc:T manager.main.agent}" Style="{StaticResource Label}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding AgentState}" Style="{StaticResource Value}" />
-                                        <TextBlock Grid.Row="1" Text="{loc:T manager.main.address}" Style="{StaticResource Label}" />
-                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Addresses}" Style="{StaticResource Value}" />
-                                        <TextBlock Grid.Row="2" Text="{loc:T manager.main.port}" Style="{StaticResource Label}" />
-                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Port}" Style="{StaticResource Value}" />
-                                        <TextBlock Grid.Row="3" Text="{loc:T manager.main.paired}" Style="{StaticResource Label}" />
-                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Paired}" Style="{StaticResource Value}" />
-                                        <TextBlock Grid.Row="4" Text="{loc:T manager.main.vpn}" Style="{StaticResource Label}" />
-                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Vpns}" Style="{StaticResource Value}" />
-                                        <TextBlock Grid.Row="5" Text="{loc:T manager.main.fingerprint}" Style="{StaticResource Label}" Margin="0,0,16,0" />
-                                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Fingerprint, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" FontSize="11"
-                                                 TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Padding="0" />
-                                    </Grid>
-                                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                        <Button Style="{StaticResource Secondary}" Command="{Binding RestartAgentCommand}" AutomationProperties.Name="{loc:T manager.main.restartAgent}" IsEnabled="{Binding AgentInstalled}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" FontSize="14" Margin="0,0,8,0" />
-                                                <TextBlock Text="{loc:T manager.main.restartAgent}" VerticalAlignment="Center" />
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Style="{StaticResource Secondary}" Command="{Binding NewTokenCommand}" AutomationProperties.Name="{loc:T manager.main.newToken}" Margin="8,0,0,0">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE8D7;" FontSize="14" Margin="0,0,8,0" />
-                                                <TextBlock Text="{loc:T manager.main.newToken}" VerticalAlignment="Center" />
-                                            </StackPanel>
-                                        </Button>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-
-                            <TextBlock Text="{loc:T manager.devices.title}" Style="{StaticResource SectionTitle}" />
-                            <TextBlock Text="{loc:T manager.devices.none}" Foreground="{DynamicResource Muted}" Margin="0,0,0,8">
+            <!-- The portal behind the whole layer: only the window's edges cut it -->
+            <Grid ClipToBounds="True">
+                <Path Style="{StaticResource PortalWatermark}" />
+                <DockPanel>
+                    <!-- Status bar -->
+                    <Border DockPanel.Dock="Bottom" Padding="24,8">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource WarningBackground}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding CurrentVersion, StringFormat=v{0}}" Foreground="{DynamicResource Faint}" Margin="12,0,0,0" />
+                            <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource Muted}" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasDevices}" Value="True">
-                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource Warning}" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <ItemsControl ItemsSource="{Binding Devices}" x:Name="DeviceList">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type vm:DeviceItem}">
-                                        <Border Style="{StaticResource Card}" Margin="0,0,0,8" Padding="16,10">
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Read-only banner -->
+                    <Border DockPanel.Dock="Top" Background="{DynamicResource WarningBackground}" CornerRadius="10" Padding="16,10" Margin="28,16,28,0"
+                            Visibility="{Binding IsReadOnly, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Secondary}" Command="{Binding ElevateCommand}" AutomationProperties.Name="{loc:T manager.main.elevate}" Margin="12,0,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE7EF;" FontSize="14" Margin="0,0,8,0" />
+                                    <TextBlock Text="{loc:T manager.main.elevate}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource Warning}" TextWrapping="Wrap" Text="{loc:T manager.main.readOnly}" />
+                        </DockPanel>
+                    </Border>
+
+                    <Grid>
+                        <!-- Published apps -->
+                        <DockPanel Visibility="{Binding IsChecked, ElementName=AppsPage, Converter={StaticResource BoolToVis}}">
+                            <TextBlock DockPanel.Dock="Top" Text="{loc:T manager.main.apps}" Style="{StaticResource PageTitle}" Margin="28,20,28,14" />
+
+                            <DockPanel DockPanel.Dock="Top" Margin="28,0,28,6" LastChildFill="False">
+                                <Button DockPanel.Dock="Left" Style="{StaticResource Primary}" Command="{Binding AddFilesCommand}" AutomationProperties.Name="{loc:T manager.main.addApp}" Margin="0,0,8,6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="14" Margin="0,0,8,0" Foreground="{DynamicResource OnAccent}" />
+                                        <TextBlock Text="{loc:T manager.main.addApp}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button DockPanel.Dock="Left" Content="{loc:T manager.main.fromStartMenu}" Style="{StaticResource Secondary}" Margin="0,0,8,6"
+                                        Command="{Binding PublishInstalledCommand}" />
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Subtle}" Command="{Binding RemoveCommand}" Padding="10,8" Margin="4,0,0,6"
+                                        ToolTip="{loc:T manager.main.remove}" AutomationProperties.Name="{loc:T manager.main.remove}">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" />
+                                </Button>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Subtle}" Command="{Binding EditCommand}" Padding="10,8" Margin="4,0,0,6"
+                                        ToolTip="{loc:T manager.main.edit}" AutomationProperties.Name="{loc:T manager.main.edit}">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE70F;" />
+                                </Button>
+                            </DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Foreground="{DynamicResource Faint}" FontSize="12" Margin="28,0,28,10" TextWrapping="Wrap"
+                                       Text="{loc:T manager.main.tip}" />
+
+                            <Grid>
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False" MaxWidth="380"
+                                            Visibility="{Binding HasNoApps, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE71D;" FontSize="40" Foreground="{DynamicResource Faint}" Margin="0,0,0,14" />
+                                    <TextBlock Text="{loc:T manager.main.empty}" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    <TextBlock Foreground="{DynamicResource Muted}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0"
+                                               Text="{loc:T manager.main.emptyHint}" />
+                                </StackPanel>
+
+                                <ListBox ItemsSource="{Binding Apps}" SelectedItem="{Binding SelectedApp}" Background="Transparent" Padding="22,0,22,12"
+                                         ui:ListSelection.ClearOnEmptyClick="True"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="{loc:T manager.main.apps}">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Foreground" Value="{DynamicResource Text}" />
+                                            <Setter Property="AutomationProperties.Name" Value="{Binding DisplayName}" />
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                            <Setter Property="Margin" Value="6,3" />
+                                            <Setter Property="Cursor" Value="Hand" />
+                                            <EventSetter Event="MouseDoubleClick" Handler="OnAppDoubleClick" />
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border x:Name="Bd" Background="{DynamicResource Surface}" CornerRadius="10" Padding="14,10">
+                                                            <ContentPresenter />
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileHover}" />
+                                                            </Trigger>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileSelected}" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Setter Property="ContextMenu">
+                                                <Setter.Value>
+                                                    <ContextMenu DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                                                        <MenuItem Header="{loc:T manager.main.edit}" FontWeight="SemiBold" Command="{Binding EditCommand}">
+                                                            <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE70F;" FontSize="14" /></MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <MenuItem Header="{loc:T manager.main.remove}" Command="{Binding RemoveCommand}">
+                                                            <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="14" Foreground="{DynamicResource Error}" /></MenuItem.Icon>
+                                                        </MenuItem>
+                                                    </ContextMenu>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:AppItemViewModel}">
                                             <DockPanel>
-                                                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE977;" Foreground="{DynamicResource Muted}" Margin="0,0,14,0" />
-                                                <Button DockPanel.Dock="Right" Style="{StaticResource Subtle}" Padding="10,8" VerticalAlignment="Center"
-                                                        Command="{Binding DataContext.RemoveDeviceCommand, ElementName=DeviceList}" CommandParameter="{Binding}"
-                                                        ToolTip="{loc:T manager.devices.remove}" AutomationProperties.Name="{loc:T manager.devices.remove}">
-                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" />
-                                                </Button>
+                                                <Image DockPanel.Dock="Left" Source="{Binding Icon}" Width="32" Height="32" Margin="0,0,14,0" VerticalAlignment="Center"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" />
                                                 <StackPanel VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                                    <TextBlock Text="{Binding Details}" Foreground="{DynamicResource Faint}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{Binding Path}" Foreground="{DynamicResource Faint}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                                    <TextBlock Text="{Binding Details}" Foreground="{DynamicResource Faint}" FontSize="12" TextTrimming="CharacterEllipsis" />
                                                 </StackPanel>
                                             </DockPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <TextBlock Foreground="{DynamicResource Faint}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap" Text="{loc:T manager.devices.hint}" />
-                        </StackPanel>
-                    </ScrollViewer>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </DockPanel>
 
-                    <!-- Settings -->
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsChecked, ElementName=SettingsPage, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Style="{StaticResource Page}" MaxWidth="600">
-                            <TextBlock Text="{loc:T manager.nav.settings}" Style="{StaticResource PageTitle}" />
+                        <!-- This PC: what remote access needs -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsChecked, ElementName=ThisPcPage, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Style="{StaticResource Page}">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Primary}" Command="{Binding PrepareCommand}" AutomationProperties.Name="{loc:T manager.main.prepare}" VerticalAlignment="Center"
+                                            Visibility="{Binding HasPendingReadiness, Converter={StaticResource BoolToVis}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE90F;" FontSize="14" Margin="0,0,8,0" Foreground="{DynamicResource OnAccent}" />
+                                            <TextBlock Text="{loc:T manager.main.prepare}" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                    <TextBlock Text="{loc:T manager.main.thisPc}" Style="{StaticResource PageTitle}" />
+                                </DockPanel>
+                                <TextBlock Text="{loc:T manager.thisPc.hint}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,8,0,16" />
 
-                            <TextBlock Text="{loc:T manager.settings.appearance}" Style="{StaticResource SectionTitle}" />
-                            <Border Style="{StaticResource Card}">
-                                <StackPanel>
-                                    <TextBlock Text="{loc:T manager.settings.theme}" Foreground="{DynamicResource Muted}" Margin="0,0,0,8" />
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                                        <RadioButton x:Name="ThemeSystem" Content="{loc:T common.theme.system}" GroupName="Theme" Margin="0,0,20,0" Checked="OnThemeChecked" />
-                                        <RadioButton x:Name="ThemeLight" Content="{loc:T common.theme.light}" GroupName="Theme" Margin="0,0,20,0" Checked="OnThemeChecked" />
-                                        <RadioButton x:Name="ThemeDark" Content="{loc:T common.theme.dark}" GroupName="Theme" Checked="OnThemeChecked" />
+                                <ItemsControl ItemsSource="{Binding Readiness}" x:Name="ReadinessList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:ReadinessItem}">
+                                            <Border Style="{StaticResource Card}" Margin="0,0,0,8" Padding="16,12">
+                                                <DockPanel>
+                                                    <Grid DockPanel.Dock="Left" Width="30" Height="30" Margin="0,0,14,0" VerticalAlignment="Top">
+                                                        <Ellipse x:Name="Circle" Fill="{DynamicResource WarningBackground}" />
+                                                        <TextBlock x:Name="Glyph" Style="{StaticResource Icon}" Text="&#xE7BA;" FontSize="14" Foreground="{DynamicResource Warning}" />
+                                                    </Grid>
+                                                    <Button DockPanel.Dock="Right" Content="{Binding ActionLabel}" Style="{StaticResource Secondary}" VerticalAlignment="Center" Margin="12,0,0,0"
+                                                            Command="{Binding DataContext.FixItemCommand, ElementName=ReadinessList}" CommandParameter="{Binding}"
+                                                            Visibility="{Binding HasAction, Converter={StaticResource BoolToVis}}" />
+                                                    <StackPanel VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,3,0,0"
+                                                                   Visibility="{Binding HasDetail, Converter={StaticResource BoolToVis}}" />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding State}" Value="Ok">
+                                                    <Setter TargetName="Circle" Property="Fill" Value="{DynamicResource SuccessBackground}" />
+                                                    <Setter TargetName="Glyph" Property="Text" Value="&#xE73E;" />
+                                                    <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Success}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding State}" Value="Advice">
+                                                    <Setter TargetName="Circle" Property="Fill" Value="{DynamicResource TileHover}" />
+                                                    <Setter TargetName="Glyph" Property="Text" Value="&#xE946;" />
+                                                    <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Muted}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding State}" Value="NotSupported">
+                                                    <Setter TargetName="Circle" Property="Fill" Value="{DynamicResource ErrorBackground}" />
+                                                    <Setter TargetName="Glyph" Property="Text" Value="&#xE711;" />
+                                                    <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Error}" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Connection with the clients -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsChecked, ElementName=ConnectionPage, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Style="{StaticResource Page}">
+                                <TextBlock Text="{loc:T manager.main.connection}" Style="{StaticResource PageTitle}" />
+
+                                <TextBlock Text="{loc:T manager.main.agent}" Style="{StaticResource SectionTitle}" />
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" MinWidth="90" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="{loc:T manager.main.agent}" Style="{StaticResource Label}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding AgentState}" Style="{StaticResource Value}" />
+                                            <TextBlock Grid.Row="1" Text="{loc:T manager.main.address}" Style="{StaticResource Label}" />
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Addresses}" Style="{StaticResource Value}" />
+                                            <TextBlock Grid.Row="2" Text="{loc:T manager.main.port}" Style="{StaticResource Label}" />
+                                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Port}" Style="{StaticResource Value}" />
+                                            <TextBlock Grid.Row="3" Text="{loc:T manager.main.paired}" Style="{StaticResource Label}" />
+                                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Paired}" Style="{StaticResource Value}" />
+                                            <TextBlock Grid.Row="4" Text="{loc:T manager.main.vpn}" Style="{StaticResource Label}" />
+                                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Vpns}" Style="{StaticResource Value}" />
+                                            <TextBlock Grid.Row="5" Text="{loc:T manager.main.fingerprint}" Style="{StaticResource Label}" Margin="0,0,16,0" />
+                                            <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Fingerprint, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" FontSize="11"
+                                                     TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Padding="0" />
+                                        </Grid>
+                                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                            <Button Style="{StaticResource Secondary}" Command="{Binding RestartAgentCommand}" AutomationProperties.Name="{loc:T manager.main.restartAgent}" IsEnabled="{Binding AgentInstalled}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" FontSize="14" Margin="0,0,8,0" />
+                                                    <TextBlock Text="{loc:T manager.main.restartAgent}" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Style="{StaticResource Secondary}" Command="{Binding NewTokenCommand}" AutomationProperties.Name="{loc:T manager.main.newToken}" Margin="8,0,0,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE8D7;" FontSize="14" Margin="0,0,8,0" />
+                                                    <TextBlock Text="{loc:T manager.main.newToken}" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
                                     </StackPanel>
-                                    <Button Style="{StaticResource Secondary}" HorizontalAlignment="Left" Click="OnLanguageClick" AutomationProperties.Name="{loc:T common.language.menu}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE774;" FontSize="14" Margin="0,0,8,0" />
-                                            <TextBlock Text="{loc:T common.language.menu}" VerticalAlignment="Center" />
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                            </Border>
+                                </Border>
 
-                            <TextBlock Text="{loc:T manager.main.updates}" Style="{StaticResource SectionTitle}" />
-                            <Border Style="{StaticResource Card}">
-                                <StackPanel>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" MinWidth="90" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        <TextBlock Text="{loc:T manager.main.version}" Style="{StaticResource Label}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding CurrentVersion}" Style="{StaticResource Value}" />
-                                        <TextBlock Grid.Row="1" Text="{loc:T manager.main.latestVersion}" Style="{StaticResource Label}" />
-                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LatestVersion}" Style="{StaticResource Value}" />
-                                    </Grid>
-                                    <CheckBox Content="{loc:T manager.main.autoUpdate}" ToolTip="{loc:T manager.main.autoUpdateTip}" Margin="0,6,0,0"
-                                              IsChecked="{Binding AutoUpdate, Mode=TwoWay}" IsEnabled="{Binding IsAdmin}" />
-                                    <Button Style="{StaticResource Primary}" HorizontalAlignment="Left" Margin="0,14,0,0"
-                                            Command="{Binding UpdateNowCommand}" AutomationProperties.Name="{loc:T manager.main.updateNow}" Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BoolToVis}}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="14" Margin="0,0,8,0" Foreground="{DynamicResource OnAccent}" />
-                                            <TextBlock Text="{loc:T manager.main.updateNow}" VerticalAlignment="Center" />
+                                <TextBlock Text="{loc:T manager.devices.title}" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="{loc:T manager.devices.none}" Foreground="{DynamicResource Muted}" Margin="0,0,0,8">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasDevices}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <ItemsControl ItemsSource="{Binding Devices}" x:Name="DeviceList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:DeviceItem}">
+                                            <Border Style="{StaticResource Card}" Margin="0,0,0,8" Padding="16,10">
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE977;" Foreground="{DynamicResource Muted}" Margin="0,0,14,0" />
+                                                    <Button DockPanel.Dock="Right" Style="{StaticResource Subtle}" Padding="10,8" VerticalAlignment="Center"
+                                                            Command="{Binding DataContext.RemoveDeviceCommand, ElementName=DeviceList}" CommandParameter="{Binding}"
+                                                            ToolTip="{loc:T manager.devices.remove}" AutomationProperties.Name="{loc:T manager.devices.remove}">
+                                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" />
+                                                    </Button>
+                                                    <StackPanel VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding Details}" Foreground="{DynamicResource Faint}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Foreground="{DynamicResource Faint}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap" Text="{loc:T manager.devices.hint}" />
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Settings -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsChecked, ElementName=SettingsPage, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Style="{StaticResource Page}" MaxWidth="600">
+                                <TextBlock Text="{loc:T manager.nav.settings}" Style="{StaticResource PageTitle}" />
+
+                                <TextBlock Text="{loc:T manager.settings.appearance}" Style="{StaticResource SectionTitle}" />
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="{loc:T manager.settings.theme}" Foreground="{DynamicResource Muted}" Margin="0,0,0,8" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                            <RadioButton x:Name="ThemeSystem" Content="{loc:T common.theme.system}" GroupName="Theme" Margin="0,0,20,0" Checked="OnThemeChecked" />
+                                            <RadioButton x:Name="ThemeLight" Content="{loc:T common.theme.light}" GroupName="Theme" Margin="0,0,20,0" Checked="OnThemeChecked" />
+                                            <RadioButton x:Name="ThemeDark" Content="{loc:T common.theme.dark}" GroupName="Theme" Checked="OnThemeChecked" />
                                         </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </ScrollViewer>
-                </Grid>
-            </DockPanel>
+                                        <Button Style="{StaticResource Secondary}" HorizontalAlignment="Left" Click="OnLanguageClick" AutomationProperties.Name="{loc:T common.language.menu}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE774;" FontSize="14" Margin="0,0,8,0" />
+                                                <TextBlock Text="{loc:T common.language.menu}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Text="{loc:T manager.main.updates}" Style="{StaticResource SectionTitle}" />
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" MinWidth="90" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="{loc:T manager.main.version}" Style="{StaticResource Label}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding CurrentVersion}" Style="{StaticResource Value}" />
+                                            <TextBlock Grid.Row="1" Text="{loc:T manager.main.latestVersion}" Style="{StaticResource Label}" />
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LatestVersion}" Style="{StaticResource Value}" />
+                                        </Grid>
+                                        <CheckBox Content="{loc:T manager.main.autoUpdate}" ToolTip="{loc:T manager.main.autoUpdateTip}" Margin="0,6,0,0"
+                                                  IsChecked="{Binding AutoUpdate, Mode=TwoWay}" IsEnabled="{Binding IsAdmin}" />
+                                        <Button Style="{StaticResource Primary}" HorizontalAlignment="Left" Margin="0,14,0,0"
+                                                Command="{Binding UpdateNowCommand}" AutomationProperties.Name="{loc:T manager.main.updateNow}" Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BoolToVis}}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="14" Margin="0,0,8,0" Foreground="{DynamicResource OnAccent}" />
+                                                <TextBlock Text="{loc:T manager.main.updateNow}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </DockPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>
